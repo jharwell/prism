@@ -1,5 +1,5 @@
 /**
- * \file structure3D_config.hpp
+ * \file structure3D_metrics.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,44 +18,38 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-#include <string>
+#include "rcppsw/metrics/base_metrics.hpp"
 
-#include "rcppsw/config/base_config.hpp"
-#include "rcppsw/math/vector3.hpp"
+#include "cosm/ds/block3D_vector.hpp"
 
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, config);
+NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Struct Definitions
+ * Class Definitions
  ******************************************************************************/
 /**
- * \struct structure3D_config
- * \ingroup structure config
+ * \class structure3D_metrics
+ * \ingroup structure metrics
  *
- * \brief Parsed configuration for the \ref structure3D object.
+ * \brief Interface defining the metrics to be collected from \ref structure3D
+ * as it is built about block counts, etc.
  */
-
-struct structure3D_config : public rconfig::base_config {
-  rmath::vector3u              anchor{};
-  rmath::vector3u              bounding_box{};
-  std::string                  orientation{};
-
-  std::vector<rmath::vector3u> cube_blocks{};
-  std::vector<rmath::vector3u> ramp_blocks{};
+class structure3D_metrics : public rmetrics::base_metrics {
+ public:
+  virtual const cds::block3D_vectorro& placed_blocks(void) const = 0;
 };
 
-NS_END(config, structure, silicon);
+NS_END(metrics, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_ */

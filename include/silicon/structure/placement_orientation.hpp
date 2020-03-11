@@ -1,5 +1,5 @@
 /**
- * \file structure3D_config.hpp
+ * \file placement_orientation.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,44 +18,32 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_
+#define INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-#include <string>
-
-#include "rcppsw/config/base_config.hpp"
-#include "rcppsw/math/vector3.hpp"
-
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, config);
+NS_START(silicon, structure);
 
 /*******************************************************************************
- * Struct Definitions
+ * Class Definitions
  ******************************************************************************/
 /**
- * \struct structure3D_config
- * \ingroup structure config
- *
- * \brief Parsed configuration for the \ref structure3D object.
+ * \brief Defines the orientations a block can be placed on on the structure,
+ * which is for now restricted to either aligned with the X axis or aligned with
+ * the Y axis.
  */
-
-struct structure3D_config : public rconfig::base_config {
-  rmath::vector3u              anchor{};
-  rmath::vector3u              bounding_box{};
-  std::string                  orientation{};
-
-  std::vector<rmath::vector3u> cube_blocks{};
-  std::vector<rmath::vector3u> ramp_blocks{};
+enum placement_orientation {
+  ekX,
+  ekY
 };
 
-NS_END(config, structure, silicon);
+NS_END(structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_ */

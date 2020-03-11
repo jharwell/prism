@@ -1,5 +1,5 @@
 /**
- * \file structure3D_config.hpp
+ * \file structure3D_metrics_collector.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,44 +18,29 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-#include <string>
+#include "silicon/structure/metrics/structure3D_metrics_collector.hpp"
 
-#include "rcppsw/config/base_config.hpp"
-#include "rcppsw/math/vector3.hpp"
-
-#include "silicon/silicon.hpp"
+#include "silicon/structure/metrics/structure3D_metrics.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-NS_START(silicon, structure, config);
+NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Struct Definitions
+ * Member Functions
  ******************************************************************************/
-/**
- * \struct structure3D_config
- * \ingroup structure config
- *
- * \brief Parsed configuration for the \ref structure3D object.
- */
+void structure3D_metrics_collector::collect(
+    const rmetrics::base_metrics& metrics) {
+  auto& m = dynamic_cast<const structure3D_metrics&>(metrics);
+  inc_total_count(m.placed_blocks().size());
 
-struct structure3D_config : public rconfig::base_config {
-  rmath::vector3u              anchor{};
-  rmath::vector3u              bounding_box{};
-  std::string                  orientation{};
+  for (auto *b : m.placed_blocks()) {
+    inc_cell_count(b->dloc());
+  } /* for(*b..) */
+} /* collect() */
 
-  std::vector<rmath::vector3u> cube_blocks{};
-  std::vector<rmath::vector3u> ramp_blocks{};
-};
-
-NS_END(config, structure, silicon);
-
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_ */
+NS_END(metrics, structure, silicon);

@@ -33,10 +33,12 @@
 
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/ds/cell3D.hpp"
+#include "cosm/repr/block3D_variant.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/placement_orientation.hpp"
+#include "silicon/structure/metrics/structure3D_metrics.hpp"
+#include "silicon/structure/cell3D_target_state.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -58,6 +60,11 @@ class structure3D : public rds::grid3D<cds::cell3D>,
                     public metrics::structure3D_metrics,
                     public rer::client<structure3D> {
  public:
+  struct cell_final_spec {
+    int state;
+    crepr::block_type block_type;
+    rmath::radians z_rotation;
+  };
   explicit structure3D(const config::structure3D_config* config);
 
   /* Not copy constructable/assignable by default */
@@ -71,26 +78,50 @@ class structure3D : public rds::grid3D<cds::cell3D>,
     return m_placed;
   }
 
+  bool contains(const crepr::base_block3D* query) const;
 
-  bool block_addition_valid(const rmath::vector3u& loc,
-                            placement_orientation orientation,
-                            const crepr::base_block3D* block);
+  bool block_placement_valid(const crepr::block3D_variant& block,
+                             const rmath::vector3u& loc,
+                             const rmath::radians& z_rotation);
 
   size_t n_placed_blocks(void) const { return m_placed.size(); }
+
+  /**
+   * \brief Add a block to the structure after verifying its placement is valid
+   * via \ref block_addition_valid().
+   */
   void block_add(const crepr::base_block3D* block);
 
- private:
+  /**
+   * \brief Return \c TRUE if the structure has been completed and \c FALSE
+   * otherwise.
+   */
+  bool is_complete(void) const;
+
+  /**
+   * \brief Given a location within the bounding box for the structure, compute
+   * the final state the cell should be in once the structure is completed.
+   */
+  cell_final_spec cell_spec(const rmath::vector3u& loc) const;
+
+  /**
+   * \brief For ramp blocks, compute the list of cells which will be in the
+   * BLOCK_EXTENT state as part of the specified ramp block once the structure
+   * is completed.
+   */
+  std::vector<rmath::vector3u> spec_to_block_extents(
+      const config::ramp_block_loc_spec* spec) const;
+
   /**
    * \brief Verify cell state for block addition.
    */
-  bool block_addition_cell_check(const cds::cell3D& cell) const;
+  bool block_placement_cell_check(const cds::cell3D& cell) const;
 
+ private:
   /* clang-format off */
-  const rmath::vector3u mc_anchor;
-  const rmath::vector3u mc_bounding_box;
-  const std::string     mc_orientation;
+  const config::structure3D_config mc_config;
 
-  cds::block3D_vectorro m_placed{};
+  cds::block3D_vectorro            m_placed{};
   /* clang-format on */
 };
 

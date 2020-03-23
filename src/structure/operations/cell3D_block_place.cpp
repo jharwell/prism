@@ -1,5 +1,5 @@
 /**
- * \file structure_block_placement.cpp
+ * \file cell3D_block_place.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,50 +21,41 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/events/structure_block_placement.hpp"
+#include "silicon/structure/operations/cell3D_block_place.hpp"
 
 #include "cosm/ds/cell3D.hpp"
 
 #include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-NS_START(silicon, events, detail);
+NS_START(silicon, structure, operations, detail);
 
 /*******************************************************************************
- * Constructors/Destructors
+ * Constructors/Destructor
  ******************************************************************************/
-structure_block_placement::structure_block_placement(const rmath::vector3u& loc,
-                                 const structure::placement_orientation& orientation,
-                                 crepr::base_block3D* block)
-    : ER_CLIENT_INIT("silicon.events.structure_block_placement"),
-      cell3D_op(loc),
-      mc_orientation(orientation),
-      m_block(block) {
-}
+cell3D_block_place::cell3D_block_place(const rmath::vector3u& coord,
+                                       crepr::base_block3D* block)
+    : ER_CLIENT_INIT("silicon.structure.operations.cell3D_block_place"),
+      cell3D_op(coord), m_block(block) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void structure_block_placement::visit(structure::structure3D& structure) {
-  ER_ASSERT(structure.block_addition_valid(coord(), mc_orientation, m_block),
-            "Bad placement of block%d @loc%s",
-            m_block->id().v(),
-            coord().to_str().c_str());
-  structure.block_add(m_block);
+void cell3D_block_place::visit(structure3D& structure) {
   visit(structure[coord()]);
 } /* visit() */
 
-void structure_block_placement::visit(cds::cell3D& cell) {
+void cell3D_block_place::visit(cds::cell3D& cell) {
   cell.entity(m_block);
   visit(cell.fsm());
 } /* visit() */
 
-void structure_block_placement::visit(cfsm::cell3D_fsm& fsm) {
+void cell3D_block_place::visit(cfsm::cell3D_fsm& fsm) {
   ER_ASSERT(!fsm.state_has_block() && !fsm.state_in_block_extent(),
             "FSM in wrong state");
   fsm.event_block_place();
 } /* visit() */
 
-NS_END(detail, events, silicon);
+NS_END(detail, operations, structure, silicon);

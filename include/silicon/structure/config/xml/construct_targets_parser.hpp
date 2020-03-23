@@ -1,5 +1,5 @@
 /**
- * \file structure3D_parser.cpp
+ * \file construct_targets_parser.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,9 +18,17 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_XML_CONSTRUCT_TARGETS_PARSER_HPP_
+#define INCLUDE_SILICON_STRUCTURE_CONFIG_XML_CONSTRUCT_TARGETS_PARSER_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <string>
+#include <memory>
+
+#include "silicon/structure/config/construct_targets.hpp"
+#include "rcppsw/config/xml/xml_config_parser.hpp"
 #include "silicon/structure/config/xml/structure3D_parser.hpp"
 
 /*******************************************************************************
@@ -29,40 +37,40 @@
 NS_START(silicon, structure, config, xml);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void structure3D_parser::parse(const ticpp::Element& node) {
-  ticpp::Element snode = node_get(node, kXMLRoot);
-  m_config = std::make_unique<config_type>();
+/**
+ * \class construct_targets_parser
+ * \ingroup config structure xml
+ *
+ * \brief Parses XML parameters defining one or more construction targets into
+ * \ref construct_targets.
+ */
+class construct_targets_parser : public rconfig::xml::xml_config_parser {
+ public:
+  using config_type = construct_targets_config;
 
-  XML_PARSE_ATTR(snode, m_config, anchor);
-  XML_PARSE_ATTR(snode, m_config, bounding_box);
-  XML_PARSE_ATTR(snode, m_config, orientation);
+  /**
+   * \brief The root tag that all \ref construct_targets parameters should lie
+   * under in the XML tree.
+   */
+  static constexpr char kXMLRoot[] = "construct_targets";
 
-  std::map<std::string, rmath::radians> orientation_map = {
-    {"X", rmath::radians::kZERO},
-    {"Y" , rmath::radians::kPI_OVER_TWO}
-  };
+  void parse(const ticpp::Element& node) override RCSW_COLD;
 
-  ticpp::Iterator<ticpp::Element> node_it;
-  auto cube_blocks = node_get(snode, "cube_blocks");
-  auto ramp_blocks = node_get(snode, "ramp_blocks");
+  std::string xml_root(void) const override RCSW_COLD { return kXMLRoot; }
 
-  for (node_it = cube_blocks.FirstChildElement();
-       node_it != node_it.end();
-       ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->cube_blocks[tmp] = {tmp};
-  } /* for(node_it..) */
+ private:
+  const rconfig::base_config* config_get_impl(void) const override RCSW_COLD {
+    return m_config.get();
+  }
+  /* clang-format off */
+  std::unique_ptr<config_type> m_config{nullptr};
+  structure3D_parser           m_target;
 
-  for (node_it = ramp_blocks.FirstChildElement();
-       node_it != node_it.end();
-       ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->ramp_blocks[tmp] = {tmp, orientation_map[m_config->orientation]};
-  } /* for(node_it..) */
-} /* parse() */
+  /* clang-format on */
+};
 
 NS_END(xml, config, structure, silicon);
+
+#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_XML_CONSTRUCT_TARGETS_PARSER_HPP_ */

@@ -1,5 +1,5 @@
 /**
- * \file structure3D_parser.cpp
+ * \file construct_targets_parser.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/config/xml/structure3D_parser.hpp"
+#include "silicon/structure/config/xml/construct_targets_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -31,37 +31,17 @@ NS_START(silicon, structure, config, xml);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void structure3D_parser::parse(const ticpp::Element& node) {
-  ticpp::Element snode = node_get(node, kXMLRoot);
+void construct_targets_parser::parse(const ticpp::Element& node) {
+  ticpp::Element cnode = node_get(node, kXMLRoot);
   m_config = std::make_unique<config_type>();
 
-  XML_PARSE_ATTR(snode, m_config, anchor);
-  XML_PARSE_ATTR(snode, m_config, bounding_box);
-  XML_PARSE_ATTR(snode, m_config, orientation);
-
-  std::map<std::string, rmath::radians> orientation_map = {
-    {"X", rmath::radians::kZERO},
-    {"Y" , rmath::radians::kPI_OVER_TWO}
-  };
-
   ticpp::Iterator<ticpp::Element> node_it;
-  auto cube_blocks = node_get(snode, "cube_blocks");
-  auto ramp_blocks = node_get(snode, "ramp_blocks");
 
-  for (node_it = cube_blocks.FirstChildElement();
+  for (node_it = cnode.FirstChildElement();
        node_it != node_it.end();
        ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->cube_blocks[tmp] = {tmp};
-  } /* for(node_it..) */
-
-  for (node_it = ramp_blocks.FirstChildElement();
-       node_it != node_it.end();
-       ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->ramp_blocks[tmp] = {tmp, orientation_map[m_config->orientation]};
+    m_target.parse(*node_it);
+    m_config->targets.push_back(*m_target.config_get<structure3D_parser::config_type>());
   } /* for(node_it..) */
 } /* parse() */
 

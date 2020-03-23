@@ -1,5 +1,5 @@
 /**
- * \file structure_block_placement.hpp
+ * \file cell3D_block_extent.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,69 +18,62 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_EVENTS_STRUCTURE_BLOCK_PLACEMENT_HPP_
-#define INCLUDE_SILICON_EVENTS_STRUCTURE_BLOCK_PLACEMENT_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_CELL3D_BLOCK_EXTENT_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_CELL3D_BLOCK_EXTENT_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcppsw/math/vector3.hpp"
 #include "rcppsw/er/client.hpp"
 
 #include "cosm/events/cell3D_op.hpp"
 #include "cosm/repr/base_block3D.hpp"
 
-#include "silicon/silicon.hpp"
-#include "silicon/structure/placement_orientation.hpp"
-
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
 namespace silicon::structure {
 class structure3D;
 } /* namespace silicon::structure */
 
-NS_START(silicon, events, detail);
+NS_START(silicon, structure, operations, detail);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure_block_placement
- * \ingroup events
+ * \class cell3D_block_extent
+ * \ingroup structure operations
  *
- * \brief A block drop to place a block onto the in-progress \ref structure3D.
+ * \brief Change the state of a  \ref cell3D from some state to being part of a
+ * block's extent.
  */
-class structure_block_placement : public rer::client<structure_block_placement>,
-                                  public cevents::cell3D_op {
- public:
+class cell3D_block_extent : public rer::client<cell3D_block_extent>,
+                            public cevents::cell3D_op {
  private:
   struct visit_typelist_impl {
     using inherited = cell3D_op::visit_typelist;
-    using others = rmpl::typelist<structure::structure3D>;
+    using others = rmpl::typelist<structure3D>;
     using value = boost::mpl::joint_view<inherited::type, others::type>;
   };
 
  public:
   using visit_typelist = visit_typelist_impl::value;
 
-  structure_block_placement(const rmath::vector3u& loc,
-                  const structure::placement_orientation& orientation,
-                  crepr::base_block3D* block);
+  cell3D_block_extent(const rmath::vector3u& coord,
+                      crepr::base_block3D* block);
+  cell3D_block_extent& operator=(const cell3D_block_extent&) = delete;
+  cell3D_block_extent(const cell3D_block_extent&) = delete;
 
-  /* Not copy constructable/assignable by default */
-  structure_block_placement(const structure_block_placement&) = delete;
-  const structure_block_placement& operator=(const structure_block_placement&) = delete;
-
-  void visit(structure::structure3D& structure);
+  void visit(structure3D& structure);
 
  private:
   void visit(cds::cell3D& cell);
   void visit(cfsm::cell3D_fsm& fsm);
 
   /* clang-format off */
-  const structure::placement_orientation mc_orientation;
-
-  crepr::base_block3D*                   m_block;
+  crepr::base_block3D * m_block;
   /* clang-format on */
 };
 
@@ -90,17 +83,16 @@ class structure_block_placement : public rer::client<structure_block_placement>,
  * (i.e. remove the possibility of implicit upcasting performed by the
  * compiler).
  */
-using structure_block_placement_visitor_impl =
-    rpvisitor::precise_visitor<structure_block_placement,
-                               structure_block_placement::visit_typelist>;
+using cell3D_block_extent_visitor_impl =
+    rpvisitor::precise_visitor<detail::cell3D_block_extent,
+                               detail::cell3D_block_extent::visit_typelist>;
 
 NS_END(detail);
 
-class structure_block_placement_visitor : public detail::structure_block_placement_visitor_impl {
-  using detail::structure_block_placement_visitor_impl::structure_block_placement_visitor_impl;
+class cell3D_block_extent_visitor : public detail::cell3D_block_extent_visitor_impl {
+  using detail::cell3D_block_extent_visitor_impl::cell3D_block_extent_visitor_impl;
 };
 
+NS_END(events, foraging, silicon);
 
-NS_END(events, silicon);
-
-#endif /* INCLUDE_SILICON_EVENTS_STRUCTURE_BLOCK_PLACEMENT_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_CELL3D_BLOCK_EXTENT_HPP_ */

@@ -1,5 +1,5 @@
 /**
- * \file structure3D_config.hpp
+ * \file structure3D_builder_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,17 +18,16 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_BUILDER_CONFIG_HPP_
+#define INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_BUILDER_CONFIG_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <map>
 #include <string>
 
 #include "rcppsw/config/base_config.hpp"
-#include "rcppsw/math/vector3.hpp"
+#include "rcppsw/types/timestep.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -40,36 +39,18 @@ NS_START(silicon, structure, config);
 /*******************************************************************************
  * Struct Definitions
  ******************************************************************************/
-struct ramp_block_loc_spec {
-  rmath::vector3u loc{};
-  rmath::radians z_rotation{};
-};
-
-struct cube_block_loc_spec {
-  rmath::vector3u loc{};
-};
-
 /**
- * \struct structure3D_config
+ * \struct structure3D_builder_config
  * \ingroup structure config
  *
- * \brief Parsed configuration for the \ref structure3D object.
+ * \brief Parsed configuration for the \ref structure3D_builder object.
  */
-struct structure3D_config : public rconfig::base_config {
-  rmath::vector3u              anchor{};
-  rmath::vector3u              bounding_box{};
-  std::string                  orientation{};
-
-  /*
-   * We use maps with somewhat redundant (key, value) pairs in order to make the
-   * process of determining "what kind of block should this (i,j,k) location
-   * contain when the structure is completed?" efficient. Just using vectors
-   * requires a linear scan for every single passed location.
-   */
-  std::map<rmath::vector3u, cube_block_loc_spec> cube_blocks{};
-  std::map<rmath::vector3u, ramp_block_loc_spec> ramp_blocks{};
+struct structure3D_builder_config : public rconfig::base_config {
+  std::string      build_src{};
+  rtypes::timestep static_build_interval{rtypes::timestep(0)};
+  size_t           static_build_interval_count{0};
 };
 
 NS_END(config, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_CONFIG_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_STRUCTURE3D_BUILDER_CONFIG_HPP_ */

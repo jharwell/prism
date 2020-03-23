@@ -1,5 +1,5 @@
 /**
- * \file placement_orientation.hpp
+ * \file structure3D_builder_parser.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,32 +18,26 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_
-#define INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/silicon.hpp"
+#include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-NS_START(silicon, structure);
+NS_START(silicon, structure, config, xml);
 
 /*******************************************************************************
- * Class Definitions
+ * Member Functions
  ******************************************************************************/
-/**
- * \brief Defines the orientations a block can be placed on on the structure,
- * which is for now restricted to either aligned with the X axis or aligned with
- * the Y axis.
- */
-enum placement_orientation {
-  ekX,
-  ekY
-};
+void structure3D_builder_parser::parse(const ticpp::Element& node) {
+  ticpp::Element bnode = node_get(node, kXMLRoot);
+  m_config = std::make_unique<config_type>();
 
-NS_END(structure, silicon);
+  XML_PARSE_ATTR(bnode, m_config, build_src);
+  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval, rtypes::timestep(0));
+  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval_count, 1UL);
+} /* parse() */
 
-#endif /* INCLUDE_SILICON_STRUCTURE_PLACEMENT_ORIENTATION_HPP_ */
+NS_END(xml, config, structure, silicon);

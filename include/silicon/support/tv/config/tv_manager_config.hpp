@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file tv_manager_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,37 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_CONFIG_TV_MANAGER_CONFIG_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_CONFIG_TV_MANAGER_CONFIG_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "rcppsw/config/base_config.hpp"
+#include "cosm/tv/config/population_dynamics_config.hpp"
+#include "silicon/support/tv/config/env_dynamics_config.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, support, tv, config);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Structure Definitions
+ ******************************************************************************/
+/**
+ * \struct tv_manager_config
+ * \ingroup support tv config
+ *
+ * \brief Configuration for the \ref tv_manager.
+ */
+struct tv_manager_config final : public rconfig::base_config {
+  tv::config::env_dynamics_config env_dynamics{};
+  ctv::config::population_dynamics_config population_dynamics{};
+};
 
-} /* namespace silicon */
+NS_END(config, tv, support, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_CONFIG_TV_MANAGER_CONFIG_HPP_ */

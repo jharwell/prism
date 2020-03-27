@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file env_dynamics_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,34 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "cosm/tv/config/base_env_dynamics_config.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, support, tv, config);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Structure Definitions
+ ******************************************************************************/
+/**
+ * \struct env_dynamics_config
+ * \ingroup support tv config
+ *
+ * \brief Configuration for the \ref env_dynamics.
+ */
+struct env_dynamics_config final : public ctv::config::base_env_dynamics_config {
+  /* open to extension */
+};
 
-} /* namespace silicon */
+NS_END(config, tv, support, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_ */

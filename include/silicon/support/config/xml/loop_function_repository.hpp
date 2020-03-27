@@ -1,5 +1,7 @@
 /**
- * \file silicon.hpp
+ * \file loop_function_repository.hpp
+ *
+ * Handles parsing of all XML parameters at runtime.
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +20,36 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_
+#define INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "cosm/pal/config/xml/base_sm_repository.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, support, config, xml);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \class loop_function_repository
+ * \ingroup support config xml
+ *
+ * \brief Extra loop function XML parsers/results specific to the SILICON
+ * project.
+ */
+class loop_function_repository : public cpal::config::xml::base_sm_repository {
+ public:
+  loop_function_repository(void) noexcept;
+};
 
-} /* namespace silicon */
+NS_END(xml, config, support, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_ */

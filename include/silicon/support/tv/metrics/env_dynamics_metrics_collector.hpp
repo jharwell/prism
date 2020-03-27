@@ -1,0 +1,74 @@
+/**
+ * \file env_dynamics_metrics_collector.hpp
+ *
+ * \copyright 2020 John Harwell, All rights reserved.
+ *
+ * This file is part of SILICON.
+ *
+ * SILICON is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SILICON.  If not, see <http://www.gnu.org/licenses/
+ */
+
+#ifndef INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
+#define INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include <list>
+#include <string>
+
+#include "rcppsw/metrics/base_metrics_collector.hpp"
+
+#include "silicon/silicon.hpp"
+
+/*******************************************************************************
+ * Namespaces
+ ******************************************************************************/
+NS_START(silicon, support, tv, metrics);
+
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \class env_dynamics_metrics_collector
+ * \ingroup support metrics tv
+ *
+ * \brief Collector for \ref env_dynamics_metrics.
+ *
+ * Metrics CANNOT be collected in parallel; concurrent updates to the gathered
+ * stats are not supported. Metrics are written out every timestep.
+ */
+class env_dynamics_metrics_collector final
+    : public rmetrics::base_metrics_collector {
+ public:
+  /**
+   * \param ofname_stem The output file name stem.
+   */
+  explicit env_dynamics_metrics_collector(const std::string& ofname_stem);
+
+  void collect(const rmetrics::base_metrics& metrics) override;
+
+ private:
+  std::list<std::string> csv_header_cols(void) const override;
+  boost::optional<std::string> csv_line_build(void) override;
+
+  /* clang-format off */
+  double           m_avg_motion_throttle{0.0};
+  rtypes::timestep m_arena_block_manip_penalty{0};
+  rtypes::timestep m_structure_block_manip_penalty{0};
+  /* clang-format on */
+};
+
+NS_END(metrics, tv, support, silicon);
+
+#endif /* INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_ */

@@ -27,7 +27,7 @@
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/er/client.hpp"
 
-#include "cosm/events/cell3D_op.hpp"
+#include "cosm/ds/operations/cell3D_op.hpp"
 #include "cosm/repr/base_block3D.hpp"
 
 /*******************************************************************************
@@ -50,7 +50,7 @@ NS_START(silicon, structure, operations, detail);
  * block's extent.
  */
 class cell3D_block_extent : public rer::client<cell3D_block_extent>,
-                            public cevents::cell3D_op {
+                            public cdops::cell3D_op {
  private:
   struct visit_typelist_impl {
     using inherited = cell3D_op::visit_typelist;

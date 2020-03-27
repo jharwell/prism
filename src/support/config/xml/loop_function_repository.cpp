@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file loop_function_repository.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,28 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "silicon/support/config/xml/loop_function_repository.hpp"
+#include "silicon/structure/config/xml/construct_targets_parser.hpp"
+#include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, support, config, xml);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Constructors/Destructor
+ ******************************************************************************/
+loop_function_repository::loop_function_repository(void) noexcept {
+  parser_register<ssconfig::xml::construct_targets_parser,
+                  ssconfig::construct_targets_config>(
+                      ssconfig::xml::construct_targets_parser::kXMLRoot);
+  parser_register<ssconfig::xml::structure3D_builder_parser,
+                  ssconfig::structure3D_builder_config>(
+                      ssconfig::xml::structure3D_builder_parser::kXMLRoot);
+}
 
-} /* namespace silicon */
-
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+NS_END(xml, config, support, silicon);

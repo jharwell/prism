@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file interactor_status.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,42 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_INTERACTOR_STATUS_HPP_
+#define INCLUDE_SILICON_SUPPORT_INTERACTOR_STATUS_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "rcppsw/common/common.hpp"
+#include "rcppsw/utils/maskable_enum.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, support);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \brief The status returned by an action class representing a robot
+ * interaction with the arena/environment. Used to disambiguate when
+ * post-interaction hooks need to be run after processing all interactions for a
+ * given robot on a given timestep.
+ */
+enum class interactor_status {
+  /**
+   * \brief No event occured (i.e. the robot did not meet the requirements for
+   * the interaction).
+   */
+  ekNO_EVENT = 1 << 0,
 
-} /* namespace silicon */
+  /**
+   * \brief The robot placed a block on the \ref structure3D.
+   */
+  ekSTRUCTURE_BLOCK_PLACE = 1 << 1,
+};
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
+NS_END(support, silicon);
 
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_INTERACTOR_STATUS_HPP_ */

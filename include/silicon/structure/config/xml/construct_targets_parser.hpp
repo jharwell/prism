@@ -27,7 +27,7 @@
 #include <string>
 #include <memory>
 
-#include "silicon/structure/config/construct_targets.hpp"
+#include "silicon/structure/config/construct_targets_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
 #include "silicon/structure/config/xml/structure3D_parser.hpp"
 
@@ -66,7 +66,7 @@ class construct_targets_parser : public rconfig::xml::xml_config_parser {
   }
   /* clang-format off */
   std::unique_ptr<config_type> m_config{nullptr};
-  structure3D_parser           m_target;
+  structure3D_parser           m_target{};
 
   /* clang-format on */
 };

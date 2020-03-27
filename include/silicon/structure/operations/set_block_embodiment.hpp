@@ -26,7 +26,6 @@
  ******************************************************************************/
 #include <boost/variant/static_visitor.hpp>
 
-#include "cosm/events/cell2D_empty.hpp"
 #include "cosm/repr/embodied_block.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"

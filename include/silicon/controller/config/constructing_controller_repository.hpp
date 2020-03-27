@@ -1,5 +1,5 @@
 /**
- * \file construct_targets_config.hpp
+ * \file constructing_controller_repository.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,37 +18,37 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_
+#define INCLUDE_SILICON_CONTROLLER_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-
-#include "rcppsw/config/base_config.hpp"
+#include "rcppsw/config/xml/xml_config_repository.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/config/structure3D_config.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-NS_START(silicon, structure, config);
+NS_START(silicon, controller, config);
 
 /*******************************************************************************
- * Struct Definitions
+ * Class Definitions
  ******************************************************************************/
 /**
- * \struct construct_targets_config
- * \ingroup structure config
+ * \class constructing_controller_repository
+ * \ingroup controller config
  *
- * \brief Configuration for the structures to be built during simulation.
+ * \brief Collection of all parameter parsers and parse results needed by
+ * all constructing controllers.
  */
-struct construct_targets_config : public rconfig::base_config {
-  std::vector<structure3D_config> targets;
+class constructing_controller_repository
+    : public rconfig::xml::xml_config_repository {
+ public:
+  constructing_controller_repository(void) RCSW_COLD;
 };
 
-NS_END(config, structure, silicon);
+NS_END(config, controller, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_ */
+#endif /* INCLUDE_SILICON_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_ */

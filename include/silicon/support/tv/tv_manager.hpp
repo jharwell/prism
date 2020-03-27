@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file tv_manager.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,34 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_TV_MANAGER_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_TV_MANAGER_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "cosm/tv/tv_manager.hpp"
+
+#include "silicon/support/tv/env_dynamics.hpp"
+#include "silicon/support/tv/silicon_pd_adaptor.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+namespace silicon::controller {
+class constructing_controller;
+} /* namespace silicon::controller */
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+NS_START(silicon, support, tv);
 
-} /* namespace silicon */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \brief Adapts the \ref ctv::tv_manager from COSM to SILICON.
+ */
+using tv_manager = ctv::tv_manager<env_dynamics, silicon_pd_adaptor>;
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
+NS_END(tv, support, silicon);
 
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_TV_MANAGER_HPP_ */

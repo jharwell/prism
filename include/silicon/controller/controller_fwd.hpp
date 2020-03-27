@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file controller_fwd.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,37 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
+#define INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "rcppsw/common/common.hpp"
+#include "rcppsw/mpl/typelist.hpp"
+
+#include "silicon/silicon.hpp"
+
+/*******************************************************************************
+ * Macros
+ ******************************************************************************/
+#define NON_ORACULAR_CONTROLLER_TYPES                                   \
+  controller::ccrw_controller
+
+#define ORACULAR_CONTROLLER_TYPES
+
+#define CONTROLLER_TYPES \
+  ORACULAR_CONTROLLER_TYPES, NON_ORACULAR_CONTROLLER_TYPES
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, controller);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+class constructing_controller;
+class ccrw_controller;
+using typelist = rmpl::typelist<ccrw_controller>;
 
-} /* namespace silicon */
+NS_END(controller, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_ */

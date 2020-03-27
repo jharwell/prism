@@ -67,6 +67,10 @@ class validate_placement : public rer::client<validate_placement>,
         mc_loc(loc),
         mc_z_rot(z_rotation) {}
 
+  /* Not copy constructible or copy assignment by default  */
+  validate_placement(const validate_placement&) = delete;
+  validate_placement& operator=(const validate_placement&) = delete;
+
   bool operator()(const crepr::cube_block3D* block) const;
   bool operator()(const crepr::ramp_block3D* block) const;
 

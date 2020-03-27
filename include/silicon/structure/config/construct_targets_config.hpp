@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file construct_targets_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,37 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_
+#define INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include <vector>
+
+#include "rcppsw/config/base_config.hpp"
+
+#include "silicon/silicon.hpp"
+#include "silicon/structure/config/structure3D_config.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, structure, config);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Struct Definitions
+ ******************************************************************************/
+/**
+ * \struct construct_targets_config
+ * \ingroup structure config
+ *
+ * \brief Configuration for the structures to be built during simulation.
+ */
+struct construct_targets_config : public rconfig::base_config {
+  std::vector<structure3D_config> targets{};
+};
 
-} /* namespace silicon */
+NS_END(config, structure, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_CONSTRUCT_TARGETS_CONFIG_HPP_ */

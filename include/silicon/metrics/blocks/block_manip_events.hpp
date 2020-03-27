@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file block_manip_events.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,26 +18,29 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_
+#define INCLUDE_SILICON_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, metrics, blocks);
 
-namespace structure {
-namespace config {}
-} /* namespace structure */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+enum block_manip_events {
+  ekARENA_PICKUP,
+  ekARENA_DROP,
+  ekSTRUCTURE_PLACE,
+  ekMAX_EVENTS
+};
 
-} /* namespace silicon */
+NS_END(blocks, metrics, silicon);
 
-namespace sstructure = silicon::structure;
-namespace ssconfig = sstructure::config;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_ */

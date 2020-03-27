@@ -3,6 +3,11 @@
 ################################################################################
 set(LIBRA_BUILD_FOR "ARGOS" CACHE STRING "Build for ARGoS.")
 
+# Needed by COSM for population dynamics and swarm iteration
+set(ARGOS_ROBOT_TYPE "foot-bot")
+set(ARGOS_ROBOT_NAME_PREFIX "fb")
+set(ARGOS_CONTROLLER_XML_ID "ffc")
+
 ################################################################################
 # External Projects                                                            #
 ################################################################################

@@ -54,26 +54,23 @@ class cell3D_block_place : public rer::client<cell3D_block_place>,
  private:
   struct visit_typelist_impl {
     using inherited = cell3D_op::visit_typelist;
-    using others = rmpl::typelist<structure3D>;
-    using value = boost::mpl::joint_view<inherited::type, others::type>;
+    using value = inherited;
   };
 
  public:
   using visit_typelist = visit_typelist_impl::value;
 
-  cell3D_block_place(const rmath::vector3u& coord,
-                      crepr::base_block3D* block);
+  cell3D_block_place(const rmath::vector3u& loc, crepr::base_block3D* block);
   cell3D_block_place& operator=(const cell3D_block_place&) = delete;
   cell3D_block_place(const cell3D_block_place&) = delete;
 
-  void visit(structure3D& structure);
+  void visit(cds::cell3D& cell);
 
  private:
-  void visit(cds::cell3D& cell);
   void visit(cfsm::cell3D_fsm& fsm);
 
   /* clang-format off */
-  crepr::base_block3D * m_block;
+  crepr::base_block3D* m_block;
   /* clang-format on */
 };
 

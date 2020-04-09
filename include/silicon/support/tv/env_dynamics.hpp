@@ -76,7 +76,7 @@ class env_dynamics final : public rer::client<env_dynamics>,
 
   env_dynamics(const tv::config::env_dynamics_config * config,
                const support::base_loop_functions* lf,
-               carena::base_arena_map* map);
+               carena::base_arena_map<crepr::base_block3D>* map);
 
   env_dynamics(const env_dynamics&) = delete;
   const env_dynamics& operator=(const env_dynamics&) = delete;

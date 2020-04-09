@@ -43,10 +43,6 @@ cell3D_block_extent::cell3D_block_extent(const rmath::vector3u& coord,
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void cell3D_block_extent::visit(structure3D& structure) {
-  visit(structure[coord()]);
-} /* visit() */
-
 void cell3D_block_extent::visit(cds::cell3D& cell) {
   cell.entity(m_block);
   visit(cell.fsm());

@@ -1,7 +1,7 @@
 /**
- * \file loop_function_repository.cpp
+ * \file tv_manager_parser.cpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2018 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -21,29 +21,48 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/support/config/xml/loop_function_repository.hpp"
-#include "silicon/structure/config/xml/construct_targets_parser.hpp"
-#include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
 #include "silicon/support/tv/config/xml/tv_manager_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, support, config, xml);
+NS_START(silicon, support, tv, config, xml);
 
 /*******************************************************************************
- * Constructors/Destructor
+ * Member Functions
  ******************************************************************************/
-loop_function_repository::loop_function_repository(void) noexcept {
-  parser_register<ssconfig::xml::construct_targets_parser,
-                  ssconfig::construct_targets_config>(
-                      ssconfig::xml::construct_targets_parser::kXMLRoot);
-  parser_register<ssconfig::xml::structure3D_builder_parser,
-                  ssconfig::structure3D_builder_config>(
-                      ssconfig::xml::structure3D_builder_parser::kXMLRoot);
-  parser_register<sstv::config::xml::tv_manager_parser,
-                  sstv::config::tv_manager_config>(
-                      sstv::config::xml::tv_manager_parser::kXMLRoot);
-}
+void tv_manager_parser::parse(const ticpp::Element& node) {
+  /*
+   * This needs to be non-NULL in ALL situations, because the environmental
+   * dynamics part of temporal variance must ALWAYS be present (even if it is
+   * not used). Using whether the config is NULL or not and creating a
+   * std::unique_ptr if it is results in use-after-free. See #621.
+   */
+  m_config = std::make_unique<config_type>();
 
-NS_END(xml, config, support, silicon);
+  /* No temporal variance configured */
+  if (nullptr == node.FirstChild(kXMLRoot, false)) {
+    return;
+  }
+
+  ticpp::Element tvnode = node_get(node, kXMLRoot);
+
+  m_envd.parse(tvnode);
+  m_popd.parse(tvnode);
+
+  if (m_envd.is_parsed()) {
+    m_config->env_dynamics =
+        *m_envd.config_get<env_dynamics_parser::config_type>();
+  }
+
+  if (m_popd.is_parsed()) {
+    m_config->population_dynamics = *m_popd.config_get<
+        ctv::config::xml::population_dynamics_parser::config_type>();
+  }
+} /* parse() */
+
+bool tv_manager_parser::validate(void) const {
+  return m_envd.validate() && m_popd.validate();
+} /* validate() */
+
+NS_END(xml, config, tv, support, silicon);

@@ -20,8 +20,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_
-#define INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_
+#define INCLUDE_SILICON_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_
 
 /*******************************************************************************
  * Includes
@@ -52,4 +52,4 @@ class loop_function_repository : public cpal::config::xml::base_sm_repository {
 
 NS_END(xml, config, support, silicon);
 
-#endif /* INCLUDE_SILICON_SUPPORT_CONFIG_LOOP_FUNCTION_REPOSITORY_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_ */

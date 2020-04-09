@@ -36,7 +36,7 @@ void structure3D_builder_parser::parse(const ticpp::Element& node) {
   m_config = std::make_unique<config_type>();
 
   XML_PARSE_ATTR(bnode, m_config, build_src);
-  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval, rtypes::timestep(0));
+  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval, rtypes::timestep(1));
   XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval_count, 1UL);
 } /* parse() */
 

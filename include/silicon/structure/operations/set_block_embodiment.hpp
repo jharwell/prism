@@ -50,12 +50,10 @@ struct set_block_embodiment_impl : public boost::static_visitor<void>,
   set_block_embodiment_impl(void)
       : ER_CLIENT_INIT("silicon.structure.builder.block_embodiment") {}
 
-  template<typename T>
   void operator()(crepr::cube_block3D* block,
                   const crepr::embodied_cube_block& embodiment) const {
     block->embodiment(boost::make_optional(embodiment));
   }
-  template<typename T>
   void operator()(crepr::ramp_block3D* block,
                   const crepr::embodied_ramp_block& embodiment) const {
     block->embodiment(boost::make_optional(embodiment));
@@ -65,8 +63,8 @@ struct set_block_embodiment_impl : public boost::static_visitor<void>,
    * should crash and burn if we ever hit them.
    */
   template <typename T, typename U>
-  void operator()(T* , const U&) const {
-  ER_FATAL_SENTINEL("Invalid (block type, embodiment): (%s,%s)",
+  void operator()(T* , const U&) const noexcept {
+  ER_FATAL_SENTINEL("Invalid (block type, embodiment) pair: (%s,%s)",
                     std::type_index(typeid(T)).name(),
                     std::type_index(typeid(U)).name());
   }

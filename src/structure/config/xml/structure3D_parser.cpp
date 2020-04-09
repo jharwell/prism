@@ -32,37 +32,42 @@ NS_START(silicon, structure, config, xml);
  * Member Functions
  ******************************************************************************/
 void structure3D_parser::parse(const ticpp::Element& node) {
-  ticpp::Element snode = node_get(node, kXMLRoot);
   m_config = std::make_unique<config_type>();
 
-  XML_PARSE_ATTR(snode, m_config, anchor);
-  XML_PARSE_ATTR(snode, m_config, bounding_box);
-  XML_PARSE_ATTR(snode, m_config, orientation);
+  XML_PARSE_ATTR(node, m_config, anchor);
+  XML_PARSE_ATTR(node, m_config, bounding_box);
+  XML_PARSE_ATTR(node, m_config, orientation);
 
   std::map<std::string, rmath::radians> orientation_map = {
     {"X", rmath::radians::kZERO},
     {"Y" , rmath::radians::kPI_OVER_TWO}
   };
 
-  ticpp::Iterator<ticpp::Element> node_it;
-  auto cube_blocks = node_get(snode, "cube_blocks");
-  auto ramp_blocks = node_get(snode, "ramp_blocks");
+  if (nullptr != node.FirstChild("cube_blocks", false)) {
+    auto cube_blocks = node_get(node, "cube_blocks");
+    ticpp::Iterator<ticpp::Element> node_it;
 
-  for (node_it = cube_blocks.FirstChildElement();
-       node_it != node_it.end();
-       ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->cube_blocks[tmp] = {tmp};
-  } /* for(node_it..) */
+    for (node_it = cube_blocks.FirstChildElement();
+         node_it != node_it.end();
+         ++node_it) {
+      rmath::vector3u tmp;
+      node_attr_get(*node_it, "cell", tmp);
+      m_config->cube_blocks[tmp] = {tmp};
+    } /* for(node_it..) */
+  }
 
-  for (node_it = ramp_blocks.FirstChildElement();
-       node_it != node_it.end();
-       ++node_it) {
-    rmath::vector3u tmp;
-    node_attr_get(*node_it, "loc", tmp);
-    m_config->ramp_blocks[tmp] = {tmp, orientation_map[m_config->orientation]};
-  } /* for(node_it..) */
+  if (nullptr != node.FirstChild("ramp_blocks", false)) {
+    auto ramp_blocks = node_get(node, "ramp_blocks");
+    ticpp::Iterator<ticpp::Element> node_it;
+
+    for (node_it = ramp_blocks.FirstChildElement();
+         node_it != node_it.end();
+         ++node_it) {
+      rmath::vector3u tmp;
+      node_attr_get(*node_it, "cell", tmp);
+      m_config->ramp_blocks[tmp] = {tmp, orientation_map[m_config->orientation]};
+    } /* for(node_it..) */
+  }
 } /* parse() */
 
 NS_END(xml, config, structure, silicon);

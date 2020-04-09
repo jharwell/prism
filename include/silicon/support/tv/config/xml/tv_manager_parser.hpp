@@ -1,5 +1,5 @@
 /**
- * \file structure3D_parser.hpp
+ * \file tv_manager_parser.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CONFIG_XML_STRUCTURE3D_PARSER_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CONFIG_XML_STRUCTURE3D_PARSER_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_
 
 /*******************************************************************************
  * Includes
@@ -27,47 +27,52 @@
 #include <string>
 #include <memory>
 
-#include "silicon/structure/config/structure3D_config.hpp"
+#include "silicon/support/tv/config/tv_manager_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
+#include "cosm/tv/config/xml/population_dynamics_parser.hpp"
+#include "silicon/support/tv/config/xml/env_dynamics_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, structure, config, xml);
+NS_START(silicon, support, tv, config, xml);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure3D_parser
- * \ingroup config structure xml
+ * \class tv_manager_parser
+ * \ingroup support tv config xml
  *
- * \brief Parses XML parameters defining \ref structure3D to be constructed at
- * the start of simulation.
+ * \brief Parses XML parameters for \ref tv_manager into \ref tv_manager_config.
  */
-class structure3D_parser final : public rconfig::xml::xml_config_parser {
+class tv_manager_parser final : public rconfig::xml::xml_config_parser {
  public:
-  using config_type = structure3D_config;
+  using config_type = tv_manager_config;
 
   /**
-   * \brief The root tag that all \ref structure3D parameters should lie under
+   * \brief The root tag that all temporal variance parameters should lie under
    * in the XML tree.
    */
-  static constexpr const char kXMLRoot[] = "structure3D";
+  static constexpr const char kXMLRoot[] = "temporal_variance";
 
-  void parse(const ticpp::Element& node) override RCSW_COLD;
+  void parse(const ticpp::Element& node) override;
+  bool validate(void) const override RCSW_CONST;
 
-  std::string xml_root(void) const override RCSW_COLD { return kXMLRoot; }
+  std::string xml_root(void) const override { return kXMLRoot; }
 
  private:
-  const rconfig::base_config* config_get_impl(void) const override RCSW_COLD {
+  const rconfig::base_config* config_get_impl(void) const override {
     return m_config.get();
   }
+
   /* clang-format off */
-  std::unique_ptr<config_type> m_config{nullptr};
+  std::unique_ptr<config_type>                 m_config{nullptr};
+  ctv::config::xml::population_dynamics_parser m_popd{};
+  env_dynamics_parser                          m_envd{};
   /* clang-format on */
 };
 
-NS_END(xml, config, structure, silicon);
+NS_END(xml, config, tv, support, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_XML_STRUCTURE3D_PARSER_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_ */

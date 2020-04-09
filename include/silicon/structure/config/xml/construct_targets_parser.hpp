@@ -46,7 +46,7 @@ NS_START(silicon, structure, config, xml);
  * \brief Parses XML parameters defining one or more construction targets into
  * \ref construct_targets.
  */
-class construct_targets_parser : public rconfig::xml::xml_config_parser {
+class construct_targets_parser final : public rconfig::xml::xml_config_parser {
  public:
   using config_type = construct_targets_config;
 
@@ -54,7 +54,7 @@ class construct_targets_parser : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all \ref construct_targets parameters should lie
    * under in the XML tree.
    */
-  static constexpr char kXMLRoot[] = "construct_targets";
+  static constexpr const char kXMLRoot[] = "construct_targets";
 
   void parse(const ticpp::Element& node) override RCSW_COLD;
 

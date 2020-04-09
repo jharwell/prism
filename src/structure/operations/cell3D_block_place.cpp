@@ -35,18 +35,15 @@ NS_START(silicon, structure, operations, detail);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-cell3D_block_place::cell3D_block_place(const rmath::vector3u& coord,
+cell3D_block_place::cell3D_block_place(const rmath::vector3u& loc,
                                        crepr::base_block3D* block)
     : ER_CLIENT_INIT("silicon.structure.operations.cell3D_block_place"),
-      cell3D_op(coord), m_block(block) {}
+      cell3D_op(loc),
+      m_block(block) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void cell3D_block_place::visit(structure3D& structure) {
-  visit(structure[coord()]);
-} /* visit() */
-
 void cell3D_block_place::visit(cds::cell3D& cell) {
   cell.entity(m_block);
   visit(cell.fsm());

@@ -34,6 +34,7 @@
 #include "silicon/support/tv/silicon_pd_adaptor.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
+#include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/structure3D_builder.hpp"
 
@@ -46,9 +47,7 @@ NS_START(silicon, support);
  * Constructors/Destructors
  ******************************************************************************/
 base_loop_functions::base_loop_functions(void)
-    : ER_CLIENT_INIT("silicon.loop"),
-      m_target(nullptr),
-      m_builder(nullptr) {}
+    : ER_CLIENT_INIT("silicon.loop") {}
 
 base_loop_functions::~base_loop_functions(void) = default;
 
@@ -73,15 +72,14 @@ void base_loop_functions::init(ticpp::Element& node) {
   /* initialize arena map and distribute blocks */
   auto* aconfig = config()->config_get<caconfig::arena_map_config>();
   auto* vconfig = config()->config_get<cvconfig::visualization_config>();
-  arena_map_init<carena::base_arena_map>(aconfig, vconfig);
+  arena_map_init<arena_map_type>(aconfig, vconfig);
 
   /* initialize structure builder */
   construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
-                    config()->config_get<ssconfig::structure3D_config>());
+                    config()->config_get<ssconfig::construct_targets_config>());
 
   /* initialize temporal variance injection */
   tv_init(config()->config_get<tv::config::tv_manager_config>());
-
 } /* init() */
 
 void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
@@ -96,12 +94,12 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
   auto envd =
       std::make_unique<tv::env_dynamics>(&tvp->env_dynamics,
                                          this,
-                                         arena_map<carena::base_arena_map>());
+                                         arena_map());
 
   auto popd = std::make_unique<tv::silicon_pd_adaptor>(&tvp->population_dynamics,
                                                        this,
-                                                       arena_map<carena::base_arena_map>(),
                                                        envd.get(),
+                                                       arena_map(),
                                                        rng());
 
   m_tv_manager =
@@ -140,11 +138,15 @@ void base_loop_functions::output_init(const cmconfig::output_config* output) {
 } /* output_init() */
 
 void base_loop_functions::construction_init(const ssconfig::structure3D_builder_config* builder_config,
-                                       const ssconfig::structure3D_config* target_config) {
-  m_target = std::make_unique<sstructure::structure3D>(target_config);
-  m_builder = std::make_unique<sstructure::structure3D_builder>(builder_config,
-                                                                m_target.get(),
-                                                                this);
+                                            const ssconfig::construct_targets_config* targets_config) {
+  ER_INFO("Initializing %zu construction targets", targets_config->targets.size());
+  for (size_t i = 0; i < targets_config->targets.size(); ++i) {
+    m_targets.push_back(std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
+                                                                  arena_map()));
+    m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(builder_config,
+                                                                           m_targets[i].get(),
+                                                                           this));
+  } /* for(i..) */
 } /* construction_init() */
 
 /*******************************************************************************
@@ -158,6 +160,12 @@ void base_loop_functions::pre_step(void) {
   if (nullptr != m_tv_manager) {
     m_tv_manager->update(rtypes::timestep(GetSpace().GetSimulationClock()));
   }
+  for (auto &builder : m_builders) {
+    if (builder->build_static_enabled()) {
+      builder->build_static(arena_map()->blocks(),
+                            rtypes::timestep(GetSpace().GetSimulationClock()));
+    }
+  } /* for(&builder..) */
 } /* pre_step() */
 
 void base_loop_functions::post_step(void) {

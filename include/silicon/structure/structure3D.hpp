@@ -33,7 +33,7 @@
 
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/ds/cell3D.hpp"
-#include "cosm/repr/block3D_variant.hpp"
+#include "cosm/repr/block_variant.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
@@ -43,6 +43,11 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
+namespace cosm::arena {
+template<typename T>
+class base_arena_map;
+} /* namespace cosm::arena */
+
 NS_START(silicon, structure);
 
 /*******************************************************************************
@@ -56,19 +61,21 @@ NS_START(silicon, structure);
  * representation/data structure; does not contain any operations other than
  * basic add/remove/etc.
  */
-class structure3D : public rds::grid3D<cds::cell3D>,
-                    public metrics::structure3D_metrics,
-                    public rer::client<structure3D> {
+class structure3D final : public rds::grid3D<cds::cell3D>,
+                          public metrics::structure3D_metrics,
+                          public rer::client<structure3D> {
  public:
   struct cell_final_spec {
     int state;
     crepr::block_type block_type;
     rmath::radians z_rotation;
   };
-  explicit structure3D(const config::structure3D_config* config);
+  using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
 
-  /* Not copy constructable/assignable by default */
-  structure3D(const structure3D&) = delete;
+  structure3D(const config::structure3D_config* config,
+              const arena_map_type* map);
+
+  structure3D(const structure3D&) = default;
   const structure3D& operator=(const structure3D&) = delete;
 
   using rds::grid3D<cds::cell3D>::operator[];
@@ -78,6 +85,13 @@ class structure3D : public rds::grid3D<cds::cell3D>,
     return m_placed;
   }
 
+  rmath::vector3d originr(void) const { return mc_config.anchor; }
+  rmath::vector3u origind(void) const {
+    return rmath::vector3u(static_cast<uint>(mc_config.anchor.x()),
+                           static_cast<uint>(mc_config.anchor.y()),
+                           static_cast<uint>(mc_config.anchor.z()));
+  }
+  size_t volumetric_size(void) const { return xsize() * ysize() *zsize(); }
   bool contains(const crepr::base_block3D* query) const;
 
   bool block_placement_valid(const crepr::block3D_variant& block,
@@ -117,8 +131,19 @@ class structure3D : public rds::grid3D<cds::cell3D>,
    */
   bool block_placement_cell_check(const cds::cell3D& cell) const;
 
+  /**
+   * \brief Given a cell from the structure, calculate its absolute position in
+   * the arena. This is necessary to support blocks with a unit dimension that
+   * is greater than the grid resolution of the arena.
+   */
+  rmath::vector3d cell_loc_abs(const cds::cell3D& cell) const;
+
  private:
+  double unit_dim_factor_calc(const arena_map_type* map) const;
+
   /* clang-format off */
+  const double                     mc_unit_dim_factor;
+  const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 
   cds::block3D_vectorro            m_placed{};

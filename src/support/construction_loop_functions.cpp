@@ -91,9 +91,10 @@ struct functor_maps_initializer {
     config_map->emplace(
         typeid(controller),
         robot_configurer<T>(
-            lf->config()->config_get<cvconfig::visualization_config>());
+            lf->config()->config_get<cvconfig::visualization_config>()));
     lf->m_los2D_update_map->emplace(typeid(controller),
-                                      cfops::robot_los_update<T>(lf->arena_map()));
+                                    cfops::robot_los_update<T,
+                                    carena::base_arena_map<crepr::base_block3D>>(lf->arena_map()));
   }
 
   /* clang-format off */
@@ -135,9 +136,6 @@ void construction_loop_functions::shared_init(ticpp::Element& node) {
 } /* shared_init() */
 
 void construction_loop_functions::private_init(void) {
-  /* initialize output and metrics collection */
-  auto* output = config()->config_get<cmconfig::output_config>();
-
   /*
    * Need to give spatial metrics collectors the padded arena size in order to
    * avoid boost::assert failures when robots are near the upper edge of the
@@ -147,13 +145,13 @@ void construction_loop_functions::private_init(void) {
   auto padded_size = rmath::vector2d(arena_map()->xrsize(),
                                      arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
+  auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.upper = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(&output->metrics,
                                                                         &arena.grid,
                                                                         output_root());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
-
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
@@ -167,18 +165,18 @@ void construction_loop_functions::private_init(void) {
    * functors/type maps for all construction controller types.
    */
   detail::functor_maps_initializer f_initializer(&config_map, this);
-  boost::mpl::for_each<controller::typelist>(f_initializer);
+  /* boost::mpl::for_each<controller::typelist>(f_initializer); */
 
   /* configure robots */
   auto cb = [&](auto* controller) {
-    ER_ASSERT(config_map.end() != config_map.find(controller->type_index()),
-              "Controller '%s' type '%s' not in construction configuration map",
-              controller->GetId().c_str(),
-              controller->type_index().name());
-    auto applicator = ccops::applicator<controller::constructing_controller,
-    robot_configurer>(controller);
-    boost::apply_visitor(applicator,
-                         config_map.at(controller->type_index()));
+    /* ER_ASSERT(config_map.end() != config_map.find(controller->type_index()), */
+    /*           "Controller '%s' type '%s' not in construction configuration map", */
+    /*           controller->GetId().c_str(), */
+    /*           controller->type_index().name()); */
+    /* auto applicator = ccops::applicator<controller::constructing_controller, */
+    /* robot_configurer>(controller); */
+    /* /\* boost::apply_visitor(applicator, *\/ */
+    /*                      config_map.at(controller->type_index())); */
   };
 
   /*
@@ -272,13 +270,20 @@ argos::CColor construction_loop_functions::GetFloorColor(
 
   for (auto* block : arena_map()->blocks()) {
     /*
+     * If Z > 0, the block is on the structure, so no need to even do the
+     * comparisons for determining floor structure.
+     */
+    if (block->rloc3D().z() > 0) {
+      continue;
+    }
+    /*
      * Even though each block type has a unique color, the only distinction
      * that robots can make to determine if they are on a block or not is
      * between shades of black/white. So, all blocks must appear as black, even
      * when they are not actually (when blocks are picked up their correct color
      * is shown through visualization).
      */
-    if (block->contains_point(tmp)) {
+    if (block->contains_point2D(tmp)) {
       return argos::CColor::BLACK;
     }
   } /* for(block..) */
@@ -290,16 +295,16 @@ argos::CColor construction_loop_functions::GetFloorColor(
  * General Member Functions
  ******************************************************************************/
 void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
-  auto controller = static_cast<controller::constructing_controller*>(
-      &robot.GetControllableEntity().GetController());
+  /* auto controller = static_cast<controller::constructing_controller*>( */
+  /*     &robot.GetControllableEntity().GetController()); */
 
   /*
    * Update robot position, time. This can't be done as part of the robot's
    * control step because we need access to information only available in the
    * loop functions.
    */
-  controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()),
-                             arena_map()->grid_resolution());
+  /* controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()), */
+  /*                            arena_map()->grid_resolution()); */
 
   /*
    * @todo Unconditionally use the foraging LOS for now. Once I'm ready to have
@@ -307,59 +312,59 @@ void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
    * LOS if they are in the arena, and the 3D construction LOS if they are on
    * the structure.
    */
-  robot_los2D_update(controller);
+  /* robot_los2D_update(controller); */
 } /* robot_pre_step() */
 
 void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) {
-  auto controller = static_cast<controller::constructing_controller*>(
-      &robot.GetControllableEntity().GetController());
+  /* auto controller = static_cast<controller::constructing_controller*>( */
+  /*     &robot.GetControllableEntity().GetController()); */
   /*
    * Watch the robot interact with its environment after physics have been
    * updated and its controller has run.
    */
-  auto it = m_interactor_map->find(controller->type_index());
-  ER_ASSERT(m_interactor_map->end() != it,
-            "Controller '%s' type '%s' not in construction interactor map",
-            controller->GetId().c_str(),
-            controller->type_index().name());
+  /* auto it = m_interactor_map->find(controller->type_index()); */
+  /* ER_ASSERT(m_interactor_map->end() != it, */
+  /*           "Controller '%s' type '%s' not in construction interactor map", */
+  /*           controller->GetId().c_str(), */
+  /*           controller->type_index().name()); */
 
-  auto iapplicator =
-      cops::robot_arena_interaction_applicator<controller::constructing_controller,
-                                               robot_arena_interactor>(
-                                                   controller,
-                                                   rtypes::timestep(GetSpace().GetSimulationClock()));
-  auto status =
-      boost::apply_visitor(iapplicator,
-                           m_interactor_map->at(controller->type_index()));
+  /* auto iapplicator = */
+  /*     cops::robot_arena_interaction_applicator<controller::constructing_controller, */
+  /*                                              robot_arena_interactor>( */
+  /*                                                  controller, */
+  /*                                                  rtypes::timestep(GetSpace().GetSimulationClock())); */
+  /* /\* auto status = *\/ */
+  /*     boost::apply_visitor(iapplicator, */
+  /*                          m_interactor_map->at(controller->type_index())); */
 
   /*
    * Collect metrics from robot, now that it has finished interacting with the
    * environment and no more changes to its state will occur this timestep.
    */
-  auto it2 = m_metrics_map->find(controller->type_index());
-  ER_ASSERT(m_metrics_map->end() != it2,
-            "Controller '%s' type '%s' not in construction metrics map",
-            controller->GetId().c_str(),
-            controller->type_index().name());
-  auto mapplicator = ccops::applicator<controller::constructing_controller,
-                                       ccops::metrics_extract,
-                                       metrics::silicon_metrics_aggregator>(controller);
-  boost::apply_visitor(mapplicator, m_metrics_map->at(controller->type_index()));
+  /* auto it2 = m_metrics_map->find(controller->type_index()); */
+  /* ER_ASSERT(m_metrics_map->end() != it2, */
+  /*           "Controller '%s' type '%s' not in construction metrics map", */
+  /*           controller->GetId().c_str(), */
+  /*           controller->type_index().name()); */
+  /* auto mapplicator = ccops::applicator<controller::constructing_controller, */
+  /*                                      ccops::metrics_extract, */
+  /*                                      metrics::silicon_metrics_aggregator>(controller); */
+  /* boost::apply_visitor(mapplicator, m_metrics_map->at(controller->type_index())); */
 
-  controller->block_manip_recorder()->reset();
+  /* controller->block_manip_recorder()->reset(); */
 } /* robot_post_step() */
 
 void construction_loop_functions::robot_los2D_update(controller::constructing_controller* c) {
     /* Send robot its new LOS */
-  auto it = m_los2D_update_map->find(c->type_index());
-  ER_ASSERT(m_los2D_update_map->end() != it,
-            "Controller '%s' type '%s' not in construction LOS update map",
-            c->GetId().c_str(),
-            c->type_index().name());
-  auto applicator = ccops::applicator<controller::constructing_controller,
-                                      cfops::robot_los_update>(c);
-  boost::apply_visitor(applicator,
-                       m_los2D_update_map->at(c->type_index()));
+  /* auto it = m_los2D_update_map->find(c->type_index()); */
+  /* ER_ASSERT(m_los2D_update_map->end() != it, */
+  /*           "Controller '%s' type '%s' not in construction LOS update map", */
+  /*           c->GetId().c_str(), */
+  /*           c->type_index().name()); */
+  /* auto applicator = ccops::applicator<controller::constructing_controller, */
+  /*                                     cfops::robot_los_update>(c); */
+/*   boost::apply_visitor(applicator, */
+/*                        m_los2D_update_map->at(c->type_index())); */
 } /* robot_los2D_update() */
 
 using namespace argos; // NOLINT

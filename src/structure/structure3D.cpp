@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <boost/variant/static_visitor.hpp>
 
+#include "cosm/arena/base_arena_map.hpp"
+
 #include "silicon/structure/operations/validate_placement.hpp"
 
 /*******************************************************************************
@@ -36,9 +38,12 @@ NS_START(silicon, structure);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-structure3D::structure3D(const config::structure3D_config* config)
+structure3D::structure3D(const config::structure3D_config* config,
+                         const arena_map_type* map)
     : grid3D(config->bounding_box),
       ER_CLIENT_INIT("silicon.structure.structure3D"),
+      mc_unit_dim_factor(unit_dim_factor_calc(map)),
+      mc_arena_grid_res(map->grid_resolution()),
       mc_config(*config) {
     for (uint i = 0; i < mc_config.bounding_box.x(); ++i) {
       for (uint j = 0; j < mc_config.bounding_box.y(); ++j) {
@@ -62,6 +67,10 @@ bool structure3D::block_placement_valid(const crepr::block3D_variant& block,
   ER_CHECK(block_placement_cell_check(cell),
            "Host Cell@%s failed validation for block placement",
            cell.loc().to_str().c_str());
+  /*
+   * @todo check if the embodiment for this block would overlap with any other
+   * blocks already placed on the structure.
+   */
 
   ER_CHECK(rmath::radians::kZERO == z_rotation ||
            rmath::radians::kPI_OVER_TWO == z_rotation,
@@ -103,6 +112,9 @@ bool structure3D::contains(const crepr::base_block3D* const query) const {
 
 void structure3D::block_add(const crepr::base_block3D* block) {
   m_placed.push_back(block);
+  ER_INFO("Added block%d to structure (%zu total)",
+          block->id().v(),
+          m_placed.size());
 } /* block_add() */
 
 bool structure3D::is_complete(void) const {
@@ -201,5 +213,20 @@ structure3D::cell_final_spec structure3D::cell_spec(
           rmath::radians::kZERO};
   }
 } /* cell_spec() */
+
+rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
+  return originr() + rmath::uvec2dvec(cell.loc()) * mc_unit_dim_factor * mc_arena_grid_res.v();
+} /* cell_loc_abs() */
+
+double structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
+  double block_unit_dim = std::min(map->blocks()[0]->dims3D().x(),
+                                   map->blocks()[0]->dims3D().y());
+  ER_ASSERT(std::fmod(block_unit_dim,
+                      map->grid_resolution().v()) <= std::numeric_limits<double>::epsilon(),
+            "Block unit dimension (%f) not a multiple of arena grid resolution (%f)",
+            block_unit_dim,
+            map->grid_resolution().v());
+  return block_unit_dim / map->grid_resolution().v();
+} /* unit_dim_factor_calc() */
 
 NS_END(structure, silicon);

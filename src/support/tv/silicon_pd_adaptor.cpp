@@ -34,6 +34,23 @@
 NS_START(silicon, support, tv);
 
 /*******************************************************************************
+ * Constructors/Destructor
+ ******************************************************************************/
+silicon_pd_adaptor::silicon_pd_adaptor(const ctv::config::population_dynamics_config* config,
+                                       cpal::argos_sm_adaptor* sm,
+                                       env_dynamics_type *envd,
+                                       carena::base_arena_map<crepr::base_block3D>* map,
+                                       rmath::rng* rng)
+    : ER_CLIENT_INIT("silicon.support.tv.silicon_pd_adaptor"),
+      argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(config,
+                                                          sm,
+                                                          envd,
+                                                          rmath::vector2d(map->xrsize(),
+                                                                          map->yrsize()),
+                                                          rng),
+  m_map(map) {}
+
+/*******************************************************************************
  * Member Functions
  ******************************************************************************/
 void silicon_pd_adaptor::pre_kill_cleanup(
@@ -47,8 +64,8 @@ void silicon_pd_adaptor::pre_kill_cleanup(
     ER_INFO("Kill victim robot %s is carrying block%d",
             constructing->GetId().c_str(),
             constructing->block()->id().v());
-    auto it = std::find_if(arena_map()->blocks().begin(),
-                           arena_map()->blocks().end(),
+    auto it = std::find_if(m_map->blocks().begin(),
+                           m_map->blocks().end(),
                            [&](const auto& b) {
                              return constructing->block()->id() == b->id();
                            });
@@ -57,13 +74,13 @@ void silicon_pd_adaptor::pre_kill_cleanup(
      * dynamics are always applied AFTER all robots have had their control steps
      * run, we are in a non-concurrent context, so no reason to grab them.
      */
-    caops::free_block_drop_visitor adrop_op(
+    caops::free_block_drop_visitor<crepr::base_block3D> adrop_op(
         *it,
-        rmath::dvec2uvec(constructing->pos2D(), arena_map()->grid_resolution().v()),
-        arena_map()->grid_resolution(),
+        rmath::dvec2uvec(constructing->pos2D(), m_map->grid_resolution().v()),
+        m_map->grid_resolution(),
         carena::arena_map_locking::ekALL_HELD);
 
-    adrop_op.visit(*arena_map());
+    adrop_op.visit(*m_map);
   }
 } /* pre_kill_cleanup() */
 

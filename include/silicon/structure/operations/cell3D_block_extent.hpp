@@ -54,8 +54,7 @@ class cell3D_block_extent : public rer::client<cell3D_block_extent>,
  private:
   struct visit_typelist_impl {
     using inherited = cell3D_op::visit_typelist;
-    using others = rmpl::typelist<structure3D>;
-    using value = boost::mpl::joint_view<inherited::type, others::type>;
+    using value = inherited;
   };
 
  public:
@@ -66,10 +65,9 @@ class cell3D_block_extent : public rer::client<cell3D_block_extent>,
   cell3D_block_extent& operator=(const cell3D_block_extent&) = delete;
   cell3D_block_extent(const cell3D_block_extent&) = delete;
 
-  void visit(structure3D& structure);
+  void visit(cds::cell3D& cell);
 
  private:
-  void visit(cds::cell3D& cell);
   void visit(cfsm::cell3D_fsm& fsm);
 
   /* clang-format off */

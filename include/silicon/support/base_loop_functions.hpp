@@ -55,7 +55,7 @@ struct tv_manager_config;
 namespace silicon::structure {
 namespace config {
 struct structure3D_builder_config;
-struct structure3D_config;
+struct construct_targets_config;
 } /* namespace config */
 
 class structure3D_builder;
@@ -82,12 +82,14 @@ NS_START(silicon, support);
 class base_loop_functions : public cpal::argos_sm_adaptor,
                             public rer::client<base_loop_functions> {
  public:
+  using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
+
   base_loop_functions(void) RCSW_COLD;
   ~base_loop_functions(void) override RCSW_COLD;
 
   /* Not copy constructible/assignable by default */
-  base_loop_functions(const base_loop_functions& s) = delete;
-  base_loop_functions& operator=(const base_loop_functions& s) = delete;
+  base_loop_functions(const base_loop_functions&) = delete;
+  base_loop_functions& operator=(const base_loop_functions&) = delete;
 
   /* swarm manager overrides */
   void init(ticpp::Element&) override RCSW_COLD;
@@ -96,6 +98,9 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   void post_step(void) override;
 
   const tv::tv_manager* tv_manager(void) const { return m_tv_manager.get(); }
+  const arena_map_type* arena_map(void) const {
+    return argos_sm_adaptor::arena_map<arena_map_type>();
+  }
 
  protected:
   tv::tv_manager* tv_manager(void) { return m_tv_manager.get(); }
@@ -104,7 +109,13 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   }
   config::xml::loop_function_repository* config(void) { return &m_config; }
 
+  arena_map_type* arena_map(void) {
+    return argos_sm_adaptor::arena_map<arena_map_type>();
+  }
  private:
+  using targets_vector_type = std::vector<std::unique_ptr<structure::structure3D>>;
+  using builders_vector_type = std::vector<std::unique_ptr<structure::structure3D_builder>>;
+
   /**
    * \brief Initialize temporal variance handling.
    *
@@ -123,16 +134,17 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    * \brief Initialize the \ref structure::structure3D_builder.
    *
    * \param builder_config Parsed builder parameters.
-   * \param target_config Parsed \ref structure::structure3D parameters.
+   * \param target_config Parsed \ref structure::structure3D parameters (one per
+   *                      structure).
    */
   void construction_init(const ssconfig::structure3D_builder_config* builder_config,
-                         const ssconfig::structure3D_config* target_config);
+                         const ssconfig::construct_targets_config* targets_config);
 
   /* clang-format off */
-  config::xml::loop_function_repository           m_config{};
-  std::unique_ptr<tv::tv_manager>                 m_tv_manager{nullptr};
-  std::unique_ptr<structure::structure3D>         m_target;
-  std::unique_ptr<structure::structure3D_builder> m_builder;
+  config::xml::loop_function_repository m_config{};
+  std::unique_ptr<tv::tv_manager>       m_tv_manager{nullptr};
+  targets_vector_type                   m_targets{};
+  builders_vector_type                  m_builders{};
   /* clang-format on */
 };
 

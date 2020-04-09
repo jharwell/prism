@@ -45,7 +45,7 @@ NS_START(silicon, structure, config, xml);
  * \brief Parses XML parameters defining for the \ref structure3D_builder at the
  * start of simulation.
  */
-class structure3D_builder_parser : public rconfig::xml::xml_config_parser {
+class structure3D_builder_parser final : public rconfig::xml::xml_config_parser {
  public:
   using config_type = structure3D_builder_config;
 
@@ -53,7 +53,7 @@ class structure3D_builder_parser : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all \ref structure3D_builder parameters should lie
    * under in the XML tree.
    */
-  static constexpr char kXMLRoot[] = "structure3D_builder";
+  static constexpr const char kXMLRoot[] = "structure3D_builder";
 
   void parse(const ticpp::Element& node) override RCSW_COLD;
 

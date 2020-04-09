@@ -35,9 +35,17 @@ namespace structure {
 namespace config {}
 } /* namespace structure */
 
+namespace support {
+namespace tv {}
+} /* namespace support */
+
 } /* namespace silicon */
 
 namespace sstructure = silicon::structure;
+
 namespace ssconfig = sstructure::config;
+
+namespace ssupport = silicon::support;
+namespace sstv = ssupport::tv;
 
 #endif /* INCLUDE_SILICON_SILICON_HPP_ */

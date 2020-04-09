@@ -16,12 +16,11 @@
   <!-- *************** -->
   <controllers>
 
-    <birtd_dpo_controller id="ffc"
-                          library="libsilicon">
+    <crw_controller id="ffc"
+                    library="libfordyca">
       <actuators>
         <differential_steering implementation="default" />
         <!-- <leds implementation="default" medium="leds" /> -->
-        <range_and_bearing implementation="default" />
       </actuators>
       <sensors>
         <differential_steering implementation="default" />
@@ -31,7 +30,6 @@
         <footbot_light implementation="rot_z_only" show_rays="false">
         </footbot_light>
         <footbot_motor_ground implementation="rot_z_only" />
-        <range_and_bearing implementation="medium" medium="rab" />
         <colored_blob_omnidirectional_camera implementation="rot_z_only"
                                              medium="leds" />
         <battery implementation="default" />
@@ -42,103 +40,11 @@
             output_root="output"
             output_dir="__current_date__"
             />
-        <perception
-            los_dim="0.4">
-          <grid resolution="0.2"
-                size="12, 6, 2"/>
-          <pheromone rho="0.00001"
-                     repeat_deposit="false"/>
-        </perception>
-        <task_executive
-            update_exec_ests="true"
-            update_interface_ests="true"
-            />
-        <task_alloc
-            policy="stoch_nbhd1">
-          <task_abort>
-            <src_sigmoid_sel
-                input_src="exec">
-              <sigmoid_sel
-                  method="harwell2018">
-                <sigmoid reactivity="8"
-                         offset="3"
-                         gamma="1.0"/>
-              </sigmoid_sel>
-            </src_sigmoid_sel>
-          </task_abort>
-          <task_exec_estimates
-              seed_enabled="false"
-              generalist="2000:4000"
-              collector="1000:2000"
-              harvester="1000:2000"
-              cache_starter="1000:2000"
-              cache_finisher="1000:2000"
-              cache_collector="1000:2000"
-              cache_transferer="1000:2000">
-            <ema alpha="0.8"/>
-          </task_exec_estimates>
-
-          <epsilon_greedy epsilon="0.11"
-                          regret_bound="linear"/>
-
-          <ucb1 gamma="1000"/>
-
-          <stoch_nbhd1
-              tab_init_policy="max_depth">
-            <task_partition
-                always_partition="true"
-                never_partition="false">
-              <src_sigmoid_sel
-                  input_src="exec">
-                <sigmoid_sel
-                    method="pini2011">
-                  <sigmoid
-                      reactivity="4"
-                      offset="1.0"
-                      gamma="1.0"/>
-                </sigmoid_sel>
-              </src_sigmoid_sel>
-            </task_partition>
-            <subtask_sel>
-              <src_sigmoid_sel
-                  input_src="exec">
-                <sigmoid_sel
-                    method="harwell2018">
-                  <sigmoid
-                      reactivity="8"
-                      offset="1.25"
-                      gamma="1.0"/>
-                </sigmoid_sel>
-              </src_sigmoid_sel>
-            </subtask_sel>
-            <tab_sel>
-              <src_sigmoid_sel
-                  input_src="exec">
-                <sigmoid_sel
-                    method="harwell2019">
-                  <sigmoid
-                      reactivity="4"
-                      offset="1.0"
-                      gamma="1.0"/>
-                </sigmoid_sel>
-              </src_sigmoid_sel>
-            </tab_sel>
-          </stoch_nbhd1>
-        </task_alloc>
         <block_sel_matrix
             nest="6, 3">
-          <!--       <block_priorities -->
-          <!--           cube="1.0" -->
-          <!--           ramp="1.0" -->
-          <!--           /> -->
-          <!--       <pickup_policy -->
-          <!--           policy="cluster_proximity" -->
-          <!--           prox_dist="3.0" -->
-          <!--           /> -->
         </block_sel_matrix>
         <exploration
-            block_strategy="CRW"
-            cache_strategy="ledtaxis_search"/>
+            block_strategy="CRW"/>
         <sensing_subsystem2D>
           <!-- -5pi/6 : 5pi/6 -->
           <proximity_sensor fov="-2.61:2.61"
@@ -151,9 +57,6 @@
             <!-- BLOCK: Blocks are black. -->
             <block range="-0.05:0.05"
                    consensus="4"/>
-            <!-- CACHE: Caches are dark gray. -->
-            <cache range="0.3:0.5"
-                   consensus="3"/>
           </ground_sensor>
         </sensing_subsystem2D>
         <actuation_subsystem2D>
@@ -176,7 +79,7 @@
                       max_speed="10.0" />
         </actuation_subsystem2D>
       </params>
-    </birtd_dpo_controller>
+    </crw_controller>
 
   </controllers>
 
@@ -184,7 +87,7 @@
   <!-- * Loop functions * -->
   <!-- ****************** -->
   <loop_functions library="libsilicon"
-                  label="depth2_loop_functions">
+                  label="construction_loop_functions">
     <output
         output_root="output"
         output_dir="__current_date__">
@@ -195,59 +98,15 @@
             block_acq_counts="block-acq-counts"
             block_transport="block-transport"
             block_manipulation="block-manipulation"
-            cache_acq_counts="cache-acq-counts"
-            cache_utilization="cache-utilization"
-            cache_lifecycle="cache-lifecycle"
-            cache_site_selection="cache-site-selection"
-            task_execution_generalist="task-execution-generalist"
-            task_execution_collector="task-execution-collector"
-            task_execution_harvester="task-execution-harvester"
-            task_execution_cache_starter="task-execution-cache_starter"
-            task_execution_cache_finisher="task-execution-cache_finisher"
-            task_execution_cache_transferer="task-execution-cache_transferer"
-            task_execution_cache_collector="task-execution-cache_collector"
-            task_tab_generalist="task-tab-generalist"
-            task_tab_collector="task-tab-collector"
-            task_tab_harvester="task-tab-harvester"
-            task_distribution="task-distribution"
-            perception_dpo="perception-dpo"
-            perception_mdpo="perception-mdpo"
-            swarm_convergence="swarm-convergence"
             tv_population="tv-population"
             tv_environment="tv-environment"/>
 
         <create output_interval="10"
                 block_acq_locs="block-acq-locs"
                 block_acq_explore_locs="block-acq-explore-locs"
-                cache_acq_locs="cache-acq-locs"
-                cache_acq_explore_locs="cache-acq-explore-locs"
-                cache_acq_vector_locs="cache-acq-vector-locs"
-                cache_locations="cache-locations"
                 swarm_dist2D_pos="swarm-dist-pos2D"/>
       </metrics>
     </output>
-    <!-- <convergence -->
-    <!--     n_threads="0" -->
-    <!--     epsilon="0.1" -->
-    <!--     epsilon_delta="1000"> -->
-    <!--   <positional_entropy -->
-    <!--       enable="false" -->
-    <!--       horizon="0:13.41" -->
-    <!--       horizon_delta="1.34"/> -->
-    <!--   <task_dist_entropy enable="false"/> -->
-    <!--   <interactivity enable="false"/> -->
-    <!--   <!-\- <angular_order enable="false"/> -\-> -->
-    <!-- </convergence> -->
-
-    <!-- <oracle_manager> -->
-    <!--   <tasking_oracle -->
-    <!--       task_exec_ests="true" -->
-    <!--       task_interface_ests="true" -->
-    <!--       /> -->
-    <!--   <entities_oracle -->
-    <!--       blocks="true" -->
-    <!--       caches="true"/> -->
-    <!-- </oracle_manager> -->
     <temporal_variance>
       <env_dynamics>
         <blocks>
@@ -269,79 +128,159 @@
           </carry_throttle>
         </blocks>
       </env_dynamics>
-      <population_dynamics
-          birth_lambda="0.0"
-          death_lambda="0.0"
-          malfunction_lambda="0.005"
-          max_size="16"
-          repair_mu="0.001"/>
     </temporal_variance>
 
-    <structure_builder
+    <structure3D_builder
         build_src="loop"
-        interval="1"/>
-
+        static_build_interval="1"
+        static_build_interval_count="1"/>
+    <construct_targets><ramp anchor="4,4,0" bounding_box="8,8,4" id="ramp0"
+                             orientation="X"><ramp_blocks><ramp_block
+                             cell="0,0,3" id="0" /><ramp_block cell="0,1,3"
+                             id="1" /><ramp_block cell="0,2,3" id="2"
+                             /><ramp_block cell="0,3,3" id="3" /><ramp_block
+                             cell="0,4,3" id="4" /><ramp_block cell="0,5,3"
+                             id="5" /><ramp_block cell="0,6,3" id="6"
+                             /><ramp_block cell="0,7,3" id="7" /><ramp_block
+                             cell="2,0,2" id="8" /><ramp_block cell="2,1,2"
+                             id="9" /><ramp_block cell="2,2,2" id="10"
+                             /><ramp_block cell="2,3,2" id="11" /><ramp_block
+                             cell="2,4,2" id="12" /><ramp_block cell="2,5,2"
+                             id="13" /><ramp_block cell="2,6,2" id="14"
+                             /><ramp_block cell="2,7,2" id="15" /><ramp_block
+                             cell="4,0,1" id="16" /><ramp_block cell="4,1,1"
+                             id="17" /><ramp_block cell="4,2,1" id="18"
+                             /><ramp_block cell="4,3,1" id="19" /><ramp_block
+                             cell="4,4,1" id="20" /><ramp_block cell="4,5,1"
+                             id="21" /><ramp_block cell="4,6,1" id="22"
+                             /><ramp_block cell="4,7,1" id="23" /><ramp_block
+                             cell="6,0,0" id="24" /><ramp_block cell="6,1,0"
+                             id="25" /><ramp_block cell="6,2,0" id="26"
+                             /><ramp_block cell="6,3,0" id="27" /><ramp_block
+                             cell="6,4,0" id="28" /><ramp_block cell="6,5,0"
+                             id="29" /><ramp_block cell="6,6,0" id="30"
+                             /><ramp_block cell="6,7,0" id="31"
+                             /></ramp_blocks><cube_blocks><cube_block
+                             cell="0,0,0" id="0" /><cube_block cell="0,1,0"
+                             id="1" /><cube_block cell="0,2,0" id="2"
+                             /><cube_block cell="0,3,0" id="3" /><cube_block
+                             cell="0,4,0" id="4" /><cube_block cell="0,5,0"
+                             id="5" /><cube_block cell="0,6,0" id="6"
+                             /><cube_block cell="0,7,0" id="7" /><cube_block
+                             cell="0,0,1" id="8" /><cube_block cell="0,1,1"
+                             id="9" /><cube_block cell="0,2,1" id="10"
+                             /><cube_block cell="0,3,1" id="11" /><cube_block
+                             cell="0,4,1" id="12" /><cube_block cell="0,5,1"
+                             id="13" /><cube_block cell="0,6,1" id="14"
+                             /><cube_block cell="0,7,1" id="15" /><cube_block
+                             cell="0,0,2" id="16" /><cube_block cell="0,1,2"
+                             id="17" /><cube_block cell="0,2,2" id="18"
+                             /><cube_block cell="0,3,2" id="19" /><cube_block
+                             cell="0,4,2" id="20" /><cube_block cell="0,5,2"
+                             id="21" /><cube_block cell="0,6,2" id="22"
+                             /><cube_block cell="0,7,2" id="23" /><cube_block
+                             cell="1,0,0" id="24" /><cube_block cell="1,1,0"
+                             id="25" /><cube_block cell="1,2,0" id="26"
+                             /><cube_block cell="1,3,0" id="27" /><cube_block
+                             cell="1,4,0" id="28" /><cube_block cell="1,5,0"
+                             id="29" /><cube_block cell="1,6,0" id="30"
+                             /><cube_block cell="1,7,0" id="31" /><cube_block
+                             cell="1,0,1" id="32" /><cube_block cell="1,1,1"
+                             id="33" /><cube_block cell="1,2,1" id="34"
+                             /><cube_block cell="1,3,1" id="35" /><cube_block
+                             cell="1,4,1" id="36" /><cube_block cell="1,5,1"
+                             id="37" /><cube_block cell="1,6,1" id="38"
+                             /><cube_block cell="1,7,1" id="39" /><cube_block
+                             cell="1,0,2" id="40" /><cube_block cell="1,1,2"
+                             id="41" /><cube_block cell="1,2,2" id="42"
+                             /><cube_block cell="1,3,2" id="43" /><cube_block
+                             cell="1,4,2" id="44" /><cube_block cell="1,5,2"
+                             id="45" /><cube_block cell="1,6,2" id="46"
+                             /><cube_block cell="1,7,2" id="47" /><cube_block
+                             cell="2,0,0" id="48" /><cube_block cell="2,1,0"
+                             id="49" /><cube_block cell="2,2,0" id="50"
+                             /><cube_block cell="2,3,0" id="51" /><cube_block
+                             cell="2,4,0" id="52" /><cube_block cell="2,5,0"
+                             id="53" /><cube_block cell="2,6,0" id="54"
+                             /><cube_block cell="2,7,0" id="55" /><cube_block
+                             cell="2,0,1" id="56" /><cube_block cell="2,1,1"
+                             id="57" /><cube_block cell="2,2,1" id="58"
+                             /><cube_block cell="2,3,1" id="59" /><cube_block
+                             cell="2,4,1" id="60" /><cube_block cell="2,5,1"
+                             id="61" /><cube_block cell="2,6,1" id="62"
+                             /><cube_block cell="2,7,1" id="63" /><cube_block
+                             cell="3,0,0" id="64" /><cube_block cell="3,1,0"
+                             id="65" /><cube_block cell="3,2,0" id="66"
+                             /><cube_block cell="3,3,0" id="67" /><cube_block
+                             cell="3,4,0" id="68" /><cube_block cell="3,5,0"
+                             id="69" /><cube_block cell="3,6,0" id="70"
+                             /><cube_block cell="3,7,0" id="71" /><cube_block
+                             cell="3,0,1" id="72" /><cube_block cell="3,1,1"
+                             id="73" /><cube_block cell="3,2,1" id="74"
+                             /><cube_block cell="3,3,1" id="75" /><cube_block
+                             cell="3,4,1" id="76" /><cube_block cell="3,5,1"
+                             id="77" /><cube_block cell="3,6,1" id="78"
+                             /><cube_block cell="3,7,1" id="79" /><cube_block
+                             cell="4,0,0" id="80" /><cube_block cell="4,1,0"
+                             id="81" /><cube_block cell="4,2,0" id="82"
+                             /><cube_block cell="4,3,0" id="83" /><cube_block
+                             cell="4,4,0" id="84" /><cube_block cell="4,5,0"
+                             id="85" /><cube_block cell="4,6,0" id="86"
+                             /><cube_block cell="4,7,0" id="87" /><cube_block
+                             cell="5,0,0" id="88" /><cube_block cell="5,1,0"
+                             id="89" /><cube_block cell="5,2,0" id="90"
+                             /><cube_block cell="5,3,0" id="91" /><cube_block
+                             cell="5,4,0" id="92" /><cube_block cell="5,5,0"
+                             id="93" /><cube_block cell="5,6,0" id="94"
+                             /><cube_block cell="5,7,0" id="95"
+                             /></cube_blocks><subtargets><subramp id="subramp0"
+                             range="4:12" type="X"
+                             /></subtargets></ramp></construct_targets>
     <arena_map>
-      <grid resolution="0.2"
-            size="12, 6, 2"/>
+    <grid resolution="0.2"
+            size="12, 12, 2"/>
       <blocks>
         <distribution
-            dist_type="single_source">
-          <!-- <redist_governor -->
-          <!--     trigger="Null" -->
-          <!--     recurrence_policy="multi" -->
-          <!--     timestep="500" -->
-          <!--     block_count="2"/> -->
-          <!-- <powerlaw -->
-          <!--     pwr_min="0" -->
-          <!--     pwr_max="3" -->
-          <!--     n_clusters="15" -->
-          <!--     /> -->
+            dist_type="random">
           <manifest
-              n_cube="10"
-              n_ramp="10"
-              unit_dim="0.2"
+              n_cube="32"
+              n_ramp="32"
+              unit_dim="0.4"
               />
         </distribution>
       </blocks>
-      <nest size="1.0, 4.0" center="6, 3" />
+      <nest size="4.0, 4.0" center="6, 6" />
     </arena_map>
-
-    <!--   <visualization robot_id="true" -->
-    <!--                  robot_los="true" -->
-    <!--                  robot_task="true" -->
-    <!--                  block_id="false" -->
-    <!--                  /> -->
+    <visualization robot_id="true"/>
   </loop_functions>
 
   <!-- *********************** -->
   <!-- * Arena configuration * -->
   <!-- *********************** -->
-  <arena size="12, 6, 10" center="6,3,5">
+  <arena size="12, 12, 10" center="6,6,5">
 
     <floor id="floor"
            source="loop_functions"
            pixels_per_meter="50" />
 
     <box id="wall_north" size="12,0.1,0.5" movable="false">
-      <body position="6,6.1,0" orientation="0,0,0" />
+      <body position="6,12.1,0" orientation="0,0,0" />
     </box>
     <box id="wall_south" size="12,0.1,0.5" movable="false">
       <body position="6,0,0" orientation="0,0,0" />
     </box>
-    <box id="wall_east" size="0.1,6,0.5" movable="false">
-      <body position="12,3,0" orientation="0,0,0" />
+    <box id="wall_east" size="0.1,12,0.5" movable="false">
+      <body position="12,6,0" orientation="0,0,0" />
     </box>
-    <box id="wall_west" size="0.1,6,0.5" movable="false">
-      <body position="0,3,0" orientation="0,0,0" />
+    <box id="wall_west" size="0.1,12,0.5" movable="false">
+      <body position="0,6,0" orientation="0,0,0" />
     </box>
     <distribute>
-      <position method="uniform" min="1,1,0" max="10,5,0" />
+      <position method="uniform" min="1,1,0" max="10,10,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="16" max_trials="1000">
         <foot-bot id="fb" omnidirectional_camera_aperture="89">
           <controller config="ffc" />
-          <!-- <battery model= "time_motion"/> -->
         </foot-bot>
       </entity>
     </distribute>
@@ -352,68 +291,45 @@
   <!-- * Physics engines * -->
   <!-- ******************* -->
   <physics_engines>
-    <dynamics2d id="dyn2d0">
-      <!--  <boundaries> -->
-      <!--     <top height="1" /> -->
-      <!--     <bottom height="0" /> -->
-      <!--     <sides> -->
-      <!--       <vertex point="0,0" /> -->
-      <!--       <vertex point="6,0" /> -->
-      <!--       <vertex point="6,6" /> -->
-      <!--       <vertex point="0,6" /> -->
-      <!--     </sides> -->
-      <!--  </boundaries> -->
-      <!-- </dynamics2d> -->
-      <!-- <dynamics2d id="dyn2d1"> -->
-      <!--  <boundaries> -->
-      <!--     <top height="1" /> -->
-      <!--     <bottom height="0" /> -->
-      <!--     <sides> -->
-      <!--       <vertex point="6,0" /> -->
-      <!--       <vertex point="12,0" /> -->
-      <!--       <vertex point="12,6" /> -->
-      <!--       <vertex point="6,6" /> -->
-      <!--     </sides> -->
-      <!--  </boundaries> -->
-    </dynamics2d>
+    <pointmass3d id="pm0">
+    </pointmass3d>
   </physics_engines>
 
   <!-- ********* -->
   <!-- * Media * -->
   <!-- ********* -->
   <media>
-    <range_and_bearing id="rab" />
     <led id="leds" />
   </media>
 
   <!-- ****************** -->
   <!-- * Visualization * -->
   <!-- ****************** -->
-  <!-- <visualization> -->
-  <!--   <qt-opengl autoplay="true"> -->
-  <!--      <frame_grabbing directory="frames" -->
-  <!--                      base_name="frame_" -->
-  <!--                      format="png" -->
-  <!--                      quality="100" -->
-  <!--                      headless_grabbing="true" -->
-  <!--                      headless_frame_size="1600x1200" -->
-  <!--                      /> -->
-  <!--     <camera> -->
-  <!--       <placement idx="0" -->
-  <!--                  position="6,3,6" -->
-  <!--                  look_at="6,3,0" -->
-  <!--                  lens_focal_length="20" -->
-  <!--                  up="0,1,0" -->
-  <!--                  /> -->
-  <!--       <placement idx="1" -->
-  <!--                  position="6,0,5" -->
-  <!--                  look_at="6,3,0" -->
-  <!--                  lens_focal_length="20" -->
-  <!--                  up="0,1,0" -->
-  <!--                  /> -->
-  <!--     </camera> -->
-  <!--     <user_functions label="depth0_qt_user_functions" /> -->
-  <!--   </qt-opengl> -->
-  <!-- </visualization> -->
+  <visualization>
+    <qt-opengl autoplay="false">
+      <!--  <frame_grabbing directory="frames" -->
+      <!--                  base_name="frame_" -->
+      <!--                  format="png" -->
+      <!--                  quality="100" -->
+      <!--                  headless_grabbing="true" -->
+      <!--                  headless_frame_size="1600x1200" -->
+      <!--                  /> -->
+      <camera>
+        <placement idx="0"
+                   position="6,3,6"
+                   look_at="6,3,0"
+                   lens_focal_length="20"
+                   up="0,1,0"
+                   />
+        <placement idx="1"
+                   position="6,0,6"
+                   look_at="6,3,0"
+                   lens_focal_length="20"
+                   up="0,1,0"
+                   />
+      </camera>
+      <!-- <user_functions label="depth0_qt_user_functions" /> -->
+    </qt-opengl>
+  </visualization>
 
 </argos-configuration>

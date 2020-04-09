@@ -55,8 +55,8 @@ struct cube_block_loc_spec {
  *
  * \brief Parsed configuration for the \ref structure3D object.
  */
-struct structure3D_config : public rconfig::base_config {
-  rmath::vector3u              anchor{};
+struct structure3D_config final : public rconfig::base_config {
+  rmath::vector3d              anchor{};
   rmath::vector3u              bounding_box{};
   std::string                  orientation{};
 

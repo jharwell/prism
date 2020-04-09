@@ -37,7 +37,7 @@ NS_START(silicon, support, tv);
  ******************************************************************************/
 env_dynamics::env_dynamics(const tv::config::env_dynamics_config* const config,
                            const support::base_loop_functions* const lf,
-                           carena::base_arena_map* const map)
+                           carena::base_arena_map<crepr::base_block3D>* const map)
     : ER_CLIENT_INIT("silicon.support.tv.env_dynamics"),
       m_rda(&config->rda, lf),
       m_fb_pickup(map, &config->block_manip_penalty, "Free Block Pickup"),

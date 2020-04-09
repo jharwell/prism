@@ -31,10 +31,11 @@
 
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/ds/block3D_vector.hpp"
-#include "cosm/repr/block3D_variant.hpp"
+#include "cosm/repr/block_variant.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
+#include "silicon/structure/static_build_status.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -42,6 +43,10 @@
 namespace cosm::pal {
 class argos_sm_adaptor;
 } /* namespace cosm::pal */
+namespace cosm::arena {
+template<typename T>
+class base_arena_map;
+} /* namespace cosm::arena */
 
 NS_START(silicon, structure);
 
@@ -60,30 +65,35 @@ class structure3D;
  * placement on the in-progress structure, 3D blocks are rendered/treated as 2D
  * for simplicity.
  */
-class structure3D_builder : public rer::client<structure3D_builder> {
+class structure3D_builder final : public rer::client<structure3D_builder> {
  public:
   /**
    * \brief XML key for specifying that the structure should be built entirely
    * by the loop functions.
    */
-  static constexpr char kBuildSrcLoop[] = "loop";
+  static constexpr const char kBuildSrcLoop[] = "loop";
 
   /**
    * \brief XML key for specifying that the structure should be built by robots.
    */
-  static constexpr char kBuildSrcRobot[] = "robot";
+  static constexpr const char kBuildSrcRobot[] = "robot";
 
   structure3D_builder(const config::structure3D_builder_config* config,
                       structure3D* target,
                       cpal::argos_sm_adaptor* sm);
 
-  /* Not copy constructable/assignable by default */
-  structure3D_builder(const structure3D_builder&) = delete;
+  structure3D_builder(const structure3D_builder&) = default;
   const structure3D_builder& operator=(const structure3D_builder&) = delete;
 
   bool block_placement_valid(const crepr::block3D_variant& block,
                              const rmath::vector3u& loc,
                              const rmath::radians& z_rotation) const;
+
+  /**
+   * \brief Determine if static building via loop functions is enabled.
+   */
+  bool build_static_enabled(void) const { return mc_config.build_src == kBuildSrcLoop; }
+
   /**
    * \brief Build the ENTIRE structure, according to XML configuration (so many
    * blocks per timestep, etc.), in the loop functions without involving robots
@@ -98,8 +108,8 @@ class structure3D_builder : public rer::client<structure3D_builder> {
    * \return \c TRUE if all blocks placed this timestep were placed
    * successfully, \c FALSE otherwise.
    */
-  bool build_static(const cds::block3D_vectorno& blocks,
-                    const rtypes::timestep& t);
+  static_build_status build_static(const cds::block3D_vectorno& blocks,
+                                   const rtypes::timestep& t);
 
   /**
    * \brief Place the specified block onto the structure, update \ref
@@ -108,9 +118,17 @@ class structure3D_builder : public rer::client<structure3D_builder> {
    *
    * If the placement of the block fails validation checks, then no action is
    * performed.
+   *
+   * \param block The block to place.
+   * \param cell The \p RELATIVE location of the block within the structure
+   *            (i.e. its internal coordinates). A cubical block within the
+   *            structure ocuupies \p ONE cell, regardless of its size in the
+   *           arena.
+   * \param z_rotation The orientation the block should have when placed at the
+   *                   specified location.
    */
   bool place_block(const crepr::block3D_variant& block,
-                   const rmath::vector3u& loc,
+                   const rmath::vector3u& cell,
                    const rmath::radians& z_rotation);
 
  private:
@@ -119,10 +137,8 @@ class structure3D_builder : public rer::client<structure3D_builder> {
    * structures.
    */
   struct static_build_state {
-    size_t           interval_count{0};
-    size_t           i{0};
-    size_t           j{0};
-    size_t           k{0};
+    size_t           n_cells{0};
+    size_t           n_built_interval{0};
   };
 
   /**
@@ -139,6 +155,15 @@ class structure3D_builder : public rer::client<structure3D_builder> {
                                                            size_t start) const;
 
 
+
+  /**
+   * \brief Place a single block as part of \ref build_static().
+   *
+   * \return \c TRUE if a block was found to be placed AND placed successfully,
+   * and \c FALSE otherwise.
+   */
+  bool build_static_single(const cds::block3D_vectorno& blocks,
+                           size_t search_start);
 
   /* clang-format off */
   const config::structure3D_builder_config mc_config;

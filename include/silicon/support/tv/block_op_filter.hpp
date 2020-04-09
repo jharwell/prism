@@ -53,7 +53,7 @@ NS_START(silicon, support, tv);
  */
 class block_op_filter : public rer::client<block_op_filter> {
  public:
-  explicit block_op_filter(const carena::base_arena_map* const map)
+  explicit block_op_filter(const carena::base_arena_map<crepr::base_block3D>* const map)
       : ER_CLIENT_INIT("silicon.support.tv.block_op_filter"),
         mc_map(map) {}
 
@@ -130,7 +130,7 @@ class block_op_filter : public rer::client<block_op_filter> {
   }
 
   /* clang-format off */
-  const carena::base_arena_map* const mc_map;
+  const carena::base_arena_map<crepr::base_block3D>* const mc_map;
   /* clang-format on */
 };
 NS_END(tv, support, silicon);

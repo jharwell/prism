@@ -26,10 +26,15 @@
  ******************************************************************************/
 #include "cosm/pal/tv/argos_pd_adaptor.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
+#include "cosm/repr/base_block3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
+namespace cosm::arena {
+template<typename T>
+class base_arena_map;
+} /* namespace cosm::arena */
 namespace silicon::controller {
 class constructing_controller;
 } /* namespace silicon::controller */
@@ -50,10 +55,11 @@ NS_START(silicon, support, tv);
 class silicon_pd_adaptor : rer::client<silicon_pd_adaptor>,
                            public cptv::argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>{
  public:
-  template <typename... Args>
-  silicon_pd_adaptor(Args&&... args)
-      : ER_CLIENT_INIT("silicon.support.tv.silicon_pd_adaptor"),
-        argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(std::forward<Args>(args)...) {}
+  silicon_pd_adaptor(const ctv::config::population_dynamics_config* config,
+                     cpal::argos_sm_adaptor* sm,
+                     env_dynamics_type *envd,
+                     carena::base_arena_map<crepr::base_block3D>* map,
+                     rmath::rng* rng);
 
   /* Not copy constructable/assignable by default */
   silicon_pd_adaptor(const silicon_pd_adaptor&) = delete;
@@ -61,6 +67,11 @@ class silicon_pd_adaptor : rer::client<silicon_pd_adaptor>,
 
   /* ARGoS PD apdaptor overrides */
   void pre_kill_cleanup(cpal::argos_controllerQ3D_adaptor* controller) override;
+
+ private:
+  /* clang-format off */
+  carena::base_arena_map<crepr::base_block3D>* m_map;
+  /* clang-format on */
 };
 
 NS_END(tv, support, silicon);

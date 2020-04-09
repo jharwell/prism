@@ -28,6 +28,7 @@
 #include "cosm/pal/argos_sm_adaptor.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
+#include "cosm/arena/base_arena_map.hpp"
 
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/operations/place_block.hpp"
@@ -53,74 +54,107 @@ structure3D_builder::structure3D_builder(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool structure3D_builder::build_static(const cds::block3D_vectorno& blocks,
-                                          const rtypes::timestep& t) {
+static_build_status structure3D_builder::build_static(
+    const cds::block3D_vectorno& blocks,
+    const rtypes::timestep& t) {
   ER_ASSERT(kBuildSrcLoop == mc_config.build_src,
             "Bad build source '%s' when calling %s",
             mc_config.build_src.c_str(),
             __FUNCTION__);
+
+  /* nothing to do */
+  if (m_target->is_complete()) {
+    return static_build_status::ekFINISHED;
+  }
 
   /*
    * Nothing to do if it has not been long enough since the last time we placed
    * blocks.
    */
   if (!(t % mc_config.static_build_interval == 0)) {
-    return true;
+    return static_build_status::ekNO_INTERVAL;
   }
 
   size_t start = 0;
-  bool ret = true;
-  for (; m_static_state.k < m_target->zsize(); ++m_static_state.k) {
-    for (; m_static_state.i < m_target->xsize(); ++m_static_state.i) {
-      for (; m_static_state.j < m_target->ysize(); ++m_static_state.j) {
-        rmath::vector3u c(m_static_state.i,
-                          m_static_state.j,
-                          m_static_state.k);
-        ER_DEBUG("Static build for cell %s", c.to_str().c_str());
+  bool single = true;
+  while (m_static_state.n_built_interval < mc_config.static_build_interval_count) {
+    if (m_static_state.n_cells >= m_target->volumetric_size()) {
+      ER_ASSERT(m_target->is_complete(),
+                "Structure incomplete after processing all cells!");
+      return static_build_status::ekFINISHED;
+    }
+    single &= build_static_single(blocks, start++);
+  } /* while(..) */
 
-        auto spec = m_target->cell_spec(c);
-        if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec.state) {
-          if (m_static_state.interval_count >= mc_config.static_build_interval_count) {
-            ER_DEBUG("Maximum build count (%zu) hit for interval",
-                     mc_config.static_build_interval_count);
-            return ret;
-          }
-
-          ER_DEBUG("Static build for block %zu/%zu hosted by cell %s",
-                   m_static_state.interval_count,
-                   mc_config.static_build_interval_count,
-                   c.to_str().c_str());
-
-          boost::optional<crepr::block3D_variant> block = build_block_find(spec.block_type,
-                                                                           blocks,
-                                                                           start++);
-          ER_ASSERT(block,
-                    "Could not find a block of type %d for location %s",
-                    rcppsw::as_underlying(spec.block_type),
-                    c.to_str().c_str());
-          bool result = place_block(*block, c, spec.z_rotation);
-          ER_ASSERT(result, "Failed to build block of type %d for location %s",
-                    rcppsw::as_underlying(spec.block_type),
-                    c.to_str().c_str());
-          ret |= result;
-          ++m_static_state.interval_count;
-        }
-      } /* for(j..) */
-    } /* for(i..) */
-  } /* for(k..) */
-  m_static_state.interval_count = 0;
-  return ret;
+  ER_DEBUG("Built %zu blocks", m_static_state.n_built_interval);
+  m_static_state.n_built_interval = 0;
+  return (single) ? static_build_status::ekINTERVAL_LIMIT :
+      static_build_status::ekINTERVAL_FAILURE;
 } /* build_static() */
 
+bool structure3D_builder::build_static_single(const cds::block3D_vectorno& blocks,
+                                              size_t search_start) {
+  size_t index = m_static_state.n_cells;
+  size_t k = index / (m_target->xsize() * m_target->ysize());
+
+  /*
+   * We need to get the index into the "domain" for a 2D array; not doing the
+   * modulo here results in incorrect Y indices once Z > 0.
+   */
+  index %= (m_target->xsize() * m_target->ysize());
+  size_t i = index % (m_target->ysize());
+  size_t j = index / (m_target->xsize());
+  ER_TRACE("i=%zu,j=%zu,k=%zu", i, j, k);
+
+  rmath::vector3u c(i, j, k);
+  ER_DEBUG("Static build for structure cell@%s, abs cell@%s",
+           c.to_str().c_str(),
+           (m_target->origind() + c).to_str().c_str());
+
+  bool ret = false;
+  auto spec = m_target->cell_spec(c);
+  if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec.state) {
+    ER_DEBUG("Build for block hosting cell%s (%zu/%zu for interval)",
+             c.to_str().c_str(),
+             m_static_state.n_built_interval,
+             mc_config.static_build_interval_count);
+
+    boost::optional<crepr::block3D_variant> block = build_block_find(spec.block_type,
+                                                                     blocks,
+                                                                     search_start);
+    ER_ASSERT(block,
+              "Could not find a block of type %d for location %s",
+              rcppsw::as_underlying(spec.block_type),
+              c.to_str().c_str());
+
+    ret = place_block(*block, c, spec.z_rotation);
+    ER_ASSERT(ret, "Failed to build block of type %d for location %s",
+              rcppsw::as_underlying(spec.block_type),
+              c.to_str().c_str());
+    /* A block has disappeared from the arena floor */
+    m_sm->floor()->SetChanged();
+    ++m_static_state.n_built_interval;
+  } else {
+    ER_TRACE("Cell%s contains no block", c.to_str().c_str());
+  }
+  ++m_static_state.n_cells;
+  return ret;
+} /* build_static_single() */
+
 bool structure3D_builder::place_block(const crepr::block3D_variant& block,
-                                       const rmath::vector3u& loc,
-                                       const rmath::radians& z_rotation) {
+                                      const rmath::vector3u& cell,
+                                      const rmath::radians& z_rotation) {
   /* verify block addition to structure is OK */
-  if (!m_target->block_placement_valid(block, loc, z_rotation)) {
+  if (!m_target->block_placement_valid(block, cell, z_rotation)) {
+    ER_WARN("Block placement at %s,z_rot=%s failed validation: abort placement",
+            cell.to_str().c_str(),
+            z_rotation.to_str().c_str());
     return false;
   }
   /* Add block to structure */
-  boost::apply_visitor(operations::place_block(loc, z_rotation, m_target),
+  boost::apply_visitor(operations::place_block(cell,
+                                               z_rotation,
+                                               m_target),
                        block);
 
   /* Create block embodiment in ARGoS */
@@ -158,10 +192,13 @@ boost::optional<crepr::block3D_variant> structure3D_builder::build_block_find(
       if (crepr::block_type::ekCUBE == type &&
           crepr::block_type::ekCUBE == blocks[eff_i]->md()->type()) {
         v = static_cast<crepr::cube_block3D*>(blocks[eff_i]);
+        ER_TRACE("Found cube build block%d", blocks[eff_i]->id().v());
+
         return boost::make_optional(v);
       } else if (crepr::block_type::ekRAMP == type &&
                  crepr::block_type::ekRAMP == blocks[eff_i]->md()->type()) {
         v = static_cast<crepr::ramp_block3D*>(blocks[eff_i]);
+        ER_TRACE("Found ramp build block%d", blocks[eff_i]->id().v());
         return boost::make_optional(v);
       }
     }

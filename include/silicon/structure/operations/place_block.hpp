@@ -50,11 +50,13 @@ NS_START(silicon, structure, operations);
 class place_block : public rer::client<place_block>,
                     public boost::static_visitor<void> {
  public:
-  place_block(const rmath::vector3u& loc,
+  place_block(const rmath::vector3u& cell,
               const rmath::radians& z_rotation,
               structure3D* structure)
       : ER_CLIENT_INIT("silicon.structure.operations.place_block"),
-        mc_loc(loc), mc_z_rot(z_rotation), m_structure(structure) {}
+        mc_cell(cell),
+        mc_z_rot(z_rotation),
+        m_structure(structure) {}
 
   place_block(const place_block&) = delete;
   place_block& operator=(const place_block&) = delete;
@@ -62,11 +64,24 @@ class place_block : public rer::client<place_block>,
   void operator()(crepr::cube_block3D* block) const;
   void operator()(crepr::ramp_block3D* block) const;
 
-  /* clang-format off */
-  const rmath::vector3u mc_loc;
-  const rmath::radians  mc_z_rot;
+ private:
+  /**
+   * \brief Calculate offset from the absolute location of a cell within the
+   * structure to where the block's absolute location in the arena needs to be
+   * in order to have the 3D embodiment appear in right place in ARGoS.
+   *
+   * Due to the structure using lattice indexing (i.e. all locations within the
+   * 1 unit area between [4.0,5,0] in X and Y have the same discrete
+   * coordinates), and ARGoS stil needing absolute coordinates within the
+   * arena.
+   */
+  rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
 
-  structure3D*          m_structure;
+  /* clang-format off */
+  const rmath::vector3u          mc_cell;
+  const rmath::radians           mc_z_rot;
+
+  structure3D*                   m_structure;
   /* clang-format on */
 };
 

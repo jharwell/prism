@@ -66,7 +66,7 @@ struct functor_maps_initializer;
  * - Robot arena interactions
  */
 class construction_loop_functions : public base_loop_functions,
-                              public rer::client<construction_loop_functions> {
+                                    public rer::client<construction_loop_functions> {
  public:
   construction_loop_functions(void) RCSW_COLD;
   ~construction_loop_functions(void) override RCSW_COLD;
@@ -92,7 +92,8 @@ class construction_loop_functions : public base_loop_functions,
                              robot_arena_interactor>::type>;
   using los2D_updater_map_type = rds::type_map<
     rmpl::typelist_wrap_apply<controller::typelist,
-                              cfops::robot_los_update>::type>;
+                              cfops::robot_los_update,
+                              carena::base_arena_map<crepr::base_block3D>>::type>;
 
   using metric_extraction_typelist = rmpl::typelist<
     ccops::metrics_extract<controller::constructing_controller,

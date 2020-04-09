@@ -39,6 +39,13 @@ NS_START(silicon, structure, operations);
 bool validate_placement::operator()(const crepr::cube_block3D* block) const {
   /* @todo check if structure invariants are violated by adding this block */
   return true;
+
+error:
+  ER_ERR("Cube block%d placement at %s,z_rot=%s failed validation",
+         block->id().v(),
+         mc_loc.to_str().c_str(),
+         mc_z_rot.to_str().c_str());
+  return false;
 } /* operator() */
 
 bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
@@ -62,6 +69,10 @@ bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
     return true;
   }
 error:
+  ER_ERR("Ramp block%d placement at %s,z_rot=%s failed validation",
+         block->id().v(),
+         mc_loc.to_str().c_str(),
+         mc_z_rot.to_str().c_str());
   return false;
 } /* operator() */
 

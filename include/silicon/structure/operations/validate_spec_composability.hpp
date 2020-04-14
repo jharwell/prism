@@ -1,5 +1,5 @@
 /**
- * \file validate_placement.hpp
+ * \file validate_spec_composability.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_COMPOSABILITY_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_COMPOSABILITY_HPP_
 
 /*******************************************************************************
  * Includes
@@ -27,61 +27,55 @@
 #include <boost/variant/static_visitor.hpp>
 
 #include "rcppsw/er/client.hpp"
-#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/slice2D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::repr {
-class cube_block3D;
-class ramp_block3D;
-} /* namespace cosm::repr */
-
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
-
 NS_START(silicon, structure, operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class validate_placement
+ * \class validate_spec_composability
  * \ingroup structure operations
  *
- * \brief Validate that the placement of a block on \ref structure3D at the
- * specified location with the specified rotation is OK, or if it violates
- * graphical invariants or other such restrictions.
+ * \brief Determine if the layers of the \ref structure3D are composable; that
+ * is, they can be stacked on top of each other without violating any
+ * graphical/topological invariants.
  */
-class validate_placement : public rer::client<validate_placement>,
-                           public boost::static_visitor<bool> {
+class validate_spec_composability : public rer::client<validate_spec_composability>,
+                      public boost::static_visitor<bool> {
  public:
-  validate_placement(const structure3D* structure,
-                           const rmath::vector3u& loc,
-                           const rmath::radians& z_rotation)
-      : ER_CLIENT_INIT("silicon.structure.validate_placement"),
-        mc_structure(structure),
-        mc_loc(loc),
-        mc_z_rot(z_rotation) {}
+  explicit validate_spec_composability(const structure3D* structure)
+      : ER_CLIENT_INIT("silicon.structure.operations.validate_spec_composability"),
+        mc_structure(structure) {}
 
   /* Not copy constructible or copy assignment by default  */
-  validate_placement(const validate_placement&) = delete;
-  validate_placement& operator=(const validate_placement&) = delete;
+  validate_spec_composability(const validate_spec_composability&) = delete;
+  validate_spec_composability& operator=(const validate_spec_composability&) = delete;
 
-  bool operator()(const crepr::cube_block3D* block) const;
-  bool operator()(const crepr::ramp_block3D* block) const;
+  bool operator()(void) const;
 
  private:
+  /**
+   * \brief Determine if the \p lower and \p upper layers at z, z+1, are
+   * composable that is, can be stacked/combined to produce a joint graph which
+   * is:
+   *
+   * - Physically feasible
+   */
+  bool is_composable(const slice2D& lower, const slice2D& upper) const;
+
   /* clang-format off */
-  const structure3D*    mc_structure;
-  const rmath::vector3u mc_loc;
-  const rmath::radians  mc_z_rot;
+  const structure3D* mc_structure;
   /* clang-format on */
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_COMPOSABILITY_HPP_ */

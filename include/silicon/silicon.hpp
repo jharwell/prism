@@ -33,6 +33,7 @@ namespace silicon {
 
 namespace structure {
 namespace config {}
+namespace operations {}
 } /* namespace structure */
 
 namespace support {
@@ -42,7 +43,7 @@ namespace tv {}
 } /* namespace silicon */
 
 namespace sstructure = silicon::structure;
-
+namespace ssops = sstructure::operations;
 namespace ssconfig = sstructure::config;
 
 namespace ssupport = silicon::support;

@@ -128,31 +128,38 @@ bool structure3D::is_complete(void) const {
 
 std::vector<rmath::vector3u> structure3D::spec_to_block_extents(
     const config::ramp_block_loc_spec* spec) const {
-
+  std::vector<rmath::vector3u> ret;
   /*
    * The convention is that the loc field for ramp block specs always points to
-   * the anchor point/host cell of the block, and that whatever the orienttion
+   * the anchor point/host cell of the block, and that whatever the orientation
    * of the block is (X or Y), it extends in the POSITIVE direction for that
    * orientation.
    */
   if (spec->z_rotation == rmath::radians::kZERO) {
-    rmath::vector3u xplus1(spec->loc.x() + 1, spec->loc.y(), spec->loc.z());
-    return {xplus1};
+    for (uint m = 1; m < kRAMP_BLOCK_EXTENT_SIZE; ++m) {
+      ret.push_back({spec->loc.x() + m, spec->loc.y(), spec->loc.z()});
+    } /* for(m..) */
+  } else if (spec->z_rotation == rmath::radians::kPI_OVER_TWO) {
+    for (uint m = 1; m < kRAMP_BLOCK_EXTENT_SIZE; ++m) {
+      ret.push_back({spec->loc.x(), spec->loc.y() + m, spec->loc.z()});
+    } /* for(m..) */
   } else {
-    rmath::vector3u yplus1(spec->loc.x(), spec->loc.y() + 1, spec->loc.z());
-    return {yplus1};
+    ER_FATAL_SENTINEL("Bad rotation '%s' in spec",
+                      spec->z_rotation.to_str().c_str());
   }
+  return ret;
 } /* spec_to_block_extents() */
 
 structure3D::cell_final_spec structure3D::cell_spec(
-    const rmath::vector3u& loc) const {
+    const rmath::vector3u& cell) const {
+  ER_TRACE("Query spec for cell@%s", cell.to_str().c_str());
   /*
    * Direct key comparison for host cells. This is the default, but I explicitly
    * define it here to clearly differentiate it from searching for blocks which
    * match the specified location based on extents.
    */
   auto host_pred = [&](const auto& pair) {
-    return pair.first == loc;
+    return pair.first == cell;
   };
 
   /* easy case: cubes are 1x1x1, so they have no extents */
@@ -167,14 +174,25 @@ structure3D::cell_final_spec structure3D::cell_spec(
    */
   auto extent_pred = [&](const auto& pair) {
     auto extents = spec_to_block_extents(&pair.second);
+    auto sum = std::accumulate(std::begin(extents),
+                               std::end(extents),
+                               std::string(),
+                               [&](const std::string& a,
+                                   const rmath::vector3u& l) {
+                                 return a + l.to_str() + ",";
+                               });
 
+
+    ER_TRACE("Checking block extent cells %s (%zu)",
+             sum.c_str(),
+             extents.size());
     /*
      * Check all extents for the current block to
      * see if they match the location we were
      * passed.
      */
     for (auto &e : extents) {
-      if (e == pair.second.loc) {
+      if (e == cell) {
         return true;
       }
     } /* for(&e..) */
@@ -193,24 +211,28 @@ structure3D::cell_final_spec structure3D::cell_spec(
                (mc_config.cube_blocks.end() != cube_it);
   ER_ASSERT(count <= 1,
             "Cell@%s config error: found in more than block spec map",
-            loc.to_str().c_str());
+            cell.to_str().c_str());
 
   if (mc_config.cube_blocks.end() != cube_it) {
     return {cfsm::cell3D_state::ekST_HAS_BLOCK,
           crepr::block_type::ekCUBE,
-          rmath::radians::kZERO};
+          rmath::radians::kZERO,
+          1};
   } else if (mc_config.ramp_blocks.end() != ramp_host_it) {
     return {cfsm::cell3D_state::ekST_HAS_BLOCK,
           crepr::block_type::ekRAMP,
-          ramp_host_it->second.z_rotation};
+          ramp_host_it->second.z_rotation,
+          kRAMP_BLOCK_EXTENT_SIZE};
   } else if (mc_config.ramp_blocks.end() != ramp_extent_it) {
     return {cfsm::cell3D_state::ekST_BLOCK_EXTENT,
           crepr::block_type::ekNONE,
-          rmath::radians::kZERO};
+          rmath::radians::kZERO,
+          0};
   } else {
     return {cfsm::cell3D_state::ekST_EMPTY,
           crepr::block_type::ekNONE,
-          rmath::radians::kZERO};
+          rmath::radians::kZERO,
+          0};
   }
 } /* cell_spec() */
 
@@ -218,7 +240,7 @@ rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
   return originr() + rmath::uvec2dvec(cell.loc()) * mc_unit_dim_factor * mc_arena_grid_res.v();
 } /* cell_loc_abs() */
 
-double structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
+size_t structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
   double block_unit_dim = std::min(map->blocks()[0]->dims3D().x(),
                                    map->blocks()[0]->dims3D().y());
   ER_ASSERT(std::fmod(block_unit_dim,
@@ -226,7 +248,7 @@ double structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
             "Block unit dimension (%f) not a multiple of arena grid resolution (%f)",
             block_unit_dim,
             map->grid_resolution().v());
-  return block_unit_dim / map->grid_resolution().v();
+  return static_cast<size_t>(block_unit_dim / map->grid_resolution().v());
 } /* unit_dim_factor_calc() */
 
 NS_END(structure, silicon);

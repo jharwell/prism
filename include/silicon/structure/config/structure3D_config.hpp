@@ -58,7 +58,7 @@ struct cube_block_loc_spec {
 struct structure3D_config final : public rconfig::base_config {
   rmath::vector3d              anchor{};
   rmath::vector3u              bounding_box{};
-  std::string                  orientation{};
+  rmath::radians               orientation{};
 
   /*
    * We use maps with somewhat redundant (key, value) pairs in order to make the

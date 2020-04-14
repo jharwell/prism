@@ -1,5 +1,5 @@
 /**
- * \file cell3D_target_state.hpp
+ * \file validate_spec.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,29 +18,43 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CELL3D_TARGET_STATE_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CELL3D_TARGET_STATE_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/silicon.hpp"
+#include "silicon/structure/operations/validate_spec.hpp"
+
+#include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/operations/validate_spec_layers.hpp"
+#include "silicon/structure/operations/validate_spec_composability.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure);
+NS_START(silicon, structure, operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-enum class cell3D_target_state {
-  ekEMPTY,
-  ekCUBE_BLOCK,
-  ekRAMP_BLOCK,
-  ekBLOCK_EXTENT
-};
+bool validate_spec::operator()(void) const {
+  validate_spec_layers layers(mc_structure);
+  validate_spec_composability composable(mc_structure);
 
-NS_END(structure, silicon);
+  /* First, intra-layer checks */
+  ER_CHECK(layers(), "Intra-layer validation checks failed");
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CELL3D_TARGET_STATE_HPP_ */
+  /* Second, inter-layer composability checks */
+  ER_CHECK(composable(), "Structure layers are not composable");
+
+  /* Third, topological checks:
+   *
+   * - No vertical topological holes (should be computable by the same algorithm
+   *   that computes holes for sliced layers on the Z-axis); eg just slice along
+   *   the Y axis. Maybe this should be part of composability checks?
+  */
+  return true;
+
+error:
+  return false;
+} /* operator() */
+
+NS_END(operations, structure, silicon);

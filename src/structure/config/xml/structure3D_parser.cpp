@@ -38,11 +38,6 @@ void structure3D_parser::parse(const ticpp::Element& node) {
   XML_PARSE_ATTR(node, m_config, bounding_box);
   XML_PARSE_ATTR(node, m_config, orientation);
 
-  std::map<std::string, rmath::radians> orientation_map = {
-    {"X", rmath::radians::kZERO},
-    {"Y" , rmath::radians::kPI_OVER_TWO}
-  };
-
   if (nullptr != node.FirstChild("cube_blocks", false)) {
     auto cube_blocks = node_get(node, "cube_blocks");
     ticpp::Iterator<ticpp::Element> node_it;
@@ -65,7 +60,7 @@ void structure3D_parser::parse(const ticpp::Element& node) {
          ++node_it) {
       rmath::vector3u tmp;
       node_attr_get(*node_it, "cell", tmp);
-      m_config->ramp_blocks[tmp] = {tmp, orientation_map[m_config->orientation]};
+      m_config->ramp_blocks[tmp] = {tmp, m_config->orientation};
     } /* for(node_it..) */
   }
 } /* parse() */

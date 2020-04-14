@@ -31,6 +31,15 @@
   <category name="silicon.structure.builder" >
     <priority value ="debug" />
   </category>
+  <category name="silicon.structure.operations" >
+    <priority value ="trace" />
+  </category>
+  <category name="silicon.structure" >
+    <priority value ="debug" />
+  </category>
+  <category name="silicon.structure.slice2D" >
+    <priority value ="trace" />
+  </category>
   <category name="cosm.robots.footbot.saa" >
     <priority value ="info" />
   </category>

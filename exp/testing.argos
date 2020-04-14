@@ -134,108 +134,222 @@
         build_src="loop"
         static_build_interval="1"
         static_build_interval_count="1"/>
-    <construct_targets><ramp anchor="4,4,0" bounding_box="8,8,4" id="ramp0"
-                             orientation="X"><ramp_blocks><ramp_block
-                             cell="0,0,3" id="0" /><ramp_block cell="0,1,3"
-                             id="1" /><ramp_block cell="0,2,3" id="2"
-                             /><ramp_block cell="0,3,3" id="3" /><ramp_block
-                             cell="0,4,3" id="4" /><ramp_block cell="0,5,3"
-                             id="5" /><ramp_block cell="0,6,3" id="6"
-                             /><ramp_block cell="0,7,3" id="7" /><ramp_block
-                             cell="2,0,2" id="8" /><ramp_block cell="2,1,2"
-                             id="9" /><ramp_block cell="2,2,2" id="10"
-                             /><ramp_block cell="2,3,2" id="11" /><ramp_block
-                             cell="2,4,2" id="12" /><ramp_block cell="2,5,2"
-                             id="13" /><ramp_block cell="2,6,2" id="14"
-                             /><ramp_block cell="2,7,2" id="15" /><ramp_block
-                             cell="4,0,1" id="16" /><ramp_block cell="4,1,1"
-                             id="17" /><ramp_block cell="4,2,1" id="18"
-                             /><ramp_block cell="4,3,1" id="19" /><ramp_block
-                             cell="4,4,1" id="20" /><ramp_block cell="4,5,1"
-                             id="21" /><ramp_block cell="4,6,1" id="22"
-                             /><ramp_block cell="4,7,1" id="23" /><ramp_block
-                             cell="6,0,0" id="24" /><ramp_block cell="6,1,0"
-                             id="25" /><ramp_block cell="6,2,0" id="26"
-                             /><ramp_block cell="6,3,0" id="27" /><ramp_block
-                             cell="6,4,0" id="28" /><ramp_block cell="6,5,0"
-                             id="29" /><ramp_block cell="6,6,0" id="30"
-                             /><ramp_block cell="6,7,0" id="31"
-                             /></ramp_blocks><cube_blocks><cube_block
-                             cell="0,0,0" id="0" /><cube_block cell="0,1,0"
-                             id="1" /><cube_block cell="0,2,0" id="2"
-                             /><cube_block cell="0,3,0" id="3" /><cube_block
-                             cell="0,4,0" id="4" /><cube_block cell="0,5,0"
-                             id="5" /><cube_block cell="0,6,0" id="6"
-                             /><cube_block cell="0,7,0" id="7" /><cube_block
-                             cell="0,0,1" id="8" /><cube_block cell="0,1,1"
-                             id="9" /><cube_block cell="0,2,1" id="10"
-                             /><cube_block cell="0,3,1" id="11" /><cube_block
-                             cell="0,4,1" id="12" /><cube_block cell="0,5,1"
-                             id="13" /><cube_block cell="0,6,1" id="14"
-                             /><cube_block cell="0,7,1" id="15" /><cube_block
-                             cell="0,0,2" id="16" /><cube_block cell="0,1,2"
-                             id="17" /><cube_block cell="0,2,2" id="18"
-                             /><cube_block cell="0,3,2" id="19" /><cube_block
-                             cell="0,4,2" id="20" /><cube_block cell="0,5,2"
-                             id="21" /><cube_block cell="0,6,2" id="22"
-                             /><cube_block cell="0,7,2" id="23" /><cube_block
-                             cell="1,0,0" id="24" /><cube_block cell="1,1,0"
-                             id="25" /><cube_block cell="1,2,0" id="26"
-                             /><cube_block cell="1,3,0" id="27" /><cube_block
-                             cell="1,4,0" id="28" /><cube_block cell="1,5,0"
-                             id="29" /><cube_block cell="1,6,0" id="30"
-                             /><cube_block cell="1,7,0" id="31" /><cube_block
-                             cell="1,0,1" id="32" /><cube_block cell="1,1,1"
-                             id="33" /><cube_block cell="1,2,1" id="34"
-                             /><cube_block cell="1,3,1" id="35" /><cube_block
-                             cell="1,4,1" id="36" /><cube_block cell="1,5,1"
-                             id="37" /><cube_block cell="1,6,1" id="38"
-                             /><cube_block cell="1,7,1" id="39" /><cube_block
-                             cell="1,0,2" id="40" /><cube_block cell="1,1,2"
-                             id="41" /><cube_block cell="1,2,2" id="42"
-                             /><cube_block cell="1,3,2" id="43" /><cube_block
-                             cell="1,4,2" id="44" /><cube_block cell="1,5,2"
-                             id="45" /><cube_block cell="1,6,2" id="46"
-                             /><cube_block cell="1,7,2" id="47" /><cube_block
-                             cell="2,0,0" id="48" /><cube_block cell="2,1,0"
-                             id="49" /><cube_block cell="2,2,0" id="50"
-                             /><cube_block cell="2,3,0" id="51" /><cube_block
-                             cell="2,4,0" id="52" /><cube_block cell="2,5,0"
-                             id="53" /><cube_block cell="2,6,0" id="54"
-                             /><cube_block cell="2,7,0" id="55" /><cube_block
-                             cell="2,0,1" id="56" /><cube_block cell="2,1,1"
-                             id="57" /><cube_block cell="2,2,1" id="58"
-                             /><cube_block cell="2,3,1" id="59" /><cube_block
-                             cell="2,4,1" id="60" /><cube_block cell="2,5,1"
-                             id="61" /><cube_block cell="2,6,1" id="62"
-                             /><cube_block cell="2,7,1" id="63" /><cube_block
-                             cell="3,0,0" id="64" /><cube_block cell="3,1,0"
-                             id="65" /><cube_block cell="3,2,0" id="66"
-                             /><cube_block cell="3,3,0" id="67" /><cube_block
-                             cell="3,4,0" id="68" /><cube_block cell="3,5,0"
-                             id="69" /><cube_block cell="3,6,0" id="70"
-                             /><cube_block cell="3,7,0" id="71" /><cube_block
-                             cell="3,0,1" id="72" /><cube_block cell="3,1,1"
-                             id="73" /><cube_block cell="3,2,1" id="74"
-                             /><cube_block cell="3,3,1" id="75" /><cube_block
-                             cell="3,4,1" id="76" /><cube_block cell="3,5,1"
-                             id="77" /><cube_block cell="3,6,1" id="78"
-                             /><cube_block cell="3,7,1" id="79" /><cube_block
-                             cell="4,0,0" id="80" /><cube_block cell="4,1,0"
-                             id="81" /><cube_block cell="4,2,0" id="82"
-                             /><cube_block cell="4,3,0" id="83" /><cube_block
-                             cell="4,4,0" id="84" /><cube_block cell="4,5,0"
-                             id="85" /><cube_block cell="4,6,0" id="86"
-                             /><cube_block cell="4,7,0" id="87" /><cube_block
-                             cell="5,0,0" id="88" /><cube_block cell="5,1,0"
-                             id="89" /><cube_block cell="5,2,0" id="90"
-                             /><cube_block cell="5,3,0" id="91" /><cube_block
-                             cell="5,4,0" id="92" /><cube_block cell="5,5,0"
-                             id="93" /><cube_block cell="5,6,0" id="94"
-                             /><cube_block cell="5,7,0" id="95"
-                             /></cube_blocks><subtargets><subramp id="subramp0"
+    <construct_targets>
+      <ramp anchor="4,4,0" bounding_box="8,8,4" id="ramp0"
+            orientation="0.0">
+        <ramp_blocks>
+          <ramp_block cell="0,0,3" id="0" />
+          <ramp_block cell="0,1,3" id="1" />
+          <ramp_block cell="0,2,3" id="2" />
+          <ramp_block cell="0,3,3" id="3" />
+          <ramp_block cell="0,4,3" id="4" />
+          <ramp_block cell="0,5,3" id="5" />
+          <ramp_block cell="0,6,3" id="6" />
+          <ramp_block cell="0,7,3" id="7" />
+          <ramp_block cell="2,0,2" id="8" />
+          <ramp_block cell="2,1,2" id="9" />
+          <ramp_block cell="2,2,2" id="10" />
+          <ramp_block cell="2,3,2" id="11" />
+          <ramp_block cell="2,4,2" id="12" />
+          <ramp_block cell="2,5,2" id="13" />
+          <ramp_block cell="2,6,2" id="14" />
+          <ramp_block cell="2,7,2" id="15" />
+          <ramp_block cell="4,0,1" id="16" />
+          <ramp_block cell="4,1,1" id="17" />
+          <ramp_block cell="4,2,1" id="18" />
+          <ramp_block cell="4,3,1" id="19" />
+          <ramp_block cell="4,4,1" id="20" />
+          <ramp_block cell="4,5,1" id="21" />
+          <ramp_block cell="4,6,1" id="22" />
+          <ramp_block cell="4,7,1" id="23" />
+          <ramp_block cell="6,0,0" id="24" />
+          <ramp_block cell="6,1,0" id="25" />
+          <ramp_block cell="6,2,0" id="26" />
+          <ramp_block cell="6,3,0" id="27" />
+          <ramp_block cell="6,4,0" id="28" />
+          <ramp_block cell="6,5,0" id="29" />
+          <ramp_block cell="6,6,0" id="30" />
+          <ramp_block cell="6,7,0" id="31" />
+        </ramp_blocks>
+        <cube_blocks>
+          <cube_block
+              cell="0,0,0" id="0" />
+          <cube_block cell="0,1,0"
+                      id="1" />
+          <cube_block cell="0,2,0" id="2"
+                      />
+          <cube_block cell="0,3,0" id="3" />
+          <cube_block
+              cell="0,4,0" id="4" />
+          <cube_block cell="0,5,0"
+                      id="5" />
+          <cube_block cell="0,6,0" id="6"
+                      />
+          <cube_block cell="0,7,0" id="7" />
+          <cube_block
+              cell="0,0,1" id="8" />
+          <cube_block cell="0,1,1"
+                      id="9" />
+          <cube_block cell="0,2,1" id="10"
+                      />
+          <cube_block cell="0,3,1" id="11" />
+          <cube_block
+              cell="0,4,1" id="12" />
+          <cube_block cell="0,5,1"
+                      id="13" />
+          <cube_block cell="0,6,1" id="14"
+                      />
+          <cube_block cell="0,7,1" id="15" />
+          <cube_block
+              cell="0,0,2" id="16" />
+          <cube_block cell="0,1,2"
+                      id="17" />
+          <cube_block cell="0,2,2" id="18"
+                      />
+          <cube_block cell="0,3,2" id="19" />
+          <cube_block
+              cell="0,4,2" id="20" />
+          <cube_block cell="0,5,2"
+                      id="21" />
+          <cube_block cell="0,6,2" id="22"
+                      />
+          <cube_block cell="0,7,2" id="23" />
+          <cube_block
+              cell="1,0,0" id="24" />
+          <cube_block cell="1,1,0"
+                      id="25" />
+          <cube_block cell="1,2,0" id="26"
+                      />
+          <cube_block cell="1,3,0" id="27" />
+          <cube_block
+              cell="1,4,0" id="28" />
+          <cube_block cell="1,5,0"
+                      id="29" />
+          <cube_block cell="1,6,0" id="30"
+                      />
+          <cube_block cell="1,7,0" id="31" />
+          <cube_block
+              cell="1,0,1" id="32" />
+          <cube_block cell="1,1,1"
+                      id="33" />
+          <cube_block cell="1,2,1" id="34"
+                      />
+          <cube_block cell="1,3,1" id="35" />
+          <cube_block
+              cell="1,4,1" id="36" />
+          <cube_block cell="1,5,1"
+                      id="37" />
+          <cube_block cell="1,6,1" id="38"
+                      />
+          <cube_block cell="1,7,1" id="39" />
+          <cube_block
+              cell="1,0,2" id="40" />
+          <cube_block cell="1,1,2"
+                      id="41" />
+          <cube_block cell="1,2,2" id="42"
+                      />
+          <cube_block cell="1,3,2" id="43" />
+          <cube_block
+              cell="1,4,2" id="44" />
+          <cube_block cell="1,5,2"
+                      id="45" />
+          <cube_block cell="1,6,2" id="46"
+                      />
+          <cube_block cell="1,7,2" id="47" />
+          <cube_block
+              cell="2,0,0" id="48" />
+          <cube_block cell="2,1,0"
+                      id="49" />
+          <cube_block cell="2,2,0" id="50"
+                      />
+          <cube_block cell="2,3,0" id="51" />
+          <cube_block
+              cell="2,4,0" id="52" />
+          <cube_block cell="2,5,0"
+                      id="53" />
+          <cube_block cell="2,6,0" id="54"
+                      />
+          <cube_block cell="2,7,0" id="55" />
+          <cube_block
+              cell="2,0,1" id="56" />
+          <cube_block cell="2,1,1"
+                      id="57" />
+          <cube_block cell="2,2,1" id="58"
+                      />
+          <cube_block cell="2,3,1" id="59" />
+          <cube_block
+              cell="2,4,1" id="60" />
+          <cube_block cell="2,5,1"
+                      id="61" />
+          <cube_block cell="2,6,1" id="62"
+                      />
+          <cube_block cell="2,7,1" id="63" />
+          <cube_block
+              cell="3,0,0" id="64" />
+          <cube_block cell="3,1,0"
+                      id="65" />
+          <cube_block cell="3,2,0" id="66"
+                      />
+          <cube_block cell="3,3,0" id="67" />
+          <cube_block
+              cell="3,4,0" id="68" />
+          <cube_block cell="3,5,0"
+                      id="69" />
+          <cube_block cell="3,6,0" id="70"
+                      />
+          <cube_block cell="3,7,0" id="71" />
+          <cube_block
+              cell="3,0,1" id="72" />
+          <cube_block cell="3,1,1"
+                      id="73" />
+          <cube_block cell="3,2,1" id="74"
+                      />
+          <cube_block cell="3,3,1" id="75" />
+          <cube_block
+              cell="3,4,1" id="76" />
+          <cube_block cell="3,5,1"
+                      id="77" />
+          <cube_block cell="3,6,1" id="78"
+                      />
+          <cube_block cell="3,7,1" id="79" />
+          <cube_block
+              cell="4,0,0" id="80" />
+          <cube_block cell="4,1,0"
+                      id="81" />
+          <cube_block cell="4,2,0" id="82"
+                      />
+          <cube_block cell="4,3,0" id="83" />
+          <cube_block
+              cell="4,4,0" id="84" />
+          <cube_block cell="4,5,0"
+                      id="85" />
+          <cube_block cell="4,6,0" id="86"
+                      />
+          <cube_block cell="4,7,0" id="87" />
+          <cube_block
+              cell="5,0,0" id="88" />
+          <cube_block cell="5,1,0"
+                      id="89" />
+          <cube_block cell="5,2,0" id="90"
+                      />
+          <cube_block cell="5,3,0" id="91" />
+          <cube_block
+              cell="5,4,0" id="92" />
+          <cube_block cell="5,5,0"
+                      id="93" />
+          <cube_block cell="5,6,0" id="94"
+                      />
+          <cube_block cell="5,7,0" id="95"
+                      />
+        </cube_blocks>
+        <subtargets>
+          <subramp id="subramp0"
                              range="4:12" type="X"
-                             /></subtargets></ramp></construct_targets>
+                             />
+        </subtargets>
+      </ramp>
+    </construct_targets>
+
     <arena_map>
     <grid resolution="0.2"
             size="12, 12, 2"/>
@@ -305,31 +419,31 @@
   <!-- ****************** -->
   <!-- * Visualization * -->
   <!-- ****************** -->
-  <visualization>
-    <qt-opengl autoplay="false">
-      <!--  <frame_grabbing directory="frames" -->
-      <!--                  base_name="frame_" -->
-      <!--                  format="png" -->
-      <!--                  quality="100" -->
-      <!--                  headless_grabbing="true" -->
-      <!--                  headless_frame_size="1600x1200" -->
-      <!--                  /> -->
-      <camera>
-        <placement idx="0"
-                   position="6,3,6"
-                   look_at="6,3,0"
-                   lens_focal_length="20"
-                   up="0,1,0"
-                   />
-        <placement idx="1"
-                   position="6,0,6"
-                   look_at="6,3,0"
-                   lens_focal_length="20"
-                   up="0,1,0"
-                   />
-      </camera>
-      <!-- <user_functions label="depth0_qt_user_functions" /> -->
-    </qt-opengl>
-  </visualization>
+  <!-- <visualization> -->
+  <!--   <qt-opengl autoplay="false"> -->
+  <!--     <!-\-  <frame_grabbing directory="frames" -\-> -->
+  <!--     <!-\-                  base_name="frame_" -\-> -->
+  <!--     <!-\-                  format="png" -\-> -->
+  <!--     <!-\-                  quality="100" -\-> -->
+  <!--     <!-\-                  headless_grabbing="true" -\-> -->
+  <!--     <!-\-                  headless_frame_size="1600x1200" -\-> -->
+  <!--     <!-\-                  /> -\-> -->
+  <!--     <camera> -->
+  <!--       <placement idx="0" -->
+  <!--                  position="6,3,6" -->
+  <!--                  look_at="6,3,0" -->
+  <!--                  lens_focal_length="20" -->
+  <!--                  up="0,1,0" -->
+  <!--                  /> -->
+  <!--       <placement idx="1" -->
+  <!--                  position="6,0,6" -->
+  <!--                  look_at="6,3,0" -->
+  <!--                  lens_focal_length="20" -->
+  <!--                  up="0,1,0" -->
+  <!--                  /> -->
+  <!--     </camera> -->
+  <!--     <!-\- <user_functions label="depth0_qt_user_functions" /> -\-> -->
+  <!--   </qt-opengl> -->
+  <!-- </visualization> -->
 
 </argos-configuration>

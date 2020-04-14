@@ -37,6 +37,7 @@
 #include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/structure3D_builder.hpp"
+#include "silicon/structure/operations/validate_spec.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -141,11 +142,16 @@ void base_loop_functions::construction_init(const ssconfig::structure3D_builder_
                                             const ssconfig::construct_targets_config* targets_config) {
   ER_INFO("Initializing %zu construction targets", targets_config->targets.size());
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
-    m_targets.push_back(std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
-                                                                  arena_map()));
-    m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(builder_config,
-                                                                           m_targets[i].get(),
-                                                                           this));
+    auto target = std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
+                                                            arena_map());
+    if (ssops::validate_spec(target.get())()) {
+      m_targets.push_back(std::move(target));
+      m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(builder_config,
+                                                                             m_targets[i].get(),
+                                                                             this));
+    } else {
+      ER_WARN("Structure %zu invalid: will not be built", i);
+    }
   } /* for(i..) */
 } /* construction_init() */
 

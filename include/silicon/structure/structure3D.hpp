@@ -38,7 +38,6 @@
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
 #include "silicon/structure/metrics/structure3D_metrics.hpp"
-#include "silicon/structure/cell3D_target_state.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -69,6 +68,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
     int state;
     crepr::block_type block_type;
     rmath::radians z_rotation;
+    size_t extent;
   };
   using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
 
@@ -93,7 +93,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   }
   size_t volumetric_size(void) const { return xsize() * ysize() *zsize(); }
   bool contains(const crepr::base_block3D* query) const;
-
+  const rmath::radians& orientation(void) const { return mc_config.orientation; }
   bool block_placement_valid(const crepr::block3D_variant& block,
                              const rmath::vector3u& loc,
                              const rmath::radians& z_rotation);
@@ -116,7 +116,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
    * \brief Given a location within the bounding box for the structure, compute
    * the final state the cell should be in once the structure is completed.
    */
-  cell_final_spec cell_spec(const rmath::vector3u& loc) const;
+  cell_final_spec cell_spec(const rmath::vector3u& cell) const;
 
   /**
    * \brief For ramp blocks, compute the list of cells which will be in the
@@ -139,10 +139,16 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   rmath::vector3d cell_loc_abs(const cds::cell3D& cell) const;
 
  private:
-  double unit_dim_factor_calc(const arena_map_type* map) const;
+  /**
+   * \brief Size of the extent for ramp blocks, based what is hard-coded in
+   * COSM. If that changes, then this will need to change too.
+   */
+  static constexpr const uint kRAMP_BLOCK_EXTENT_SIZE = 2;
+
+  size_t unit_dim_factor_calc(const arena_map_type* map) const;
 
   /* clang-format off */
-  const double                     mc_unit_dim_factor;
+  const size_t                     mc_unit_dim_factor;
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 

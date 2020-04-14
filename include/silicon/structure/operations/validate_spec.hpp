@@ -1,5 +1,5 @@
 /**
- * \file validate_placement.hpp
+ * \file validate_spec.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_
 
 /*******************************************************************************
  * Includes
@@ -27,61 +27,59 @@
 #include <boost/variant/static_visitor.hpp>
 
 #include "rcppsw/er/client.hpp"
-#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::repr {
-class cube_block3D;
-class ramp_block3D;
-} /* namespace cosm::repr */
-
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
-
 NS_START(silicon, structure, operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class validate_placement
+ * \class validate_spec
  * \ingroup structure operations
  *
- * \brief Validate that the placement of a block on \ref structure3D at the
- * specified location with the specified rotation is OK, or if it violates
- * graphical invariants or other such restrictions.
+ * \brief Validate that the spec used to create a \ref structure3D is valid;
+ * that is, it satisfies the necessary properties in order to guarantee
+ * construction by robots. This is a DIFFERENT operation that validating the
+ * CURRENT state of a structure/whether or not a block placement at a given
+ * location violates any of the properties (\ref validate_placement)
+ *
+ * The two operations may be merged once they mature, if it makes sense to do
+ * so.
+ *
+ * This operation is done AFTER the \ref structure3D object is created, because
+ * the implementation details of the validation operation are MUCH easier on the
+ * structure as opposed to lists/maps of block locations.
  */
-class validate_placement : public rer::client<validate_placement>,
-                           public boost::static_visitor<bool> {
+class validate_spec : public rer::client<validate_spec>,
+                      public boost::static_visitor<bool> {
  public:
-  validate_placement(const structure3D* structure,
-                           const rmath::vector3u& loc,
-                           const rmath::radians& z_rotation)
-      : ER_CLIENT_INIT("silicon.structure.validate_placement"),
-        mc_structure(structure),
-        mc_loc(loc),
-        mc_z_rot(z_rotation) {}
+  explicit validate_spec(const structure3D* structure)
+      : ER_CLIENT_INIT("silicon.structure.operations.validate_spec"),
+        mc_structure(structure) {}
 
   /* Not copy constructible or copy assignment by default  */
-  validate_placement(const validate_placement&) = delete;
-  validate_placement& operator=(const validate_placement&) = delete;
+  validate_spec(const validate_spec&) = delete;
+  validate_spec& operator=(const validate_spec&) = delete;
 
-  bool operator()(const crepr::cube_block3D* block) const;
-  bool operator()(const crepr::ramp_block3D* block) const;
+  bool operator()(void) const;
 
  private:
+  struct n_vertices_ret_type {
+    size_t cube;
+    size_t ramp;
+  };
+
   /* clang-format off */
-  const structure3D*    mc_structure;
-  const rmath::vector3u mc_loc;
-  const rmath::radians  mc_z_rot;
+  const structure3D* mc_structure;
   /* clang-format on */
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_ */

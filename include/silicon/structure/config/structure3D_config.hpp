@@ -59,6 +59,7 @@ struct structure3D_config final : public rconfig::base_config {
   rmath::vector3d              anchor{};
   rmath::vector3z              bounding_box{};
   rmath::radians               orientation{};
+  std::string                  id{};
 
   /*
    * We use maps with somewhat redundant (key, value) pairs in order to make the

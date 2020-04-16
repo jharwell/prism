@@ -141,6 +141,8 @@ void base_loop_functions::construction_init(
   ER_INFO("Initializing %zu construction targets",
           targets_config->targets.size());
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
+    ER_INFO("Initializing construction target %s",
+            targets_config->targets[i].id.c_str());
     auto target =
         std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
                                                   arena_map());
@@ -149,7 +151,8 @@ void base_loop_functions::construction_init(
       m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(
           builder_config, m_targets[i].get(), this));
     } else {
-      ER_WARN("Structure %zu invalid: will not be built", i);
+      ER_INFO("Construction targets %s invalid: will not be built",
+              targets_config->targets[i].id.c_str());
     }
   } /* for(i..) */
 } /* construction_init() */

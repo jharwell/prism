@@ -37,6 +37,7 @@ void structure3D_parser::parse(const ticpp::Element& node) {
   XML_PARSE_ATTR(node, m_config, anchor);
   XML_PARSE_ATTR(node, m_config, bounding_box);
   XML_PARSE_ATTR(node, m_config, orientation);
+  XML_PARSE_ATTR(node, m_config, id);
 
   if (nullptr != node.FirstChild("cube_blocks", false)) {
     auto cube_blocks = node_get(node, "cube_blocks");

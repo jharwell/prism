@@ -25,16 +25,17 @@
  * Includes
  ******************************************************************************/
 #include <memory>
+
 #include <argos3/plugins/robots/foot-bot/simulator/footbot_entity.h>
 
 #include "rcppsw/ds/type_map.hpp"
 #include "rcppsw/mpl/typelist.hpp"
 
-#include "cosm/foraging/operations/robot_los_update.hpp"
 #include "cosm/controller/operations/metrics_extract.hpp"
+#include "cosm/foraging/operations/robot_los_update.hpp"
 
-#include "silicon/support/base_loop_functions.hpp"
 #include "silicon/controller/controller_fwd.hpp"
+#include "silicon/support/base_loop_functions.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -45,7 +46,7 @@ class silicon_metrics_aggregator;
 
 NS_START(silicon, support);
 
-template<typename ControllerType>
+template <typename ControllerType>
 class robot_arena_interactor;
 
 namespace detail {
@@ -65,8 +66,9 @@ struct functor_maps_initializer;
  * - Metric collection from robots
  * - Robot arena interactions
  */
-class construction_loop_functions : public base_loop_functions,
-                                    public rer::client<construction_loop_functions> {
+class construction_loop_functions
+    : public base_loop_functions,
+      public rer::client<construction_loop_functions> {
  public:
   construction_loop_functions(void) RCSW_COLD;
   ~construction_loop_functions(void) override RCSW_COLD;
@@ -87,18 +89,17 @@ class construction_loop_functions : public base_loop_functions,
   void shared_init(ticpp::Element& node) RCSW_COLD;
 
  private:
-  using interactor_map_type = rds::type_map<
-   rmpl::typelist_wrap_apply<controller::typelist,
-                             robot_arena_interactor>::type>;
-  using los2D_updater_map_type = rds::type_map<
-    rmpl::typelist_wrap_apply<controller::typelist,
-                              cfops::robot_los_update,
-                              carena::base_arena_map<crepr::base_block3D>>::type>;
+  using interactor_map_type =
+      rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
+                                              robot_arena_interactor>::type>;
+  using los2D_updater_map_type = rds::type_map<rmpl::typelist_wrap_apply<
+      controller::typelist,
+      cfops::robot_los_update,
+      carena::base_arena_map<crepr::base_block3D>>::type>;
 
-  using metric_extraction_typelist = rmpl::typelist<
-    ccops::metrics_extract<controller::constructing_controller,
-                           metrics::silicon_metrics_aggregator>
-    >;
+  using metric_extraction_typelist =
+      rmpl::typelist<ccops::metrics_extract<controller::constructing_controller,
+                                            metrics::silicon_metrics_aggregator>>;
 
   using metric_extraction_map_type = rds::type_map<metric_extraction_typelist>;
 

@@ -23,8 +23,8 @@
  ******************************************************************************/
 #include "silicon/support/tv/silicon_pd_adaptor.hpp"
 
-#include "cosm/arena/operations/free_block_drop.hpp"
 #include "cosm/arena/base_arena_map.hpp"
+#include "cosm/arena/operations/free_block_drop.hpp"
 
 #include "silicon/controller/constructing_controller.hpp"
 
@@ -36,26 +36,28 @@ NS_START(silicon, support, tv);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-silicon_pd_adaptor::silicon_pd_adaptor(const ctv::config::population_dynamics_config* config,
-                                       cpal::argos_sm_adaptor* sm,
-                                       env_dynamics_type *envd,
-                                       carena::base_arena_map<crepr::base_block3D>* map,
-                                       rmath::rng* rng)
+silicon_pd_adaptor::silicon_pd_adaptor(
+    const ctv::config::population_dynamics_config* config,
+    cpal::argos_sm_adaptor* sm,
+    env_dynamics_type* envd,
+    carena::base_arena_map<crepr::base_block3D>* map,
+    rmath::rng* rng)
     : ER_CLIENT_INIT("silicon.support.tv.silicon_pd_adaptor"),
-      argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(config,
-                                                          sm,
-                                                          envd,
-                                                          rmath::vector2d(map->xrsize(),
-                                                                          map->yrsize()),
-                                                          rng),
-  m_map(map) {}
+      argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(
+          config,
+          sm,
+          envd,
+          rmath::vector2d(map->xrsize(), map->yrsize()),
+          rng),
+      m_map(map) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
 void silicon_pd_adaptor::pre_kill_cleanup(
     cpal::argos_controllerQ3D_adaptor* controller) {
-  auto* constructing = static_cast<controller::constructing_controller*>(controller);
+  auto* constructing =
+      static_cast<controller::constructing_controller*>(controller);
   /*
    * If the robot is carrying a block, drop/distribute it in the arena to avoid
    * it getting permanently lost when the it is removed.
@@ -76,7 +78,7 @@ void silicon_pd_adaptor::pre_kill_cleanup(
      */
     caops::free_block_drop_visitor<crepr::base_block3D> adrop_op(
         *it,
-        rmath::dvec2uvec(constructing->pos2D(), m_map->grid_resolution().v()),
+        rmath::dvec2zvec(constructing->pos2D(), m_map->grid_resolution().v()),
         m_map->grid_resolution(),
         carena::arena_map_locking::ekALL_HELD);
 

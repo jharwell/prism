@@ -23,21 +23,21 @@
  ******************************************************************************/
 #include "silicon/support/base_loop_functions.hpp"
 
-#include "cosm/arena/config/arena_map_config.hpp"
-#include "cosm/vis/config/visualization_config.hpp"
 #include "cosm/arena/base_arena_map.hpp"
+#include "cosm/arena/config/arena_map_config.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
+#include "cosm/vis/config/visualization_config.hpp"
 
-#include "silicon/support/tv/config/tv_manager_config.hpp"
 #include "silicon/controller/constructing_controller.hpp"
-#include "silicon/support/tv/silicon_pd_adaptor.hpp"
+#include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/config/construct_targets_config.hpp"
+#include "silicon/structure/operations/validate_spec.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/structure3D_builder.hpp"
-#include "silicon/structure/operations/validate_spec.hpp"
+#include "silicon/support/tv/config/tv_manager_config.hpp"
+#include "silicon/support/tv/silicon_pd_adaptor.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -93,15 +93,10 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
    * they are omitted is waaayyyy too much work. See #621 too.
    */
   auto envd =
-      std::make_unique<tv::env_dynamics>(&tvp->env_dynamics,
-                                         this,
-                                         arena_map());
+      std::make_unique<tv::env_dynamics>(&tvp->env_dynamics, this, arena_map());
 
-  auto popd = std::make_unique<tv::silicon_pd_adaptor>(&tvp->population_dynamics,
-                                                       this,
-                                                       envd.get(),
-                                                       arena_map(),
-                                                       rng());
+  auto popd = std::make_unique<tv::silicon_pd_adaptor>(
+      &tvp->population_dynamics, this, envd.get(), arena_map(), rng());
 
   m_tv_manager =
       std::make_unique<tv::tv_manager>(std::move(envd), std::move(popd));
@@ -112,13 +107,15 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
    * static ordering, because we use robot ID to create the mapping.
    */
   auto cb = [&](auto* c) {
-    m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()->register_controller(*c);
-    c->irv_init(m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()->rda_adaptor());
+    m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()
+        ->register_controller(*c);
+    c->irv_init(m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()
+                    ->rda_adaptor());
   };
   cpal::argos_swarm_iterator::controllers<argos::CFootBotEntity,
                                           controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
-                                              this, cb, kARGoSRobotType);
+      this, cb, kARGoSRobotType);
 } /* tv_init() */
 
 void base_loop_functions::output_init(const cmconfig::output_config* output) {
@@ -138,17 +135,19 @@ void base_loop_functions::output_init(const cmconfig::output_config* output) {
 #endif
 } /* output_init() */
 
-void base_loop_functions::construction_init(const ssconfig::structure3D_builder_config* builder_config,
-                                            const ssconfig::construct_targets_config* targets_config) {
-  ER_INFO("Initializing %zu construction targets", targets_config->targets.size());
+void base_loop_functions::construction_init(
+    const ssconfig::structure3D_builder_config* builder_config,
+    const ssconfig::construct_targets_config* targets_config) {
+  ER_INFO("Initializing %zu construction targets",
+          targets_config->targets.size());
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
-    auto target = std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
-                                                            arena_map());
+    auto target =
+        std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
+                                                  arena_map());
     if (ssops::validate_spec(target.get())()) {
       m_targets.push_back(std::move(target));
-      m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(builder_config,
-                                                                             m_targets[i].get(),
-                                                                             this));
+      m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(
+          builder_config, m_targets[i].get(), this));
     } else {
       ER_WARN("Structure %zu invalid: will not be built", i);
     }
@@ -166,7 +165,7 @@ void base_loop_functions::pre_step(void) {
   if (nullptr != m_tv_manager) {
     m_tv_manager->update(rtypes::timestep(GetSpace().GetSimulationClock()));
   }
-  for (auto &builder : m_builders) {
+  for (auto& builder : m_builders) {
     if (builder->build_static_enabled()) {
       builder->build_static(arena_map()->blocks(),
                             rtypes::timestep(GetSpace().GetSimulationClock()));

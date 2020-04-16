@@ -32,21 +32,18 @@
 
 #include <boost/mpl/for_each.hpp>
 
-#include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/arena/config/arena_map_config.hpp"
+#include "cosm/controller/operations/applicator.hpp"
+#include "cosm/controller/operations/metrics_extract.hpp"
+#include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/metrics/blocks/transport_metrics_collector.hpp"
-#include "cosm/pal/argos_swarm_iterator.hpp"
 #include "cosm/operations/robot_arena_interaction_applicator.hpp"
+#include "cosm/pal/argos_swarm_iterator.hpp"
 
 #include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/support/interactor_status.hpp"
 #include "silicon/support/robot_arena_interactor.hpp"
 #include "silicon/support/robot_configurer.hpp"
-#include "cosm/controller/operations/metrics_extract.hpp"
-#include "cosm/controller/operations/applicator.hpp"
-#include "silicon/support/interactor_status.hpp"
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
-#include "silicon/support/interactor_status.hpp"
-
 #include "silicon/support/tv/tv_manager.hpp"
 
 /*******************************************************************************
@@ -60,8 +57,7 @@ NS_START(silicon, support);
 NS_START(detail);
 
 using configurer_map_type = rds::type_map<
-  rmpl::typelist_wrap_apply<controller::typelist,
-                            robot_configurer>::type>;
+    rmpl::typelist_wrap_apply<controller::typelist, robot_configurer>::type>;
 
 /**
  * \struct functor_maps_initializer
@@ -80,10 +76,11 @@ struct functor_maps_initializer {
   RCSW_COLD void operator()(const T& controller) const {
     lf->m_interactor_map->emplace(
         typeid(controller),
-        robot_arena_interactor<T>(lf->arena_map(),
-                                  lf->m_metrics_agg.get(),
-                                  lf->floor(),
-                                  lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>()));
+        robot_arena_interactor<T>(
+            lf->arena_map(),
+            lf->m_metrics_agg.get(),
+            lf->floor(),
+            lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>()));
     lf->m_metrics_map->emplace(
         typeid(controller),
         ccops::metrics_extract<T, metrics::silicon_metrics_aggregator>(
@@ -92,9 +89,10 @@ struct functor_maps_initializer {
         typeid(controller),
         robot_configurer<T>(
             lf->config()->config_get<cvconfig::visualization_config>()));
-    lf->m_los2D_update_map->emplace(typeid(controller),
-                                    cfops::robot_los_update<T,
-                                    carena::base_arena_map<crepr::base_block3D>>(lf->arena_map()));
+    lf->m_los2D_update_map->emplace(
+        typeid(controller),
+        cfops::robot_los_update<T, carena::base_arena_map<crepr::base_block3D>>(
+            lf->arena_map()));
   }
 
   /* clang-format off */
@@ -142,14 +140,13 @@ void construction_loop_functions::private_init(void) {
    * arena map. The arena map pads the size obtained from the XML file after
    * initialization, so we just need to grab it.
    */
-  auto padded_size = rmath::vector2d(arena_map()->xrsize(),
-                                     arena_map()->yrsize());
+  auto padded_size =
+      rmath::vector2d(arena_map()->xrsize(), arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
   auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.upper = padded_size;
-  m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(&output->metrics,
-                                                                        &arena.grid,
-                                                                        output_root());
+  m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
+      &output->metrics, &arena.grid, output_root());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
 
@@ -169,11 +166,14 @@ void construction_loop_functions::private_init(void) {
 
   /* configure robots */
   auto cb = [&](auto* controller) {
-    /* ER_ASSERT(config_map.end() != config_map.find(controller->type_index()), */
-    /*           "Controller '%s' type '%s' not in construction configuration map", */
+    /* ER_ASSERT(config_map.end() != config_map.find(controller->type_index()),
+     */
+    /*           "Controller '%s' type '%s' not in construction configuration
+     * map", */
     /*           controller->GetId().c_str(), */
     /*           controller->type_index().name()); */
-    /* auto applicator = ccops::applicator<controller::constructing_controller, */
+    /* auto applicator = ccops::applicator<controller::constructing_controller,
+     */
     /* robot_configurer>(controller); */
     /* /\* boost::apply_visitor(applicator, *\/ */
     /*                      config_map.at(controller->type_index())); */
@@ -187,7 +187,7 @@ void construction_loop_functions::private_init(void) {
   cpal::argos_swarm_iterator::controllers<argos::CFootBotEntity,
                                           controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
-                                              this, cb, kARGoSRobotType);
+      this, cb, kARGoSRobotType);
 } /* private_init() */
 
 /*******************************************************************************
@@ -303,7 +303,8 @@ void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
    * control step because we need access to information only available in the
    * loop functions.
    */
-  /* controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()), */
+  /* controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()),
+   */
   /*                            arena_map()->grid_resolution()); */
 
   /*
@@ -324,18 +325,22 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
    */
   /* auto it = m_interactor_map->find(controller->type_index()); */
   /* ER_ASSERT(m_interactor_map->end() != it, */
-  /*           "Controller '%s' type '%s' not in construction interactor map", */
+  /*           "Controller '%s' type '%s' not in construction interactor map",
+   */
   /*           controller->GetId().c_str(), */
   /*           controller->type_index().name()); */
 
   /* auto iapplicator = */
-  /*     cops::robot_arena_interaction_applicator<controller::constructing_controller, */
+  /*     cops::robot_arena_interaction_applicator<controller::constructing_controller,
+   */
   /*                                              robot_arena_interactor>( */
   /*                                                  controller, */
-  /*                                                  rtypes::timestep(GetSpace().GetSimulationClock())); */
+  /*                                                  rtypes::timestep(GetSpace().GetSimulationClock()));
+   */
   /* /\* auto status = *\/ */
   /*     boost::apply_visitor(iapplicator, */
-  /*                          m_interactor_map->at(controller->type_index())); */
+  /*                          m_interactor_map->at(controller->type_index()));
+   */
 
   /*
    * Collect metrics from robot, now that it has finished interacting with the
@@ -346,25 +351,30 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
   /*           "Controller '%s' type '%s' not in construction metrics map", */
   /*           controller->GetId().c_str(), */
   /*           controller->type_index().name()); */
-  /* auto mapplicator = ccops::applicator<controller::constructing_controller, */
+  /* auto mapplicator = ccops::applicator<controller::constructing_controller,
+   */
   /*                                      ccops::metrics_extract, */
-  /*                                      metrics::silicon_metrics_aggregator>(controller); */
-  /* boost::apply_visitor(mapplicator, m_metrics_map->at(controller->type_index())); */
+  /*                                      metrics::silicon_metrics_aggregator>(controller);
+   */
+  /* boost::apply_visitor(mapplicator,
+   * m_metrics_map->at(controller->type_index())); */
 
   /* controller->block_manip_recorder()->reset(); */
 } /* robot_post_step() */
 
-void construction_loop_functions::robot_los2D_update(controller::constructing_controller* c) {
-    /* Send robot its new LOS */
+void construction_loop_functions::robot_los2D_update(
+    controller::constructing_controller* c) {
+  /* Send robot its new LOS */
   /* auto it = m_los2D_update_map->find(c->type_index()); */
   /* ER_ASSERT(m_los2D_update_map->end() != it, */
-  /*           "Controller '%s' type '%s' not in construction LOS update map", */
+  /*           "Controller '%s' type '%s' not in construction LOS update map",
+   */
   /*           c->GetId().c_str(), */
   /*           c->type_index().name()); */
   /* auto applicator = ccops::applicator<controller::constructing_controller, */
   /*                                     cfops::robot_los_update>(c); */
-/*   boost::apply_visitor(applicator, */
-/*                        m_los2D_update_map->at(c->type_index())); */
+  /*   boost::apply_visitor(applicator, */
+  /*                        m_los2D_update_map->at(c->type_index())); */
 } /* robot_los2D_update() */
 
 using namespace argos; // NOLINT
@@ -374,7 +384,8 @@ RCPPSW_WARNING_DISABLE_MISSING_VAR_DECL()
 RCPPSW_WARNING_DISABLE_MISSING_PROTOTYPE()
 RCPPSW_WARNING_DISABLE_GLOBAL_CTOR()
 
-REGISTER_LOOP_FUNCTIONS(construction_loop_functions, "construction_loop_functions");
+REGISTER_LOOP_FUNCTIONS(construction_loop_functions,
+                        "construction_loop_functions");
 
 RCPPSW_WARNING_DISABLE_POP()
 

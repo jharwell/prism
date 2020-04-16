@@ -32,8 +32,7 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#define NON_ORACULAR_CONTROLLER_TYPES                                   \
-  controller::ccrw_controller
+#define NON_ORACULAR_CONTROLLER_TYPES controller::ccrw_controller
 
 #define ORACULAR_CONTROLLER_TYPES
 

@@ -50,7 +50,7 @@ NS_START(silicon, structure, operations);
 class place_block : public rer::client<place_block>,
                     public boost::static_visitor<void> {
  public:
-  place_block(const rmath::vector3u& cell,
+  place_block(const rmath::vector3z& cell,
               const rmath::radians& z_rotation,
               structure3D* structure)
       : ER_CLIENT_INIT("silicon.structure.operations.place_block"),
@@ -78,7 +78,7 @@ class place_block : public rer::client<place_block>,
   rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
 
   /* clang-format off */
-  const rmath::vector3u          mc_cell;
+  const rmath::vector3z          mc_cell;
   const rmath::radians           mc_z_rot;
 
   structure3D*                   m_structure;

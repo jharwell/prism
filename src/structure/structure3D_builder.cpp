@@ -25,14 +25,14 @@
 
 #include <typeindex>
 
+#include "cosm/arena/base_arena_map.hpp"
 #include "cosm/pal/argos_sm_adaptor.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
-#include "cosm/arena/base_arena_map.hpp"
 
-#include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/operations/place_block.hpp"
 #include "silicon/structure/operations/set_block_embodiment.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -77,7 +77,8 @@ static_build_status structure3D_builder::build_static(
 
   size_t start = 0;
   bool single = true;
-  while (m_static_state.n_built_interval < mc_config.static_build_interval_count) {
+  while (m_static_state.n_built_interval <
+         mc_config.static_build_interval_count) {
     if (m_static_state.n_cells >= m_target->volumetric_size()) {
       ER_ASSERT(m_target->is_complete(),
                 "Structure incomplete after processing all cells!");
@@ -88,8 +89,8 @@ static_build_status structure3D_builder::build_static(
 
   ER_DEBUG("Built %zu blocks", m_static_state.n_built_interval);
   m_static_state.n_built_interval = 0;
-  return (single) ? static_build_status::ekINTERVAL_LIMIT :
-      static_build_status::ekINTERVAL_FAILURE;
+  return (single) ? static_build_status::ekINTERVAL_LIMIT
+                  : static_build_status::ekINTERVAL_FAILURE;
 } /* build_static() */
 
 bool structure3D_builder::build_static_single(const cds::block3D_vectorno& blocks,
@@ -106,7 +107,7 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
   size_t j = index / (m_target->xsize());
   ER_TRACE("i=%zu,j=%zu,k=%zu", i, j, k);
 
-  rmath::vector3u c(i, j, k);
+  rmath::vector3z c(i, j, k);
   ER_DEBUG("Static build for structure cell@%s, abs cell@%s",
            c.to_str().c_str(),
            (m_target->origind() + c).to_str().c_str());
@@ -119,16 +120,16 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
-    boost::optional<crepr::block3D_variant> block = build_block_find(spec.block_type,
-                                                                     blocks,
-                                                                     search_start);
+    boost::optional<crepr::block3D_variant> block =
+        build_block_find(spec.block_type, blocks, search_start);
     ER_ASSERT(block,
               "Could not find a block of type %d for location %s",
               rcppsw::as_underlying(spec.block_type),
               c.to_str().c_str());
 
     ret = place_block(*block, c, spec.z_rotation);
-    ER_ASSERT(ret, "Failed to build block of type %d for location %s",
+    ER_ASSERT(ret,
+              "Failed to build block of type %d for location %s",
               rcppsw::as_underlying(spec.block_type),
               c.to_str().c_str());
     /* A block has disappeared from the arena floor */
@@ -142,7 +143,7 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
 } /* build_static_single() */
 
 bool structure3D_builder::place_block(const crepr::block3D_variant& block,
-                                      const rmath::vector3u& cell,
+                                      const rmath::vector3z& cell,
                                       const rmath::radians& z_rotation) {
   /* verify block addition to structure is OK */
   if (!m_target->block_placement_valid(block, cell, z_rotation)) {
@@ -152,14 +153,12 @@ bool structure3D_builder::place_block(const crepr::block3D_variant& block,
     return false;
   }
   /* Add block to structure */
-  boost::apply_visitor(operations::place_block(cell,
-                                               z_rotation,
-                                               m_target),
+  boost::apply_visitor(operations::place_block(cell, z_rotation, m_target),
                        block);
 
   /* Create block embodiment in ARGoS */
-  crepr::embodied_block_variant embodiment = m_sm->make_embodied(block,
-                                                                 z_rotation);
+  crepr::embodied_block_variant embodiment =
+      m_sm->make_embodied(block, z_rotation);
 
   /*
    * Associate the created block embodiment with the source block it
@@ -186,8 +185,7 @@ boost::optional<crepr::block3D_variant> structure3D_builder::build_block_find(
      *
      * are available for selection.
      */
-    if (!m_target->contains(blocks[eff_i]) &&
-        !blocks[eff_i]->is_out_of_sight()) {
+    if (!m_target->contains(blocks[eff_i]) && !blocks[eff_i]->is_out_of_sight()) {
       crepr::block3D_variant v;
       if (crepr::block_type::ekCUBE == type &&
           crepr::block_type::ekCUBE == blocks[eff_i]->md()->type()) {
@@ -206,9 +204,10 @@ boost::optional<crepr::block3D_variant> structure3D_builder::build_block_find(
   return boost::optional<crepr::block3D_variant>();
 } /* build_block_find() */
 
-bool structure3D_builder::block_placement_valid(const crepr::block3D_variant& block,
-                                                const rmath::vector3u& loc,
-                                                const rmath::radians& z_rotation) const {
+bool structure3D_builder::block_placement_valid(
+    const crepr::block3D_variant& block,
+    const rmath::vector3z& loc,
+    const rmath::radians& z_rotation) const {
   return m_target->block_placement_valid(block, loc, z_rotation);
 } /* block_placement_valid() */
 

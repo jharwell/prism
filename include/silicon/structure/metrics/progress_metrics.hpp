@@ -1,5 +1,5 @@
 /**
- * \file structure3D_builder_parser.cpp
+ * \file progress_metrics.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,27 +18,45 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
+#include "rcppsw/metrics/base_metrics.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, config, xml);
+NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void structure3D_builder_parser::parse(const ticpp::Element& node) {
-  ticpp::Element bnode = node_get(node, kXMLRoot);
-  m_config = std::make_unique<config_type>();
+/**
+ * \class progress_metrics
+ * \ingroup structure metrics
+ *
+ * \brief Interface defining the common metrics to be collected from \ref
+ * structure3D, \ref subtarget objects as they are built.
+ */
+class progress_metrics : public virtual rmetrics::base_metrics {
+ public:
+  /**
+   * \brief Return # of blocks (cumulative count of all types) that have
+   * currently been placed on the structure/subtarget.
+   */
+  virtual size_t n_placed_blocks(void) const = 0;
 
-  XML_PARSE_ATTR(bnode, m_config, build_src);
-  XML_PARSE_ATTR_DFLT(
-      bnode, m_config, static_build_interval, rtypes::timestep(1));
-  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval_count, 1UL);
-} /* parse() */
+  /**
+   * \brief Return the total # of blocks that comprise the structure/subtarget.
+   */
+  virtual size_t n_total_blocks(void) const = 0;
+};
 
-NS_END(xml, config, structure, silicon);
+NS_END(metrics, structure, silicon);
+
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_HPP_ */

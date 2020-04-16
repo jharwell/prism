@@ -60,7 +60,7 @@ class cell3D_block_extent : public rer::client<cell3D_block_extent>,
  public:
   using visit_typelist = visit_typelist_impl::value;
 
-  cell3D_block_extent(const rmath::vector3u& coord,
+  cell3D_block_extent(const rmath::vector3z& coord,
                       crepr::base_block3D* block);
   cell3D_block_extent& operator=(const cell3D_block_extent&) = delete;
   cell3D_block_extent(const cell3D_block_extent&) = delete;

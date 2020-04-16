@@ -49,7 +49,8 @@ NS_START(silicon, support);
  *
  */
 template <typename T>
-class robot_arena_interactor final : public rer::client<robot_arena_interactor<T>> {
+class robot_arena_interactor final
+    : public rer::client<robot_arena_interactor<T>> {
  public:
   robot_arena_interactor(void)
       : ER_CLIENT_INIT("silicon.support.robot_arena_interactor") {}

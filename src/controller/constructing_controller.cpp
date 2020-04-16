@@ -30,18 +30,18 @@
 #include "rcppsw/math/config/rng_config.hpp"
 #include "rcppsw/math/rngm.hpp"
 
+#include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/repr/base_block2D.hpp"
+#include "cosm/robots/footbot/config/saa_xml_names.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystemQ3D.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
 #include "cosm/subsystem/config/sensing_subsystem2D_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
-#include "cosm/fsm/supervisor_fsm.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
-#include "cosm/robots/footbot/config/saa_xml_names.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -85,7 +85,7 @@ void constructing_controller::init(ticpp::Element& node) {
   /* initialize RNG */
   auto rngp = repo.config_get<rmath::config::rng_config>();
   base_controllerQ3D::rng_init((nullptr == rngp) ? -1 : rngp->seed,
-                              kARGoSRobotType);
+                               kARGoSRobotType);
 
   /* initialize output */
   auto* outputp = repo.config_get<cmconfig::output_config>();
@@ -100,11 +100,13 @@ void constructing_controller::init(ticpp::Element& node) {
   ndc_pop();
 } /* init() */
 
-void constructing_controller::reset(void) { block_carrying_controller::reset(); }
+void constructing_controller::reset(void) {
+  block_carrying_controller::reset();
+}
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {
-  std::string dir =
-      base_controllerQ3D::output_init(outputp->output_root, outputp->output_dir);
+  std::string dir = base_controllerQ3D::output_init(outputp->output_root,
+                                                    outputp->output_dir);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   /*
@@ -167,12 +169,12 @@ void constructing_controller::saa_init(
 #endif /* COSM_WITH_ARGOS_ROBOT_LEDS */
 
   auto actuators = csubsystem::actuation_subsystem2D::actuator_map{
-    /*
-     * We put the governed differential drive in the actuator map twice because
-     * some of the reusable components use the base class differential drive
-     * instead of the governed version (no robust way to inform that we want to
-     * use the governed version).
-     */
+      /*
+       * We put the governed differential drive in the actuator map twice
+       * because some of the reusable components use the base class differential
+       * drive instead of the governed version (no robust way to inform that we
+       * want to use the governed version).
+       */
       csubsystem::actuation_subsystem2D::map_entry_create(diff_drivea),
       csubsystem::actuation_subsystem2D::map_entry_create(leds)};
 

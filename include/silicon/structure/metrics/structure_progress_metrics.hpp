@@ -1,5 +1,5 @@
 /**
- * \file structure3D_metrics_collector.cpp
+ * \file structure_progress_metrics.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,29 +18,31 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/metrics/structure3D_metrics_collector.hpp"
-
-#include "silicon/structure/metrics/structure3D_metrics.hpp"
+#include "silicon/structure/metrics/progress_metrics.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void structure3D_metrics_collector::collect(
-    const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const structure3D_metrics&>(metrics);
-  inc_total_count(m.placed_blocks().size());
-
-  for (auto *b : m.placed_blocks()) {
-    inc_cell_count(b->dloc());
-  } /* for(*b..) */
-} /* collect() */
+/**
+ * \class structure_progress_metrics
+ * \ingroup structure metrics
+ *
+ * \brief Interface defining the metrics to be collected from \ref structure3D
+ * objects as they are built.
+ */
+class structure_progress_metrics : public progress_metrics {};
 
 NS_END(metrics, structure, silicon);
+
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_ */

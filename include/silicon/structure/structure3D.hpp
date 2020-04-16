@@ -26,28 +26,32 @@
  ******************************************************************************/
 #include <string>
 #include <vector>
+#include <memory>
 
-#include "rcppsw/math/vector3.hpp"
 #include "rcppsw/ds/grid3D.hpp"
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/vector3.hpp"
 
-#include "cosm/repr/base_block3D.hpp"
 #include "cosm/ds/cell3D.hpp"
+#include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
+#include "cosm/ds/block3D_vector.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/metrics/structure3D_metrics.hpp"
+#include "silicon/structure/metrics/structure_state_metrics.hpp"
+#include "silicon/structure/metrics/structure_progress_metrics.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 namespace cosm::arena {
-template<typename T>
+template <typename T>
 class base_arena_map;
 } /* namespace cosm::arena */
 
 NS_START(silicon, structure);
+class subtarget;
 
 /*******************************************************************************
  * Class Definitions
@@ -61,9 +65,12 @@ NS_START(silicon, structure);
  * basic add/remove/etc.
  */
 class structure3D final : public rds::grid3D<cds::cell3D>,
-                          public metrics::structure3D_metrics,
+                          public metrics::structure_state_metrics,
+                          public metrics::structure_progress_metrics,
                           public rer::client<structure3D> {
  public:
+  using subtarget_vectorno = std::vector<subtarget*>;
+
   struct cell_final_spec {
     int state;
     crepr::block_type block_type;
@@ -71,34 +78,43 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
     size_t extent;
   };
   using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
+  using rds::grid3D<cds::cell3D>::operator[];
 
   structure3D(const config::structure3D_config* config,
               const arena_map_type* map);
+  ~structure3D(void) override;
 
   structure3D(const structure3D&) = default;
   const structure3D& operator=(const structure3D&) = delete;
 
-  using rds::grid3D<cds::cell3D>::operator[];
-
-  /* structure3D metrics */
+  /* structure state metrics */
   const cds::block3D_vectorro& placed_blocks(void) const override {
     return m_placed;
   }
 
-  rmath::vector3d originr(void) const { return mc_config.anchor; }
-  rmath::vector3u origind(void) const {
-    return rmath::vector3u(static_cast<uint>(mc_config.anchor.x()),
-                           static_cast<uint>(mc_config.anchor.y()),
-                           static_cast<uint>(mc_config.anchor.z()));
+  /* structure progress metrics */
+  size_t n_placed_blocks(void) const override { return m_placed.size(); }
+  size_t n_total_blocks(void) const override {
+    return mc_config.cube_blocks.size() + mc_config.ramp_blocks.size();
   }
-  size_t volumetric_size(void) const { return xsize() * ysize() *zsize(); }
-  bool contains(const crepr::base_block3D* query) const;
-  const rmath::radians& orientation(void) const { return mc_config.orientation; }
+
+  rmath::vector3d originr(void) const { return mc_config.anchor; }
+  rmath::vector3z origind(void) const {
+    return rmath::dvec2zvec(originr(), 1.0);
+  }
+  size_t volumetric_size(void) const { return xsize() * ysize() * zsize(); }
+  const rmath::radians& orientation(void) const {
+    return mc_config.orientation;
+  }
   bool block_placement_valid(const crepr::block3D_variant& block,
-                             const rmath::vector3u& loc,
+                             const rmath::vector3z& loc,
                              const rmath::radians& z_rotation);
 
-  size_t n_placed_blocks(void) const { return m_placed.size(); }
+  /**
+   * \brief Return \c TRUE if the specified block has already been placed on the
+   * structure, and \c FALSE otherwise.
+   */
+  bool contains(const crepr::base_block3D* query) const;
 
   /**
    * \brief Add a block to the structure after verifying its placement is valid
@@ -116,14 +132,14 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
    * \brief Given a location within the bounding box for the structure, compute
    * the final state the cell should be in once the structure is completed.
    */
-  cell_final_spec cell_spec(const rmath::vector3u& cell) const;
+  cell_final_spec cell_spec(const rmath::vector3z& coord) const;
 
   /**
    * \brief For ramp blocks, compute the list of cells which will be in the
    * BLOCK_EXTENT state as part of the specified ramp block once the structure
    * is completed.
    */
-  std::vector<rmath::vector3u> spec_to_block_extents(
+  std::vector<rmath::vector3z> spec_to_block_extents(
       const config::ramp_block_loc_spec* spec) const;
 
   /**
@@ -138,7 +154,17 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
    */
   rmath::vector3d cell_loc_abs(const cds::cell3D& cell) const;
 
+  /**
+   * \brief Return the 0-based index of the \ref subtarget to which the
+   * specified cell belongs.
+   */
+  subtarget* cell_subtarget(const cds::cell3D& cell);
+
+  const subtarget_vectorno& subtargets(void) const { return m_subtargetsno; }
+
  private:
+  using subtarget_vectoro = std::vector<std::unique_ptr<subtarget>>;
+
   /**
    * \brief Size of the extent for ramp blocks, based what is hard-coded in
    * COSM. If that changes, then this will need to change too.
@@ -147,12 +173,17 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
 
   size_t unit_dim_factor_calc(const arena_map_type* map) const;
 
+  subtarget_vectoro subtargetso_calc(void) const;
+  subtarget_vectorno subtargetsno_calc(void) const;
+
   /* clang-format off */
   const size_t                     mc_unit_dim_factor;
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 
   cds::block3D_vectorro            m_placed{};
+  subtarget_vectoro                m_subtargetso;
+  subtarget_vectorno               m_subtargetsno;
   /* clang-format on */
 };
 

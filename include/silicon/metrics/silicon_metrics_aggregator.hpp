@@ -26,8 +26,8 @@
  ******************************************************************************/
 #include <string>
 
-#include "cosm/metrics/config/metrics_config.hpp"
 #include "cosm/metrics/base_metrics_aggregator.hpp"
+#include "cosm/metrics/config/metrics_config.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -37,6 +37,9 @@
 namespace silicon::support {
 class base_loop_functions;
 }
+namespace silicon::structure {
+class structure3D;
+} /* namespace silicon::structure */
 
 NS_START(silicon, metrics);
 
@@ -50,8 +53,9 @@ NS_START(silicon, metrics);
  * \brief Extends the \ref cmetrics::base_metrics_aggregator for the SILICON
  * project.
  */
-class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator>,
-                                   public cmetrics::base_metrics_aggregator {
+class silicon_metrics_aggregator
+    : public rer::client<silicon_metrics_aggregator>,
+      public cmetrics::base_metrics_aggregator {
  public:
   silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
                              const cdconfig::grid_config* const gconfig,
@@ -59,6 +63,7 @@ class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator
   ~silicon_metrics_aggregator(void) override = default;
 
   void collect_from_loop(const support::base_loop_functions* loop);
+  void collect_from_structure(const structure::structure3D* structure);
 };
 
 NS_END(metrics, silicon);

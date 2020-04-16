@@ -38,6 +38,7 @@
 #include "rcppsw/utils/color.hpp"
 
 #include "cosm/pal/argos_sm_adaptor.hpp"
+
 #include "silicon/support/config/xml/loop_function_repository.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
 
@@ -112,9 +113,12 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   arena_map_type* arena_map(void) {
     return argos_sm_adaptor::arena_map<arena_map_type>();
   }
+
  private:
-  using targets_vector_type = std::vector<std::unique_ptr<structure::structure3D>>;
-  using builders_vector_type = std::vector<std::unique_ptr<structure::structure3D_builder>>;
+  using targets_vector_type =
+      std::vector<std::unique_ptr<structure::structure3D>>;
+  using builders_vector_type =
+      std::vector<std::unique_ptr<structure::structure3D_builder>>;
 
   /**
    * \brief Initialize temporal variance handling.
@@ -137,8 +141,9 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    * \param target_config Parsed \ref structure::structure3D parameters (one per
    *                      structure).
    */
-  void construction_init(const ssconfig::structure3D_builder_config* builder_config,
-                         const ssconfig::construct_targets_config* targets_config);
+  void construction_init(
+      const ssconfig::structure3D_builder_config* builder_config,
+      const ssconfig::construct_targets_config* targets_config);
 
   /* clang-format off */
   config::xml::loop_function_repository m_config{};

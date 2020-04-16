@@ -37,11 +37,11 @@ void construct_targets_parser::parse(const ticpp::Element& node) {
 
   ticpp::Iterator<ticpp::Element> node_it;
 
-  for (node_it = cnode.FirstChildElement();
-       node_it != node_it.end();
+  for (node_it = cnode.FirstChildElement(); node_it != node_it.end();
        ++node_it) {
     m_target.parse(*node_it);
-    m_config->targets.push_back(*m_target.config_get<structure3D_parser::config_type>());
+    m_config->targets.push_back(
+        *m_target.config_get<structure3D_parser::config_type>());
   } /* for(node_it..) */
 } /* parse() */
 

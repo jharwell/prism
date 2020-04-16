@@ -35,18 +35,17 @@ NS_START(silicon, structure);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-slice2D::slice2D(const rmath::vector3u& axis,
-                 const layer_view& view,
+slice2D::slice2D(const slice_coords& coords,
                  const structure3D* structure)
     : ER_CLIENT_INIT("silicon.structure.slice2D"),
-      mc_axis(axis),
-      mc_view(view),
+      mc_coords(coords),
+      mc_view(structure->subgrid(mc_coords.ll, mc_coords.ur)),
       mc_structure(structure) {
-  ER_ASSERT(rmath::vector3u::X == mc_axis ||
-            rmath::vector3u::Y == mc_axis ||
-            rmath::vector3u::Z == mc_axis,
-            "Bad slice axis %s", mc_axis.to_str().c_str());
-      }
+  ER_ASSERT(rmath::vector3z::X == mc_coords.axis || rmath::vector3z::Y == mc_coords.axis ||
+            rmath::vector3z::Z == mc_coords.axis,
+            "Bad slice axis %s",
+            mc_coords.axis.to_str().c_str());
+}
 
 /*******************************************************************************
  * Member Functions
@@ -115,13 +114,15 @@ bool slice2D::is_traversable_d1(void) const {
          *   cell or cube block in between, depending.
          */
         if (crepr::block_type::ekRAMP == spec2.block_type) {
-          ER_TRACE("cell(%zu%zu) contains ramp,cell(%zu+%zu=%zu,%zu) also contains ramp",
-                   i,
-                   j,
-                   i,
-                   spec.extent,
-                   i+spec.extent,
-                   j);
+          ER_TRACE(
+              "cell(%zu%zu) contains ramp,cell(%zu+%zu=%zu,%zu) also "
+              "contains ramp",
+              i,
+              j,
+              i,
+              spec.extent,
+              i + spec.extent,
+              j);
 
           return false;
         }
@@ -141,18 +142,20 @@ bool slice2D::is_traversable_d1(void) const {
         if ((crepr::block_type::ekRAMP == spec2.block_type &&
              rmath::radians::kZERO != spec2.z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2.state) {
-          ER_TRACE("cell(%zu%zu) contains cube, cell(%zu+%zu=%zu,%zu) also ramp not oriented in +x",
-                   i,
-                   j,
-                   i,
-                   spec.extent,
-                   i+spec.extent,
-                   j);
-        return false;
+          ER_TRACE(
+              "cell(%zu%zu) contains cube, cell(%zu+%zu=%zu,%zu) also "
+              "ramp not oriented in +x",
+              i,
+              j,
+              i,
+              spec.extent,
+              i + spec.extent,
+              j);
+          return false;
         }
       }
     } /* for(i..) */
-  } /* for(j..) */
+  }   /* for(j..) */
   return true;
 } /* is_traversable_d1() */
 
@@ -191,13 +194,15 @@ bool slice2D::is_traversable_d2(void) const {
          *   cell or cube block in between, depending.
          */
         if (crepr::block_type::ekRAMP == spec2.block_type) {
-          ER_TRACE("cell(%zu%zu) contains ramp,cell(%zu,%zu=%zu+%zu) also contains ramp",
-                   i,
-                   j,
-                   i,
-                   j+spec.extent,
-                   j,
-                   spec.extent);
+          ER_TRACE(
+              "cell(%zu%zu) contains ramp,cell(%zu,%zu=%zu+%zu) also "
+              "contains ramp",
+              i,
+              j,
+              i,
+              j + spec.extent,
+              j,
+              spec.extent);
 
           return false;
         }
@@ -217,18 +222,20 @@ bool slice2D::is_traversable_d2(void) const {
         if ((crepr::block_type::ekRAMP == spec2.block_type &&
              rmath::radians::kPI_OVER_TWO != spec2.z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2.state) {
-          ER_TRACE("cell(%zu%zu) contains cube, cell(%zu,%zu=%zu+%zu) also ramp not oriented in +x",
-                   i,
-                   j,
-                   i,
-                   j+spec.extent,
-                   j,
-                   spec.extent);
+          ER_TRACE(
+              "cell(%zu%zu) contains cube, cell(%zu,%zu=%zu+%zu) also "
+              "ramp not oriented in +x",
+              i,
+              j,
+              i,
+              j + spec.extent,
+              j,
+              spec.extent);
           return false;
         }
       }
     } /* for(i..) */
-  } /* for(j..) */
+  }   /* for(j..) */
   return true;
 } /* is_traversable_d2() */
 
@@ -254,7 +261,7 @@ bool slice2D::is_feasible(void) const {
       if (crepr::block_type::ekRAMP == spec.block_type &&
           rmath::radians::kZERO == spec.z_rotation) {
         for (size_t m = 1; m < spec.extent; ++m) {
-          auto extent_spec = mc_structure->cell_spec(access(i+m,j).loc());
+          auto extent_spec = mc_structure->cell_spec(access(i + m, j).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec.state) {
             return false;
           }
@@ -262,7 +269,7 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec.block_type &&
                  rmath::radians::kPI_OVER_TWO == spec.z_rotation) {
         for (size_t m = 1; m < spec.extent; ++m) {
-          auto extent_spec = mc_structure->cell_spec(access(i,j+m).loc());
+          auto extent_spec = mc_structure->cell_spec(access(i, j + m).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec.state) {
             return false;
           }
@@ -270,22 +277,22 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec.block_type &&
                  rmath::radians::kPI == spec.z_rotation) {
         for (size_t m = 1; m < spec.extent; ++m) {
-          auto extent_spec = mc_structure->cell_spec(access(i-m,j).loc());
+          auto extent_spec = mc_structure->cell_spec(access(i - m, j).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec.state) {
             return false;
           }
         } /* for(m..) */
       } else if (crepr::block_type::ekRAMP == spec.block_type &&
-               rmath::radians::kTHREE_PI_OVER_TWO == spec.z_rotation) {
+                 rmath::radians::kTHREE_PI_OVER_TWO == spec.z_rotation) {
         for (size_t m = 1; m < spec.extent; ++m) {
-          auto extent_spec = mc_structure->cell_spec(access(i,j-m).loc());
+          auto extent_spec = mc_structure->cell_spec(access(i, j - m).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec.state) {
             return false;
           }
         } /* for(m..) */
       }
     } /* for(j..) */
-  } /* for(i..) */
+  }   /* for(i..) */
   return true;
 } /* is_feasible() */
 
@@ -300,7 +307,7 @@ bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
    * If out of bounds for the structure, it will cause the spec to be empty, NOT
    * a segfault (nice feature...).
    */
-  auto ijkminus1 = mc_structure->cell_spec(cell.loc() - rmath::vector3u::Z);
+  auto ijkminus1 = mc_structure->cell_spec(cell.loc() - rmath::vector3z::Z);
 
   size_t face_count = 0;
   /*
@@ -329,7 +336,7 @@ std::set<const cds::cell3D*> slice2D::simple_holes(void) const {
         ret.insert(&access(i, j));
       }
     } /* for(j..) */
-  } /* for(i..) */
+  }   /* for(i..) */
   return ret;
 } /* simple_holes() */
 
@@ -344,11 +351,10 @@ std::set<slice2D::topological_hole_type> slice2D::topological_holes(void) const 
    * set for the return type, because duplicates will be overwritten, and the
    * unique set of topological holes will be returned.
    */
-  for (auto *shole1 : sholes) {
+  for (auto* shole1 : sholes) {
     std::set<const cds::cell3D*> thole = {shole1};
-    for (auto *shole2 : sholes) {
-      if (shole1 != shole2 &&
-          cells_are_adjacent(*shole1, *shole2)) {
+    for (auto* shole2 : sholes) {
+      if (shole1 != shole2 && cells_are_adjacent(*shole1, *shole2)) {
         thole.insert(shole2);
       }
     } /* for(shole2..) */
@@ -358,11 +364,9 @@ std::set<slice2D::topological_hole_type> slice2D::topological_holes(void) const 
      * exterior node, then we don't have a hole from a topological point of
      * view (at least I don't think so...)
      */
-    if (std::all_of(thole.begin(),
-                    thole.end(),
-                    [&](const cds::cell3D* cell){
-                      return !cell_is_exterior(*cell);
-                    })) {
+    if (std::all_of(thole.begin(), thole.end(), [&](const cds::cell3D* cell) {
+          return !cell_is_exterior(*cell);
+        })) {
       ret.insert(thole);
     }
   } /* for(&shole..) */
@@ -372,29 +376,29 @@ std::set<slice2D::topological_hole_type> slice2D::topological_holes(void) const 
 bool slice2D::cells_are_adjacent(const cds::cell3D& cell1,
                                  const cds::cell3D& cell2) const {
   bool d1plus1_neighbor, d1minus1_neighbor, d2plus1_neighbor, d2minus1_neighbor;
-  if (rmath::vector3u::Z == mc_axis) {
-    d1plus1_neighbor  = (cell1.loc() + rmath::vector3u::X == cell2.loc());
-    d1minus1_neighbor =  (cell1.loc() - rmath::vector3u::X == cell2.loc());
-    d2plus1_neighbor  = (cell1.loc() + rmath::vector3u::Y == cell2.loc());
-    d2minus1_neighbor =  (cell1.loc() - rmath::vector3u::Y == cell2.loc());
-  } else if (rmath::vector3u::Y == mc_axis) {
-    d1plus1_neighbor  = (cell1.loc() + rmath::vector3u::X == cell2.loc());
-    d1minus1_neighbor =  (cell1.loc() - rmath::vector3u::X == cell2.loc());
-    d2plus1_neighbor  = (cell1.loc() + rmath::vector3u::Z == cell2.loc());
-    d2minus1_neighbor =  (cell1.loc() - rmath::vector3u::Z == cell2.loc());
+  if (rmath::vector3z::Z == mc_coords.axis) {
+    d1plus1_neighbor = (cell1.loc() + rmath::vector3z::X == cell2.loc());
+    d1minus1_neighbor = (cell1.loc() - rmath::vector3z::X == cell2.loc());
+    d2plus1_neighbor = (cell1.loc() + rmath::vector3z::Y == cell2.loc());
+    d2minus1_neighbor = (cell1.loc() - rmath::vector3z::Y == cell2.loc());
+  } else if (rmath::vector3z::Y == mc_coords.axis) {
+    d1plus1_neighbor = (cell1.loc() + rmath::vector3z::X == cell2.loc());
+    d1minus1_neighbor = (cell1.loc() - rmath::vector3z::X == cell2.loc());
+    d2plus1_neighbor = (cell1.loc() + rmath::vector3z::Z == cell2.loc());
+    d2minus1_neighbor = (cell1.loc() - rmath::vector3z::Z == cell2.loc());
   } else {
-    d1plus1_neighbor  = (cell1.loc() + rmath::vector3u::Y == cell2.loc());
-    d1minus1_neighbor =  (cell1.loc() - rmath::vector3u::Y == cell2.loc());
-    d2plus1_neighbor  = (cell1.loc() + rmath::vector3u::Z == cell2.loc());
-    d2minus1_neighbor =  (cell1.loc() - rmath::vector3u::Z == cell2.loc());
+    d1plus1_neighbor = (cell1.loc() + rmath::vector3z::Y == cell2.loc());
+    d1minus1_neighbor = (cell1.loc() - rmath::vector3z::Y == cell2.loc());
+    d2plus1_neighbor = (cell1.loc() + rmath::vector3z::Z == cell2.loc());
+    d2minus1_neighbor = (cell1.loc() - rmath::vector3z::Z == cell2.loc());
   }
 
-  return d1plus1_neighbor ||d1minus1_neighbor ||
-      d2plus1_neighbor || d2minus1_neighbor;
+  return d1plus1_neighbor || d1minus1_neighbor || d2plus1_neighbor ||
+         d2minus1_neighbor;
 } /* cells_are_adjacent() */
 
 size_t slice2D::d1(void) const {
-  if (rmath::vector3u::X == mc_axis) {
+  if (rmath::vector3z::X == mc_coords.axis) {
     return mc_view.shape()[1];
   } else {
     return mc_view.shape()[0];
@@ -402,7 +406,7 @@ size_t slice2D::d1(void) const {
 } /* d1() */
 
 size_t slice2D::d2(void) const {
-  if (rmath::vector3u::Z == mc_axis) {
+  if (rmath::vector3z::Z == mc_coords.axis) {
     return mc_view.shape()[1];
   } else {
     return mc_view.shape()[2];
@@ -410,13 +414,56 @@ size_t slice2D::d2(void) const {
 } /* d2() */
 
 const cds::cell3D& slice2D::access(size_t d1, size_t d2) const {
-  if (rmath::vector3u::X == mc_axis) {
+  if (rmath::vector3z::X == mc_coords.axis) {
     return mc_view[0][d1][d2];
-  } else if (rmath::vector3u::Y == mc_axis) {
+  } else if (rmath::vector3z::Y == mc_coords.axis) {
     return mc_view[d1][0][d2];
   } else {
     return mc_view[d1][d2][0];
   }
 } /* access() */
+
+bool slice2D::contains(const rmath::vector3z& coord) const {
+  if (rmath::vector3z::X == mc_coords.axis) {
+    return coord.x() == mc_coords.offset &&
+        coord.y() < d1() && coord.z() < d2();
+  } else if (rmath::vector3z::Y == mc_coords.axis) {
+    return coord.y() == mc_coords.offset &&
+        coord.x() < d1() && coord.z() < d2();
+  } else {
+    return coord.z() == mc_coords.offset &&
+        coord.x() < d1() && coord.y() < d2();
+  }
+} /* contains() */
+
+/*******************************************************************************
+ * Non-Member Functions
+ ******************************************************************************/
+slice2D::slice_coords slice2D::coords_calc(const rmath::vector3z& axis,
+                                           const structure3D* structure,
+                                           size_t offset) {
+  if (rmath::vector3z::X == axis) {
+    return {
+      axis,
+          offset,
+      {offset, 0, 0},
+      {offset + 1, structure->ysize(), structure->zsize()}
+    };
+  } else if (rmath::vector3z::Y == axis) {
+    return {
+      axis,
+          offset,
+          {0, offset, 0},
+          {structure->xsize(), offset + 1, structure->zsize()}
+    };
+  } else {
+    return {
+      axis,
+          offset,
+      {0, 0, offset},
+      {structure->xsize(), structure->ysize(), offset + 1}
+    };
+  }
+}
 
 NS_END(structure, silicon);

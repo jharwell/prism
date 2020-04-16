@@ -24,13 +24,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <argos3/plugins/simulator/entities/box_entity.h>
 #include <boost/optional.hpp>
+
+#include <argos3/plugins/simulator/entities/box_entity.h>
 
 #include "rcppsw/er/client.hpp"
 
-#include "cosm/repr/base_block3D.hpp"
 #include "cosm/ds/block3D_vector.hpp"
+#include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
 
 #include "silicon/silicon.hpp"
@@ -44,7 +45,7 @@ namespace cosm::pal {
 class argos_sm_adaptor;
 } /* namespace cosm::pal */
 namespace cosm::arena {
-template<typename T>
+template <typename T>
 class base_arena_map;
 } /* namespace cosm::arena */
 
@@ -86,13 +87,15 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
   const structure3D_builder& operator=(const structure3D_builder&) = delete;
 
   bool block_placement_valid(const crepr::block3D_variant& block,
-                             const rmath::vector3u& loc,
+                             const rmath::vector3z& loc,
                              const rmath::radians& z_rotation) const;
 
   /**
    * \brief Determine if static building via loop functions is enabled.
    */
-  bool build_static_enabled(void) const { return mc_config.build_src == kBuildSrcLoop; }
+  bool build_static_enabled(void) const {
+    return mc_config.build_src == kBuildSrcLoop;
+  }
 
   /**
    * \brief Build the ENTIRE structure, according to XML configuration (so many
@@ -128,7 +131,7 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    *                   specified location.
    */
   bool place_block(const crepr::block3D_variant& block,
-                   const rmath::vector3u& cell,
+                   const rmath::vector3z& cell,
                    const rmath::radians& z_rotation);
 
  private:
@@ -137,8 +140,8 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    * structures.
    */
   struct static_build_state {
-    size_t           n_cells{0};
-    size_t           n_built_interval{0};
+    size_t n_cells{0};
+    size_t n_built_interval{0};
   };
 
   /**
@@ -150,11 +153,10 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    * \param start The starting index within \p blocks, in order to reduce the
    *              complexity of repeated linear scans.
    */
-  boost::optional<crepr::block3D_variant> build_block_find(crepr::block_type type,
-                                                           const cds::block3D_vectorno& blocks,
-                                                           size_t start) const;
-
-
+  boost::optional<crepr::block3D_variant> build_block_find(
+      crepr::block_type type,
+      const cds::block3D_vectorno& blocks,
+      size_t start) const;
 
   /**
    * \brief Place a single block as part of \ref build_static().

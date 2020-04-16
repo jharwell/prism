@@ -33,17 +33,19 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_spec_composability::operator()() const {
   for (size_t z = 0; z < mc_structure->zsize() - 1; ++z) {
-    auto lower = slice2D(rmath::vector3u::Z,
-                         mc_structure->layer(z),
+    auto lower = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
+                                              mc_structure,
+                                              z),
                          mc_structure);
-    auto upper = slice2D(rmath::vector3u::Z,
-                         mc_structure->layer(z+1),
+    auto upper = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
+                                              mc_structure,
+                                              z+1),
                          mc_structure);
     ER_CHECK(is_composable(lower, upper),
              "Layer%zu->layer%zu not composable",
              z,
-             z+1);
-    ER_DEBUG("Layer%zu->layer%zu OK", z, z+1);
+             z + 1);
+    ER_DEBUG("Layer%zu->layer%zu OK", z, z + 1);
   } /* for(z..) */
   return true;
 
@@ -63,8 +65,8 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
     ER_DEBUG("One or both layers contain topological holes");
     return false;
   }
-  for (size_t i = 0; i < lower.shape()[0]; ++i) {
-    for (size_t j = 0; j < lower.shape()[1]; ++j) {
+  for (size_t i = 0; i < lower.d1(); ++i) {
+    for (size_t j = 0; j < lower.d2(); ++j) {
       auto specl = mc_structure->cell_spec(lower.access(i, j).loc());
       auto specu = mc_structure->cell_spec(upper.access(i, j).loc());
       /*
@@ -93,14 +95,14 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
          * the layers, regardless of block type/orientation in the upper layer).
          */
         for (size_t m = 1; m < specl.extent; ++m) {
-          auto spec_extent = mc_structure->cell_spec(upper.access(i,j).loc());
+          auto spec_extent = mc_structure->cell_spec(upper.access(i, j).loc());
           if (cfsm::cell3D_state::ekST_EMPTY != spec_extent.state) {
             return false;
           }
         } /* for(m..) */
       }
     } /* for(j..) */
-  } /* for(i..) */
+  }   /* for(i..) */
   return true;
 } /* is_composable() */
 

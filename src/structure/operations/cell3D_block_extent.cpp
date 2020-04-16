@@ -35,10 +35,11 @@ NS_START(silicon, structure, operations, detail);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-cell3D_block_extent::cell3D_block_extent(const rmath::vector3u& coord,
+cell3D_block_extent::cell3D_block_extent(const rmath::vector3z& coord,
                                          crepr::base_block3D* block)
     : ER_CLIENT_INIT("silicon.structure.operations.cell3D_block_extent"),
-      cell3D_op(coord), m_block(block) {}
+      cell3D_op(coord),
+      m_block(block) {}
 
 /*******************************************************************************
  * Member Functions

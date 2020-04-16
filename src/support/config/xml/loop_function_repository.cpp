@@ -22,6 +22,7 @@
  * Includes
  ******************************************************************************/
 #include "silicon/support/config/xml/loop_function_repository.hpp"
+
 #include "silicon/structure/config/xml/construct_targets_parser.hpp"
 #include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
 #include "silicon/support/tv/config/xml/tv_manager_parser.hpp"
@@ -37,13 +38,13 @@ NS_START(silicon, support, config, xml);
 loop_function_repository::loop_function_repository(void) noexcept {
   parser_register<ssconfig::xml::construct_targets_parser,
                   ssconfig::construct_targets_config>(
-                      ssconfig::xml::construct_targets_parser::kXMLRoot);
+      ssconfig::xml::construct_targets_parser::kXMLRoot);
   parser_register<ssconfig::xml::structure3D_builder_parser,
                   ssconfig::structure3D_builder_config>(
-                      ssconfig::xml::structure3D_builder_parser::kXMLRoot);
+      ssconfig::xml::structure3D_builder_parser::kXMLRoot);
   parser_register<sstv::config::xml::tv_manager_parser,
                   sstv::config::tv_manager_config>(
-                      sstv::config::xml::tv_manager_parser::kXMLRoot);
+      sstv::config::xml::tv_manager_parser::kXMLRoot);
 }
 
 NS_END(xml, config, support, silicon);

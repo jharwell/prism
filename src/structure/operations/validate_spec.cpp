@@ -23,9 +23,9 @@
  ******************************************************************************/
 #include "silicon/structure/operations/validate_spec.hpp"
 
-#include "silicon/structure/structure3D.hpp"
-#include "silicon/structure/operations/validate_spec_layers.hpp"
 #include "silicon/structure/operations/validate_spec_composability.hpp"
+#include "silicon/structure/operations/validate_spec_layers.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,7 +50,7 @@ bool validate_spec::operator()(void) const {
    * - No vertical topological holes (should be computable by the same algorithm
    *   that computes holes for sliced layers on the Z-axis); eg just slice along
    *   the Y axis. Maybe this should be part of composability checks?
-  */
+   */
   return true;
 
 error:

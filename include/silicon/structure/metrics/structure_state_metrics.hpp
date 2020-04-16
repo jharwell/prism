@@ -1,5 +1,5 @@
 /**
- * \file structure3D_builder_parser.cpp
+ * \file structure_state_metrics.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,27 +18,42 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
+#include "rcppsw/metrics/base_metrics.hpp"
+
+#include "cosm/ds/block3D_vector.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, config, xml);
+NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void structure3D_builder_parser::parse(const ticpp::Element& node) {
-  ticpp::Element bnode = node_get(node, kXMLRoot);
-  m_config = std::make_unique<config_type>();
+/**
+ * \class structure_state_metrics
+ * \ingroup structure metrics
+ *
+ * \brief Interface defining the metrics to be collected from \ref structure3D
+ * as it is built about block counts, etc.
+ */
+class structure_state_metrics : public virtual rmetrics::base_metrics {
+ public:
+  /**
+   * \brief Return the list of blocks that have been placed so far onto the
+   * structure.
+   */
+  virtual const cds::block3D_vectorro& placed_blocks(void) const = 0;
+};
 
-  XML_PARSE_ATTR(bnode, m_config, build_src);
-  XML_PARSE_ATTR_DFLT(
-      bnode, m_config, static_build_interval, rtypes::timestep(1));
-  XML_PARSE_ATTR_DFLT(bnode, m_config, static_build_interval_count, 1UL);
-} /* parse() */
+NS_END(metrics, structure, silicon);
 
-NS_END(xml, config, structure, silicon);
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_ */

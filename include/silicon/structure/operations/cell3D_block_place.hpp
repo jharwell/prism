@@ -60,7 +60,7 @@ class cell3D_block_place : public rer::client<cell3D_block_place>,
  public:
   using visit_typelist = visit_typelist_impl::value;
 
-  cell3D_block_place(const rmath::vector3u& loc, crepr::base_block3D* block);
+  cell3D_block_place(const rmath::vector3z& loc, crepr::base_block3D* block);
   cell3D_block_place& operator=(const cell3D_block_place&) = delete;
   cell3D_block_place(const cell3D_block_place&) = delete;
 

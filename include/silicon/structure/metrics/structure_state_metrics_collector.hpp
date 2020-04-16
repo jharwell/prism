@@ -1,5 +1,5 @@
 /**
- * \file goal_acq_locs_metrics_collector.hpp
+ * \file structure_state_metrics_collector.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_COLLECTOR_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_COLLECTOR_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
 
 /*******************************************************************************
  * Includes
@@ -39,7 +39,7 @@ NS_START(silicon, structure, metrics);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure3D_metrics_collector
+ * \class structure_state_metrics_collector
  * \ingroup structure metrics
  *
  * \brief Collector for construction progress as reported directly from \ref
@@ -48,7 +48,7 @@ NS_START(silicon, structure, metrics);
  * Metrics MUST be collected serially; concurrent updates to the gathered stats
  * are not supported.
  */
-class structure3D_metrics_collector final :
+class structure_state_metrics_collector final :
     public rmetrics::spatial::grid3D_metrics_collector<rmetrics::spatial::cell_avg> {
  public:
   /**
@@ -57,10 +57,10 @@ class structure3D_metrics_collector final :
    * \param dims Dimensions of the structure.
    * \param mode The selected output mode.
    */
-  structure3D_metrics_collector(const std::string& ofname,
-                                  const rtypes::timestep& interval,
-                                  const rmath::vector3u& dims,
-                                  const rmetrics::output_mode& mode) :
+  structure_state_metrics_collector(const std::string& ofname,
+                                const rtypes::timestep& interval,
+                                const rmath::vector3z& dims,
+                                const rmetrics::output_mode& mode) :
       grid3D_metrics_collector(ofname, interval, dims, mode) {}
 
   void collect(const rmetrics::base_metrics& metrics) override;
@@ -68,4 +68,4 @@ class structure3D_metrics_collector final :
 
 NS_END(metrics, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_COLLECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_ */

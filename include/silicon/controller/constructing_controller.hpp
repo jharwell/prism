@@ -28,16 +28,16 @@
 #include <string>
 #include <typeindex>
 
+#include "cosm/controller/block_carrying_controller.hpp"
 #include "cosm/controller/irv_recipient_controller.hpp"
+#include "cosm/controller/manip_event_recorder.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
 #include "cosm/repr/base_block2D.hpp"
-#include "cosm/controller/block_carrying_controller.hpp"
-#include "cosm/controller/manip_event_recorder.hpp"
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/metrics/blocks/block_manip_events.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -82,7 +82,8 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
                                 public ccontroller::block_carrying_controller,
                                 public rer::client<constructing_controller> {
  public:
-  using block_manip_recorder_type = ccontroller::manip_event_recorder<metrics::blocks::block_manip_events::ekMAX_EVENTS>;
+  using block_manip_recorder_type = ccontroller::manip_event_recorder<
+      metrics::blocks::block_manip_events::ekMAX_EVENTS>;
 
   constructing_controller(void) RCSW_COLD;
   ~constructing_controller(void) override RCSW_COLD;

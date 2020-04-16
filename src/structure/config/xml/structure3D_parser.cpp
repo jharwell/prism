@@ -42,10 +42,9 @@ void structure3D_parser::parse(const ticpp::Element& node) {
     auto cube_blocks = node_get(node, "cube_blocks");
     ticpp::Iterator<ticpp::Element> node_it;
 
-    for (node_it = cube_blocks.FirstChildElement();
-         node_it != node_it.end();
+    for (node_it = cube_blocks.FirstChildElement(); node_it != node_it.end();
          ++node_it) {
-      rmath::vector3u tmp;
+      rmath::vector3z tmp;
       node_attr_get(*node_it, "cell", tmp);
       m_config->cube_blocks[tmp] = {tmp};
     } /* for(node_it..) */
@@ -55,10 +54,9 @@ void structure3D_parser::parse(const ticpp::Element& node) {
     auto ramp_blocks = node_get(node, "ramp_blocks");
     ticpp::Iterator<ticpp::Element> node_it;
 
-    for (node_it = ramp_blocks.FirstChildElement();
-         node_it != node_it.end();
+    for (node_it = ramp_blocks.FirstChildElement(); node_it != node_it.end();
          ++node_it) {
-      rmath::vector3u tmp;
+      rmath::vector3z tmp;
       node_attr_get(*node_it, "cell", tmp);
       m_config->ramp_blocks[tmp] = {tmp, m_config->orientation};
     } /* for(node_it..) */

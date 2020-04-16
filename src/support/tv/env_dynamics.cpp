@@ -23,9 +23,10 @@
  ******************************************************************************/
 #include "silicon/support/tv/env_dynamics.hpp"
 
-#include "silicon/support/tv/config/env_dynamics_config.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
+
 #include "silicon/support/base_loop_functions.hpp"
+#include "silicon/support/tv/config/env_dynamics_config.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -62,10 +63,12 @@ rtypes::timestep env_dynamics::arena_block_manip_penalty(void) const {
 } /* arena_block_manip_penalty() */
 
 rtypes::timestep env_dynamics::structure_block_manip_penalty(void) const {
-  return penalty_handler(block_op_src::ekSTRUCTURE_PLACEMENT)->penalty_calc(m_timestep);
+  return penalty_handler(block_op_src::ekSTRUCTURE_PLACEMENT)
+      ->penalty_calc(m_timestep);
 } /* structure_block_manip_penalty() */
 
-void env_dynamics::register_controller(const cpal::argos_controllerQ3D_adaptor& c) {
+void env_dynamics::register_controller(
+    const cpal::argos_controllerQ3D_adaptor& c) {
   m_rda.register_controller(c.entity_id());
 } /* register_controller() */
 

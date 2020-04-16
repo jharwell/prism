@@ -29,7 +29,6 @@
 #include "cosm/subsystem/config/xml/actuation_subsystem2D_parser.hpp"
 #include "cosm/subsystem/config/xml/sensing_subsystem2D_parser.hpp"
 
-
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/

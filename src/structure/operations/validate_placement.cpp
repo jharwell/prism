@@ -50,18 +50,16 @@ error:
 
 bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
   if (rmath::radians::kZERO == mc_z_rot) {
-    auto& extent_cell = mc_structure->access(mc_loc.x() + 1,
-                                             mc_loc.y(),
-                                             mc_loc.z());
+    auto& extent_cell =
+        mc_structure->access(mc_loc.x() + 1, mc_loc.y(), mc_loc.z());
     ER_CHECK(mc_structure->block_placement_cell_check(extent_cell),
              "Extent cell@%s failed validation for block placement",
              extent_cell.loc().to_str().c_str());
     /* @todo check if structure invariants are violated by adding this block */
     return true;
   } else {
-    auto& extent_cell = mc_structure->access(mc_loc.x(),
-                                             mc_loc.y() + 1,
-                                             mc_loc.z());
+    auto& extent_cell =
+        mc_structure->access(mc_loc.x(), mc_loc.y() + 1, mc_loc.z());
     ER_CHECK(mc_structure->block_placement_cell_check(extent_cell),
              "Extent cell@%s failed validation for block placement",
              extent_cell.loc().to_str().c_str());

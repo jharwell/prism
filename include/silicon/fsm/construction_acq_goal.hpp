@@ -61,7 +61,8 @@ bool operator!=(const cfsm::metrics::goal_acq_metrics::goal_type& goal1,
 bool operator!=(const construction_acq_goal& goal1,
                 const cfsm::metrics::goal_acq_metrics::goal_type& goal2) RCSW_PURE;
 
-cfsm::metrics::goal_acq_metrics::goal_type to_goal_type(const construction_acq_goal& goal);
+cfsm::metrics::goal_acq_metrics::goal_type to_goal_type(
+    const construction_acq_goal& goal);
 
 NS_END(fsm, silicon);
 

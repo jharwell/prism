@@ -1,5 +1,5 @@
 /**
- * \file structure3D_metrics.hpp
+ * \file structure_state_metrics_collector.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,38 +18,29 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/metrics/base_metrics.hpp"
+#include "silicon/structure/metrics/structure_state_metrics_collector.hpp"
 
-#include "cosm/ds/block3D_vector.hpp"
-
-#include "silicon/silicon.hpp"
+#include "silicon/structure/metrics/structure_state_metrics.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
 NS_START(silicon, structure, metrics);
 
 /*******************************************************************************
- * Class Definitions
+ * Member Functions
  ******************************************************************************/
-/**
- * \class structure3D_metrics
- * \ingroup structure metrics
- *
- * \brief Interface defining the metrics to be collected from \ref structure3D
- * as it is built about block counts, etc.
- */
-class structure3D_metrics : public rmetrics::base_metrics {
- public:
-  virtual const cds::block3D_vectorro& placed_blocks(void) const = 0;
-};
+void structure_state_metrics_collector::collect(
+    const rmetrics::base_metrics& metrics) {
+  auto& m = dynamic_cast<const structure_state_metrics&>(metrics);
+  inc_total_count(m.placed_blocks().size());
+
+  for (auto* b : m.placed_blocks()) {
+    inc_cell_count(b->dloc());
+  } /* for(*b..) */
+} /* collect() */
 
 NS_END(metrics, structure, silicon);
-
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE3D_METRICS_HPP_ */

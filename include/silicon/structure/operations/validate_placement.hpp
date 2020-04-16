@@ -60,7 +60,7 @@ class validate_placement : public rer::client<validate_placement>,
                            public boost::static_visitor<bool> {
  public:
   validate_placement(const structure3D* structure,
-                           const rmath::vector3u& loc,
+                           const rmath::vector3z& loc,
                            const rmath::radians& z_rotation)
       : ER_CLIENT_INIT("silicon.structure.validate_placement"),
         mc_structure(structure),
@@ -77,7 +77,7 @@ class validate_placement : public rer::client<validate_placement>,
  private:
   /* clang-format off */
   const structure3D*    mc_structure;
-  const rmath::vector3u mc_loc;
+  const rmath::vector3z mc_loc;
   const rmath::radians  mc_z_rot;
   /* clang-format on */
 };

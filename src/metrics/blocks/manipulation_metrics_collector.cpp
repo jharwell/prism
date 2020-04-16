@@ -90,14 +90,20 @@ boost::optional<std::string> manipulation_metrics_collector::csv_line_build(void
 void manipulation_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const ccmetrics::manipulation_metrics&>(metrics);
-  m_interval.arena_pickup_events += m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
-  m_interval.arena_pickup_penalty += m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
+  m_interval.arena_pickup_events +=
+      m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
+  m_interval.arena_pickup_penalty +=
+      m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
 
-  m_interval.arena_drop_events += m.status(metrics::blocks::block_manip_events::ekARENA_DROP);
-  m_interval.arena_drop_penalty += m.penalty(metrics::blocks::block_manip_events::ekARENA_DROP).v();
+  m_interval.arena_drop_events +=
+      m.status(metrics::blocks::block_manip_events::ekARENA_DROP);
+  m_interval.arena_drop_penalty +=
+      m.penalty(metrics::blocks::block_manip_events::ekARENA_DROP).v();
 
-  m_interval.structure_place_events += m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
-  m_interval.structure_place_penalty += m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
+  m_interval.structure_place_events +=
+      m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
+  m_interval.structure_place_penalty +=
+      m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
 } /* collect() */
 
 void manipulation_metrics_collector::reset_after_interval(void) {

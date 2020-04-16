@@ -41,12 +41,12 @@ NS_START(silicon, structure, config);
  * Struct Definitions
  ******************************************************************************/
 struct ramp_block_loc_spec {
-  rmath::vector3u loc{};
+  rmath::vector3z loc{};
   rmath::radians z_rotation{};
 };
 
 struct cube_block_loc_spec {
-  rmath::vector3u loc{};
+  rmath::vector3z loc{};
 };
 
 /**
@@ -57,7 +57,7 @@ struct cube_block_loc_spec {
  */
 struct structure3D_config final : public rconfig::base_config {
   rmath::vector3d              anchor{};
-  rmath::vector3u              bounding_box{};
+  rmath::vector3z              bounding_box{};
   rmath::radians               orientation{};
 
   /*
@@ -66,8 +66,8 @@ struct structure3D_config final : public rconfig::base_config {
    * contain when the structure is completed?" efficient. Just using vectors
    * requires a linear scan for every single passed location.
    */
-  std::map<rmath::vector3u, cube_block_loc_spec> cube_blocks{};
-  std::map<rmath::vector3u, ramp_block_loc_spec> ramp_blocks{};
+  std::map<rmath::vector3z, cube_block_loc_spec> cube_blocks{};
+  std::map<rmath::vector3z, ramp_block_loc_spec> ramp_blocks{};
 };
 
 NS_END(config, structure, silicon);

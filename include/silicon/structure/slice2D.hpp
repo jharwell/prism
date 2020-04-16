@@ -50,11 +50,25 @@ class structure3D;
  */
 class slice2D : public rer::client<slice2D> {
  public:
+  struct slice_coords {
+    rmath::vector3z axis;
+    size_t offset;
+    rmath::vector3z ll;
+    rmath::vector3z ur;
+  };
+
   using layer_view = rds::grid3D<cds::cell3D>::const_grid_view;
   using topological_hole_type = std::set<const cds::cell3D*>;
 
-  slice2D(const rmath::vector3u& axis,
-          const layer_view& view,
+  /**
+   * \brief Given the axis for slicing, calculate the lower left and upper right
+   * coordinates for the slice (defines the bounding box for the slice).
+   */
+  static slice_coords coords_calc(const rmath::vector3z& axis,
+                                  const structure3D* structure,
+                                  size_t offset);
+
+  slice2D(const slice_coords& coords,
           const structure3D* structure);
 
   /* Not copy constructable/assignable by default */
@@ -83,16 +97,19 @@ class slice2D : public rer::client<slice2D> {
    * topological hole is a contiguous group of "simple" holes. Contiguousness is
    * determined by N,S,E,W adjacency.
    */
-  std::set<topological_hole_type> topological_holes() const;
-
-  const ulong* shape(void) const { return mc_view.shape(); }
+  std::set<topological_hole_type> topological_holes(void) const;
 
   const cds::cell3D& access(size_t d1, size_t d2) const;
-
- private:
   size_t d1(void) const;
   size_t d2(void) const;
 
+  /**
+   * \brief Return \c TRUE if the slice contains the specified coordinates, and
+   * \c FALSE otherwise.
+   */
+  bool contains(const rmath::vector3z& coord) const;
+
+ private:
   /**
    * \brief Determine if the layer is traversable by robots entering/exiting
    * from the first slice dimension for all values.
@@ -132,9 +149,9 @@ class slice2D : public rer::client<slice2D> {
                           const cds::cell3D& cell2) const;
 
   /* clang-format off */
-  const rmath::vector3u mc_axis;
-  const layer_view      mc_view;
-  const structure3D*    mc_structure;
+  const slice_coords mc_coords;
+  const layer_view   mc_view;
+  const structure3D* mc_structure;
   /* clang-format on */
 };
 

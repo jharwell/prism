@@ -25,7 +25,9 @@
  * Includes
  ******************************************************************************/
 #include <boost/variant/static_visitor.hpp>
+
 #include "cosm/vis/config/visualization_config.hpp"
+
 #include "silicon/controller/controller_fwd.hpp"
 
 /*******************************************************************************
@@ -42,7 +44,7 @@ NS_START(silicon, support);
  *
  * \brief Functor to perform controller configuration during initialization.
  */
-template<typename TControllerType>
+template <typename TControllerType>
 class robot_configurer : public boost::static_visitor<void> {
  public:
   explicit robot_configurer(const cvconfig::visualization_config* const config)

@@ -25,8 +25,10 @@
 
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
+
 #include "silicon/structure/operations/cell3D_block_extent.hpp"
 #include "silicon/structure/operations/cell3D_block_place.hpp"
+#include "silicon/structure/subtarget.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -53,12 +55,17 @@ void place_block::operator()(crepr::cube_block3D* block) const {
    * The discrete location does not match up to the real location, but ARGoS
    * does not use that, so that SHOULD be OK for now.
    */
-  rmath::vector3d cell_loc = m_structure->cell_loc_abs(m_structure->access(mc_cell));
+  rmath::vector3d cell_loc =
+      m_structure->cell_loc_abs(m_structure->access(mc_cell));
   block->rloc(cell_loc + embodiment_offset_calc(block));
   block->dloc(m_structure->origind() + mc_cell);
 
   /* actually add the block to the structure */
   m_structure->block_add(block);
+
+  /* update subtarget */
+  auto subtarget = m_structure->cell_subtarget(m_structure->access(mc_cell));
+  subtarget->placed_block_count_update(1);
 }
 
 void place_block::operator()(crepr::ramp_block3D* block) const {
@@ -77,7 +84,8 @@ void place_block::operator()(crepr::ramp_block3D* block) const {
    * The discrete location does not match up to the real location, but ARGoS
    * does not use that, so that SHOULD be OK for now.
    */
-  rmath::vector3d cell_loc = m_structure->cell_loc_abs(m_structure->access(mc_cell));
+  rmath::vector3d cell_loc =
+      m_structure->cell_loc_abs(m_structure->access(mc_cell));
   block->rloc(cell_loc + embodiment_offset_calc(block));
   block->dloc(m_structure->origind() + mc_cell);
 
@@ -86,7 +94,7 @@ void place_block::operator()(crepr::ramp_block3D* block) const {
     size_t ub = static_cast<size_t>(mc_cell.x() +
                                     block->dims3D().x() / block->dims3D().y());
     for (size_t x = mc_cell.x() + 1; x < ub; ++x) {
-      rmath::vector3u extent_loc(x, mc_cell.y(), mc_cell.z());
+      rmath::vector3z extent_loc(x, mc_cell.y(), mc_cell.z());
       cell3D_block_extent_visitor op(extent_loc, block);
       op.visit(m_structure->access(extent_loc));
     } /* for(x..) */
@@ -94,7 +102,7 @@ void place_block::operator()(crepr::ramp_block3D* block) const {
     size_t ub = static_cast<size_t>(mc_cell.y() +
                                     block->dims3D().x() / block->dims3D().y());
     for (size_t y = mc_cell.y() + 1; y < ub; ++y) {
-      rmath::vector3u extent_loc(mc_cell.x(), y, mc_cell.z());
+      rmath::vector3z extent_loc(mc_cell.x(), y, mc_cell.z());
       cell3D_block_extent_visitor op(extent_loc, block);
       op.visit(m_structure->access(extent_loc));
     } /* for(y..) */
@@ -106,19 +114,19 @@ void place_block::operator()(crepr::ramp_block3D* block) const {
 
   /* actually add the block to the structure */
   m_structure->block_add(block);
+
+  /* update subtarget */
+  auto subtarget = m_structure->cell_subtarget(m_structure->access(mc_cell));
+  subtarget->placed_block_count_update(1);
 }
 
 rmath::vector3d place_block::embodiment_offset_calc(
     const crepr::base_block3D* block) const {
   /* X,Y axes of block and arena align */
   if (rmath::radians::kZERO == mc_z_rot) {
-    return {block->dims3D().x() / 2.0,
-          block->dims3D().y() / 2.0,
-          0.0};
+    return {block->dims3D().x() / 2.0, block->dims3D().y() / 2.0, 0.0};
   } else { /* X,Y axes of block and arena are swapped */
-    return {block->dims3D().y() / 2.0,
-          block->dims3D().x() / 2.0,
-          0.0};
+    return {block->dims3D().y() / 2.0, block->dims3D().x() / 2.0, 0.0};
   }
 } /* embodiment_offset_calc() */
 

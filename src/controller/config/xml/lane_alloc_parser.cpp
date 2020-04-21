@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file lane_alloc_parser.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,42 +18,23 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "silicon/controller/config/xml/lane_alloc_parser.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, controller, config, xml);
 
-namespace structure {
-namespace config {}
-namespace operations {}
-} /* namespace structure */
+/*******************************************************************************
+ * Member Functions
+ ******************************************************************************/
+void lane_alloc_parser::parse(const ticpp::Element& node) {
+  m_config = std::make_unique<config_type>();
 
-namespace support {
-namespace tv {}
-} /* namespace support */
+  XML_PARSE_ATTR(node, m_config, policy);
+} /* parse() */
 
-namespace controller {
-namespace config {}
-} /* namespace controller */
-
-} /* namespace silicon */
-
-namespace sstructure = silicon::structure;
-namespace ssops = sstructure::operations;
-namespace ssconfig = sstructure::config;
-
-namespace ssupport = silicon::support;
-namespace sstv = ssupport::tv;
-
-namespace scontroller = silicon::controller;
-namespace scconfig = scontroller::config;;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+NS_END(xml, config, controller, silicon);

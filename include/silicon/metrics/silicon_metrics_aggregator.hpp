@@ -28,8 +28,10 @@
 
 #include "cosm/metrics/base_metrics_aggregator.hpp"
 #include "cosm/metrics/config/metrics_config.hpp"
+#include "cosm/ds/config/grid_config.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/ds/construct_target_vector.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -59,11 +61,40 @@ class silicon_metrics_aggregator
  public:
   silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
                              const cdconfig::grid_config* const gconfig,
-                             const std::string& output_root);
+                             const std::string& output_root,
+                             const ds::construct_target_vectorno& targets);
   ~silicon_metrics_aggregator(void) override = default;
 
   void collect_from_loop(const support::base_loop_functions* loop);
   void collect_from_structure(const structure::structure3D* structure);
+
+ private:
+  /**
+   * \brief Register collectors that don't need extra arguments that do not
+   * pertain to construction targets.
+   */
+  void register_standard_non_target(const cmconfig::metrics_config* mconfig);
+
+  /**
+   * \brief Register collectors that don't need extra arguments that pertain to
+   * construction targets.
+   */
+  void register_standard_target(const cmconfig::metrics_config* mconfig,
+                                const sstructure::structure3D* structure);
+
+  /**
+   * \brief Register collectors that need extra arguments that pertain to
+   * construction targets (# construction lanes).
+   */
+  void register_with_target_lanes(const cmconfig::metrics_config* mconfig,
+                                  const sstructure::structure3D* structure);
+
+  /**
+   * \brief Register collectors that need extra arguments that pertain to
+   * construction targets (structure dimenions).
+   */
+  void register_with_target_dims(const cmconfig::metrics_config* mconfig,
+                                 const sstructure::structure3D* structure);
 };
 
 NS_END(metrics, silicon);

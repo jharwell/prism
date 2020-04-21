@@ -81,7 +81,8 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   using rds::grid3D<cds::cell3D>::operator[];
 
   structure3D(const config::structure3D_config* config,
-              const arena_map_type* map);
+              const arena_map_type* map,
+              size_t id);
   ~structure3D(void) override;
 
   structure3D(const structure3D&) = default;
@@ -97,7 +98,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   size_t n_total_blocks(void) const override {
     return mc_config.cube_blocks.size() + mc_config.ramp_blocks.size();
   }
-
+  rmath::vector3z dims(void) const { return mc_config.bounding_box; }
   rmath::vector3d originr(void) const { return mc_config.anchor; }
   rmath::vector3z origind(void) const {
     return rmath::dvec2zvec(originr(), 1.0);
@@ -109,6 +110,8 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   bool block_placement_valid(const crepr::block3D_variant& block,
                              const rmath::vector3z& loc,
                              const rmath::radians& z_rotation);
+
+  size_t id(void) const { return mc_id; }
 
   /**
    * \brief Return \c TRUE if the specified block has already been placed on the
@@ -177,6 +180,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   subtarget_vectorno subtargetsno_calc(void) const;
 
   /* clang-format off */
+  const size_t                     mc_id;
   const size_t                     mc_unit_dim_factor;
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;

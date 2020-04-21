@@ -43,14 +43,11 @@ XML configuration:
 
 .. code-block:: XML
 
-   <loop_functions>
-       ...
-       <structure3D_builder
-           build_src="loop|robot"
-           static_bulid_interval="INT"
-           static_build_interval_count="INT"/>
-       ...
-   </loop_functions>
+   <structure3D_builder
+       build_src="loop|robot"
+       static_bulid_interval="INT"
+       static_build_interval_count="INT"
+   />
 
 - ``build_src`` - The source of block placements for the structure. Valid values
   are:
@@ -82,19 +79,15 @@ XML configuration:
 
 .. code-block:: XML
 
-   <loop_functions>
-       ...
-       <construct_targets>
-           <ramp>
-               ...
-           </ramp>
-           <rectprism>
-               ...
-           </rectprism>
+   <construct_targets>
+       <ramp>
            ...
-       </construct_targets>
+       </ramp>
+       <rectprism>
+           ...
+       </rectprism>
        ...
-   </loop_functions>
+   </construct_targets>
 
 
 - ``ramp`` - Defines a ramp subtarget.

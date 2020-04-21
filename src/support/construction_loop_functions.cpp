@@ -146,7 +146,7 @@ void construction_loop_functions::private_init(void) {
   auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.upper = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
-      &output->metrics, &arena.grid, output_root());
+      &output->metrics, &arena.grid, output_root(), construct_targets());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
 

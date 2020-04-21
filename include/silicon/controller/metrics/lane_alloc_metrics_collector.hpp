@@ -1,5 +1,5 @@
 /**
- * \file structure_state_metrics_collector.hpp
+ * \file lane_allocs_metrics_collector.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,54 +18,68 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
+#define INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <string>
 #include <list>
+#include <vector>
 
-#include "rcppsw/metrics/spatial/grid3D_metrics_collector.hpp"
+#include "rcppsw/metrics/base_metrics_collector.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, structure, metrics);
+NS_START(silicon, controller, metrics);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure_state_metrics_collector
- * \ingroup structure metrics
+ * \class lane_alloc_metrics_collector
+ * \ingroup controller metrics
  *
- * \brief Collector for construction progress as reported directly from \ref
+ * \brief Collector for \ref lane_alloc_metrics within a single \ref
  * structure3D.
  *
- * Metrics MUST be collected serially; concurrent updates to the gathered stats
- * are not supported.
+ * Metrics CAN be collected in parallel from robots; concurrent updates to the
+ * gathered stats are supported. Metrics are written out at the specified
+ * collection interval.
  */
-class structure_state_metrics_collector final :
-    public rmetrics::spatial::grid3D_metrics_collector<rmetrics::spatial::cell_avg> {
+class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collector {
  public:
   /**
-   * \param ofname The output file name.
+   * \param ofname_stem The output file name stem.
    * \param interval Collection interval.
-   * \param dims Dimensions of the structure.
-   * \param mode The selected output mode.
+   * \param n_lanes # construct lanes in target.
    */
-  structure_state_metrics_collector(const std::string& ofname,
-                                    const rtypes::timestep& interval,
-                                    const rmetrics::output_mode& mode,
-                                    const rmath::vector3z& dims) :
-      grid3D_metrics_collector(ofname, interval, mode, dims) {}
+  lane_alloc_metrics_collector(const std::string& ofname_stem,
+                               const rtypes::timestep& interval,
+                               size_t n_lanes);
 
+  void reset(void) override;
   void collect(const rmetrics::base_metrics& metrics) override;
+  void reset_after_interval(void) override;
+
+ private:
+  struct stats {
+    size_t alloc_count{0};
+  };
+
+  std::list<std::string> csv_header_cols(void) const override;
+
+  boost::optional<std::string> csv_line_build(void) override;
+
+  /* clang-format off */
+  std::vector<stats> m_interval{};
+  std::vector<stats> m_cum{};
+  /* clang-format on */
 };
 
-NS_END(metrics, structure, silicon);
+NS_END(metrics, controller, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_ */

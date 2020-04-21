@@ -29,10 +29,16 @@
 #include "cosm/vis/config/visualization_config.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
+#include "silicon/controller/construction_lane_allocator.hpp"
+#include "silicon/controller/config/lane_alloc_config.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
+namespace silicon::structure {
+class structure3D;
+} /* namespace silicon::structure */
+
 NS_START(silicon, support);
 
 /*******************************************************************************
@@ -47,19 +53,28 @@ NS_START(silicon, support);
 template <typename TControllerType>
 class robot_configurer : public boost::static_visitor<void> {
  public:
-  explicit robot_configurer(const cvconfig::visualization_config* const config)
-      : mc_config(config) {}
+  explicit robot_configurer(const cvconfig::visualization_config* const vis_config,
+                            const scconfig::lane_alloc_config* const alloc_config,
+                            const sstructure::structure3D* structure)
+      : mc_vis_config(vis_config),
+        mc_alloc_config(alloc_config){}
 
   void operator()(TControllerType* const c) const {
-    if (nullptr != mc_config) {
-      c->display_los(mc_config->robot_los);
-      c->display_id(mc_config->robot_id);
+    if (nullptr != mc_vis_config) {
+      c->display_los(mc_vis_config->robot_los);
+      c->display_id(mc_vis_config->robot_id);
     }
+    auto allocator = std::make_unique<controller::construction_lane_allocator>(
+        mc_alloc_config,
+        mc_structure);
+    /* @todo Send this to the controller */
   }
 
  private:
   /* clang-format off */
-  const cvconfig::visualization_config * const mc_config;
+  const sstructure::structure3D*               mc_structure;
+  const cvconfig::visualization_config * const mc_vis_config;
+  const scconfig::lane_alloc_config * const    mc_alloc_config;
   /* clang-format on */
 };
 

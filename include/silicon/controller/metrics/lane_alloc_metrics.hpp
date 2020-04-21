@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file lane_alloc_metrics.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,42 +18,40 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_
+#define INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include "rcppsw/metrics/base_metrics.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, controller, metrics);
 
-namespace structure {
-namespace config {}
-namespace operations {}
-} /* namespace structure */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \class lane_alloc_metrics
+ * \ingroup controller metrics
+ *
+ * \brief Interface defining the metrics to be collected from \ref
+ * construction_lane_allocator instances during/about the lane allocation process.
+ */
+class lane_alloc_metrics : public rmetrics::base_metrics {
+ public:
+  /**
+   * \brief Return the total # of times the construction lane with the specified
+   * ID has been allocated.
+   */
+  virtual size_t alloc_count(size_t id) const = 0;
+};
 
-namespace support {
-namespace tv {}
-} /* namespace support */
+NS_END(metrics, controller, silicon);
 
-namespace controller {
-namespace config {}
-} /* namespace controller */
-
-} /* namespace silicon */
-
-namespace sstructure = silicon::structure;
-namespace ssops = sstructure::operations;
-namespace ssconfig = sstructure::config;
-
-namespace ssupport = silicon::support;
-namespace sstv = ssupport::tv;
-
-namespace scontroller = silicon::controller;
-namespace scconfig = scontroller::config;;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_ */

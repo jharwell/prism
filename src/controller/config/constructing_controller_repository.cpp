@@ -29,6 +29,8 @@
 #include "cosm/subsystem/config/xml/actuation_subsystem2D_parser.hpp"
 #include "cosm/subsystem/config/xml/sensing_subsystem2D_parser.hpp"
 
+#include "silicon/controller/config/xml/lane_alloc_parser.hpp"
+
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
@@ -50,6 +52,8 @@ constructing_controller_repository::constructing_controller_repository(void) {
       cscxml::sensing_subsystem2D_parser::kXMLRoot);
   parser_register<rmath::config::xml::rng_parser, rmath::config::rng_config>(
       rmath::config::xml::rng_parser::kXMLRoot);
+  parser_register<scconfig::xml::lane_alloc_parser, scconfig::lane_alloc_config>(
+      scconfig::xml::lane_alloc_parser::kXMLRoot);
 
   parser_find<cscxml::sensing_subsystem2D_parser>(
       cscxml::sensing_subsystem2D_parser::kXMLRoot)

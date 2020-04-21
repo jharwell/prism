@@ -41,6 +41,7 @@
 
 #include "silicon/support/config/xml/loop_function_repository.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
+#include "silicon/ds/construct_target_vector.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -113,11 +114,12 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   arena_map_type* arena_map(void) {
     return argos_sm_adaptor::arena_map<arena_map_type>();
   }
+  const ds::construct_target_vectorno& construct_targets(void) const {
+    return m_targetsno;
+  }
 
  private:
-  using targets_vector_type =
-      std::vector<std::unique_ptr<structure::structure3D>>;
-  using builders_vector_type =
+  using builders_vectoro_type =
       std::vector<std::unique_ptr<structure::structure3D_builder>>;
 
   /**
@@ -135,7 +137,8 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   void output_init(const cmconfig::output_config* output) RCSW_COLD;
 
   /**
-   * \brief Initialize the \ref structure::structure3D_builder.
+   * \brief Initialize the \ref structure::structure3D_builder objects, one per
+   * target configured in the input file.
    *
    * \param builder_config Parsed builder parameters.
    * \param target_config Parsed \ref structure::structure3D parameters (one per
@@ -148,8 +151,9 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
   /* clang-format off */
   config::xml::loop_function_repository m_config{};
   std::unique_ptr<tv::tv_manager>       m_tv_manager{nullptr};
-  targets_vector_type                   m_targets{};
-  builders_vector_type                  m_builders{};
+  ds::construct_target_vectoro          m_targetso{};
+  ds::construct_target_vectorno         m_targetsno{};
+  builders_vectoro_type                 m_builderso{};
   /* clang-format on */
 };
 

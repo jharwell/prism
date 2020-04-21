@@ -40,9 +40,11 @@ NS_START(silicon, structure);
  * Constructors/Destructors
  ******************************************************************************/
 structure3D::structure3D(const config::structure3D_config* config,
-                         const arena_map_type* map)
+                         const arena_map_type* map,
+                         size_t id)
     : grid3D(config->bounding_box),
       ER_CLIENT_INIT("silicon.structure.structure3D"),
+      mc_id(id),
       mc_unit_dim_factor(unit_dim_factor_calc(map)),
       mc_arena_grid_res(map->grid_resolution()),
       mc_config(*config),

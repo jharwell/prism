@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file lane_alloc_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,42 +18,36 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_CONFIG_LANE_ALLOC_CONFIG_HPP_
+#define INCLUDE_SILICON_CONTROLLER_CONFIG_LANE_ALLOC_CONFIG_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include <string>
+
+#include "rcppsw/config/base_config.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+NS_START(silicon, controller, config);
 
-namespace structure {
-namespace config {}
-namespace operations {}
-} /* namespace structure */
+/*******************************************************************************
+ * Struct Definitions
+ ******************************************************************************/
+/**
+ * \struct lane_alloc_config
+ * \ingroup controller config
+ *
+ * \brief Parsed configuration for  \ref construction_lane_allocator objects
+ */
+struct lane_alloc_config final : public rconfig::base_config {
+  std::string policy{};
+};
 
-namespace support {
-namespace tv {}
-} /* namespace support */
+NS_END(config, controler, silicon);
 
-namespace controller {
-namespace config {}
-} /* namespace controller */
-
-} /* namespace silicon */
-
-namespace sstructure = silicon::structure;
-namespace ssops = sstructure::operations;
-namespace ssconfig = sstructure::config;
-
-namespace ssupport = silicon::support;
-namespace sstv = ssupport::tv;
-
-namespace scontroller = silicon::controller;
-namespace scconfig = scontroller::config;;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_LANE_ALLOC_CONFIG_HPP_ */

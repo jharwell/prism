@@ -143,11 +143,13 @@ void base_loop_functions::construction_init(
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
     auto target =
         std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
-                                                  arena_map());
+                                                  arena_map(),
+                                                  i);
     if (ssops::validate_spec(target.get())()) {
-      m_targets.push_back(std::move(target));
-      m_builders.push_back(std::make_unique<sstructure::structure3D_builder>(
-          builder_config, m_targets[i].get(), this));
+      m_targetso.push_back(std::move(target));
+      m_targetsno.push_back(target.get());
+      m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
+          builder_config, m_targetso[i].get(), this));
     } else {
       ER_WARN("Structure %zu invalid: will not be built", i);
     }
@@ -165,7 +167,7 @@ void base_loop_functions::pre_step(void) {
   if (nullptr != m_tv_manager) {
     m_tv_manager->update(rtypes::timestep(GetSpace().GetSimulationClock()));
   }
-  for (auto& builder : m_builders) {
+  for (auto& builder : m_builderso) {
     if (builder->build_static_enabled()) {
       builder->build_static(arena_map()->blocks(),
                             rtypes::timestep(GetSpace().GetSimulationClock()));

@@ -1,5 +1,5 @@
 /**
- * \file silicon.hpp
+ * \file construct_target_vector.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,42 +18,38 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SILICON_HPP_
-#define INCLUDE_SILICON_SILICON_HPP_
+#ifndef INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_
+#define INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/cosm.hpp"
+#include <vector>
+#include <memory>
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon {
+namespace silicon::structure {
+class structure3D;
+} /* namespace silicon::structure */
 
-namespace structure {
-namespace config {}
-namespace operations {}
-} /* namespace structure */
+NS_START(silicon, ds);
 
-namespace support {
-namespace tv {}
-} /* namespace support */
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+using construct_target_vectoro =
+    std::vector<std::unique_ptr<structure::structure3D>>;
 
-namespace controller {
-namespace config {}
-} /* namespace controller */
+using construct_target_vectorno =
+    std::vector<structure::structure3D*>;
 
-} /* namespace silicon */
+using construct_target_vectorro =
+    std::vector<const structure::structure3D*>;
 
-namespace sstructure = silicon::structure;
-namespace ssops = sstructure::operations;
-namespace ssconfig = sstructure::config;
+NS_END(ds, silicon);
 
-namespace ssupport = silicon::support;
-namespace sstv = ssupport::tv;
-
-namespace scontroller = silicon::controller;
-namespace scconfig = scontroller::config;;
-
-#endif /* INCLUDE_SILICON_SILICON_HPP_ */
+#endif /* INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_ */

@@ -67,25 +67,25 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
   }
   for (size_t i = 0; i < lower.d1(); ++i) {
     for (size_t j = 0; j < lower.d2(); ++j) {
-      auto specl = mc_structure->cell_spec(lower.access(i, j).loc());
-      auto specu = mc_structure->cell_spec(upper.access(i, j).loc());
+      auto* specl = mc_structure->cell_spec_retrieve(lower.access(i, j).loc());
+      auto* specu = mc_structure->cell_spec_retrieve(upper.access(i, j).loc());
       /*
        * If the lower layer cell at (i,j) contained a cube, you can have
        * anything in the upper layer cell at (i,j).
        */
-      if (cfsm::cell3D_state::ekST_HAS_BLOCK == specl.state &&
-          crepr::block_type::ekCUBE == specl.block_type) {
+      if (cfsm::cell3D_state::ekST_HAS_BLOCK == specl->state &&
+          crepr::block_type::ekCUBE == specl->block_type) {
         continue;
       }
 
-      if (cfsm::cell3D_state::ekST_HAS_BLOCK == specl.state &&
-          crepr::block_type::ekRAMP == specl.block_type) {
+      if (cfsm::cell3D_state::ekST_HAS_BLOCK == specl->state &&
+          crepr::block_type::ekRAMP == specl->block_type) {
         /*
          * If the lower layer cell at (i,j) contained a ramp block, the upper
          * layer MUST be empty (otherwise not physically feasible to stack the
          * layers, regardless of block type/orientation in the upper layer).
          */
-        if (cfsm::cell3D_state::ekST_EMPTY != specu.state) {
+        if (cfsm::cell3D_state::ekST_EMPTY != specu->state) {
           return false;
         }
         /*
@@ -94,9 +94,9 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
          * upper layer must be empty (otherwise not physically feasible to stack
          * the layers, regardless of block type/orientation in the upper layer).
          */
-        for (size_t m = 1; m < specl.extent; ++m) {
-          auto spec_extent = mc_structure->cell_spec(upper.access(i, j).loc());
-          if (cfsm::cell3D_state::ekST_EMPTY != spec_extent.state) {
+        for (size_t m = 1; m < specl->extent; ++m) {
+          auto spec_extent = mc_structure->cell_spec_retrieve(upper.access(i, j).loc());
+          if (cfsm::cell3D_state::ekST_EMPTY != spec_extent->state) {
             return false;
           }
         } /* for(m..) */

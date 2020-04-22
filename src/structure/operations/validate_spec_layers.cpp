@@ -51,7 +51,7 @@ bool validate_spec_layers::layer_validate(const slice2D& layer,
                                           const rmath::radians& orientation,
                                           RCSW_UNUSED size_t z) const {
   /* PROPERTY: Hamiltonian AND even # rows along orientation direction */
-  ER_CHECK(layer.is_hamiltonian(), "Layer %zu not Hamiltonian", z);
+  ER_CHECK(layer.is_hamiltonian(), "Layer%zu not Hamiltonian", z);
   if (rmath::radians::kZERO == mc_structure->orientation()) {
     ER_CHECK(RCSW_IS_EVEN(layer.d1()),
              "Structure oriented along X axis does not have even # rows in Y");

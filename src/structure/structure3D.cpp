@@ -48,6 +48,7 @@ structure3D::structure3D(const config::structure3D_config* config,
       mc_unit_dim_factor(unit_dim_factor_calc(map)),
       mc_arena_grid_res(map->grid_resolution()),
       mc_config(*config),
+      m_cell_spec_map(cell_spec_map_calc()),
       m_subtargetso(subtargetso_calc()),
       m_subtargetsno(subtargetsno_calc()) {
   ER_ASSERT(rmath::radians::kZERO == mc_config.orientation ||
@@ -160,9 +161,9 @@ std::vector<rmath::vector3z> structure3D::spec_to_block_extents(
   return ret;
 } /* spec_to_block_extents() */
 
-structure3D::cell_final_spec structure3D::cell_spec(
+structure3D::cell_spec structure3D::cell_spec_calc(
     const rmath::vector3z& cell) const {
-  ER_TRACE("Query spec for cell@%s", cell.to_str().c_str());
+  ER_DEBUG("Query spec for cell@%s", cell.to_str().c_str());
   /*
    * Direct key comparison for host cells. This is the default, but I explicitly
    * define it here to clearly differentiate it from searching for blocks which
@@ -241,7 +242,7 @@ structure3D::cell_final_spec structure3D::cell_spec(
             rmath::radians::kZERO,
             0};
   }
-} /* cell_spec() */
+} /* cell_spec_calc() */
 
 rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
   return originr() + rmath::zvec2dvec(cell.loc()) * mc_unit_dim_factor *
@@ -263,11 +264,11 @@ size_t structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
 structure3D::subtarget_vectoro structure3D::subtargetso_calc(void) const {
   subtarget_vectoro ret;
   if (rmath::radians::kZERO == mc_config.orientation) {
-    for (size_t j = 0; j < ysize(); j+=2) {
+    for (size_t j = 0; j < ysize() / 2; ++j) {
       ret.push_back(std::make_unique<subtarget>(this, j));
     } /* for(j..) */
   } else {
-    for (size_t i = 0; i < xsize(); i+=2) {
+    for (size_t i = 0; i < xsize() / 2; ++i) {
       ret.push_back(std::make_unique<subtarget>(this, i));
     } /* for(i..) */
   }
@@ -283,6 +284,21 @@ structure3D::subtarget_vectorno structure3D::subtargetsno_calc(void) const {
   return ret;
 } /* subtargetsno_calc() */
 
+structure3D::cell_spec_map_type structure3D::cell_spec_map_calc(void) {
+  cell_spec_map_type ret;
+  ER_DEBUG("Build cell spec map for structure%zu", mc_id);
+  for (size_t i = 0; i < mc_config.bounding_box.x(); ++i) {
+    for (size_t j = 0; j < mc_config.bounding_box.y(); ++j) {
+      for (size_t k = 0; k < mc_config.bounding_box.z(); ++k) {
+        rmath::vector3z c(i, j, k);
+        ret.insert({c, cell_spec_calc(c)});
+      } /* for(k..) */
+    }   /* for(j..) */
+  }     /* for(i..) */
+  ER_DEBUG("Cell spec map for structure%zu complete", mc_id);
+  return ret;
+} /* cell_spec_map_calc() */
+
 subtarget* structure3D::cell_subtarget(const cds::cell3D& cell) {
   if (rmath::radians::kZERO == mc_config.orientation) {
     return m_subtargetsno[cell.loc().y() % 2];
@@ -291,5 +307,13 @@ subtarget* structure3D::cell_subtarget(const cds::cell3D& cell) {
   } /* for(i..) */
 } /* cell_subtarget() */
 
+const structure3D::cell_spec* structure3D::cell_spec_retrieve(
+    const rmath::vector3z& coord) const {
+  auto it = m_cell_spec_map.find(coord);
+  if (m_cell_spec_map.end() != it) {
+    return &it->second;
+  }
+  return nullptr;
+}
 
 NS_END(structure, silicon);

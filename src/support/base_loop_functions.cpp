@@ -141,17 +141,19 @@ void base_loop_functions::construction_init(
   ER_INFO("Initializing %zu construction targets",
           targets_config->targets.size());
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
+    ER_INFO("Initializing construction target %zu", i);
     auto target =
         std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
                                                   arena_map(),
                                                   i);
     if (ssops::validate_spec(target.get())()) {
-      m_targetso.push_back(std::move(target));
       m_targetsno.push_back(target.get());
+      m_targetso.push_back(std::move(target));
       m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
           builder_config, m_targetso[i].get(), this));
+      ER_INFO("Initialized construction target %zu", i);
     } else {
-      ER_WARN("Structure %zu invalid: will not be built", i);
+      ER_INFO("Construction targets %zu invalid: will not be built", i);
     }
   } /* for(i..) */
 } /* construction_init() */

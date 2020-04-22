@@ -26,6 +26,7 @@
  ******************************************************************************/
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 
 #include "rcppsw/ds/grid3D.hpp"
@@ -71,7 +72,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
  public:
   using subtarget_vectorno = std::vector<subtarget*>;
 
-  struct cell_final_spec {
+  struct cell_spec {
     int state;
     crepr::block_type block_type;
     rmath::radians z_rotation;
@@ -132,10 +133,12 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   bool is_complete(void) const;
 
   /**
-   * \brief Given a location within the bounding box for the structure, compute
-   * the final state the cell should be in once the structure is completed.
+   * \brief Given a location within the bounding box for the structure, retrieve
+   * the final state the cell should be in once the structure is completed via
+   * lookup (MUCH faster than having to compute it every queury in large
+   * structures).
    */
-  cell_final_spec cell_spec(const rmath::vector3z& coord) const;
+  const cell_spec* cell_spec_retrieve(const rmath::vector3z& coord) const;
 
   /**
    * \brief For ramp blocks, compute the list of cells which will be in the
@@ -167,6 +170,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
 
  private:
   using subtarget_vectoro = std::vector<std::unique_ptr<subtarget>>;
+  using cell_spec_map_type = std::map<rmath::vector3z, cell_spec>;
 
   /**
    * \brief Size of the extent for ramp blocks, based what is hard-coded in
@@ -179,6 +183,16 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   subtarget_vectoro subtargetso_calc(void) const;
   subtarget_vectorno subtargetsno_calc(void) const;
 
+  /**
+   * \brief Given a location within the bounding box for the structure, compute
+   * the final state the cell should be in once the structure is completed.
+   *
+   * Should ONLY be called during initialization.
+   */
+  cell_spec cell_spec_calc(const rmath::vector3z& coord) const;
+
+  cell_spec_map_type cell_spec_map_calc(void);
+
   /* clang-format off */
   const size_t                     mc_id;
   const size_t                     mc_unit_dim_factor;
@@ -186,6 +200,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   const config::structure3D_config mc_config;
 
   cds::block3D_vectorro            m_placed{};
+  cell_spec_map_type               m_cell_spec_map;
   subtarget_vectoro                m_subtargetso;
   subtarget_vectorno               m_subtargetsno;
   /* clang-format on */

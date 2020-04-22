@@ -73,8 +73,8 @@ size_t subtarget::total_block_count_calc(const slice2D& slice,
   size_t count = 0;
   for (size_t i = 0; i < slice.d1(); ++i) {
     for (size_t j = 0; j < slice.d2(); ++j) {
-      auto spec = structure->cell_spec(slice.access(i, j).loc());
-      count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec.state;
+      auto* spec = structure->cell_spec_retrieve(slice.access(i, j).loc());
+      count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
     } /* for(j..) */
   } /* for(i..) */
   return count;

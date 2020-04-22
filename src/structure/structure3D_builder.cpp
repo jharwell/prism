@@ -113,24 +113,24 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
            (m_target->origind() + c).to_str().c_str());
 
   bool ret = false;
-  auto spec = m_target->cell_spec(c);
-  if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec.state) {
+  auto* spec = m_target->cell_spec_retrieve(c);
+  if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
     ER_DEBUG("Build for block hosting cell%s (%zu/%zu for interval)",
              c.to_str().c_str(),
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
     boost::optional<crepr::block3D_variant> block =
-        build_block_find(spec.block_type, blocks, search_start);
+        build_block_find(spec->block_type, blocks, search_start);
     ER_ASSERT(block,
               "Could not find a block of type %d for location %s",
-              rcppsw::as_underlying(spec.block_type),
+              rcppsw::as_underlying(spec->block_type),
               c.to_str().c_str());
 
-    ret = place_block(*block, c, spec.z_rotation);
+    ret = place_block(*block, c, spec->z_rotation);
     ER_ASSERT(ret,
               "Failed to build block of type %d for location %s",
-              rcppsw::as_underlying(spec.block_type),
+              rcppsw::as_underlying(spec->block_type),
               c.to_str().c_str());
     /* A block has disappeared from the arena floor */
     m_sm->floor()->SetChanged();

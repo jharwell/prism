@@ -51,7 +51,7 @@ class structure_state_metrics : public virtual rmetrics::base_metrics {
    * \brief Return the list of blocks that have been placed so far onto the
    * structure.
    */
-  virtual const cds::block3D_vectorro& placed_blocks(void) const = 0;
+  virtual cds::block3D_vectorro placed_blocks(void) const = 0;
 };
 
 NS_END(metrics, structure, silicon);

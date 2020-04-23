@@ -24,6 +24,7 @@
 #include "silicon/structure/structure3D_builder.hpp"
 
 #include <typeindex>
+#include <boost/ref.hpp>
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/pal/argos_sm_adaptor.hpp"
@@ -120,20 +121,23 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
-    boost::optional<crepr::block3D_variant> block =
-        build_block_find(spec->block_type, blocks, search_start);
+    auto* block = build_block_find(spec->block_type, blocks, search_start);
     ER_ASSERT(block,
               "Could not find a block of type %d for location %s",
               rcppsw::as_underlying(spec->block_type),
               c.to_str().c_str());
 
-    ret = place_block(*block, c, spec->z_rotation);
+    /*
+     * Clone block because the structure is taking ownership of the block, and
+     * you can't share ownership with the arena, which already owns it. This
+     * also makes the # of blocks discoverable by robots in the arena as
+     * construction progresses constant. See SILICON#22.
+     */
+    ret = place_block(block->clone(), c, spec->z_rotation);
     ER_ASSERT(ret,
               "Failed to build block of type %d for location %s",
               rcppsw::as_underlying(spec->block_type),
               c.to_str().c_str());
-    /* A block has disappeared from the arena floor */
-    m_sm->floor()->SetChanged();
     ++m_static_state.n_built_interval;
   } else {
     ER_TRACE("Cell%s contains no block", c.to_str().c_str());
@@ -142,36 +146,60 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
   return ret;
 } /* build_static_single() */
 
-bool structure3D_builder::place_block(const crepr::block3D_variant& block,
+bool structure3D_builder::place_block(std::unique_ptr<crepr::base_block3D> block,
                                       const rmath::vector3z& cell,
                                       const rmath::radians& z_rotation) {
+  /*
+   * We give the placed block a unique ID that probably won't be the same as
+   * the one it had in the arena; this is necessary since blocks are cloned when
+   * pulling from the arena during static build and the ID of the cloned block
+   * is used to create the ARGoS embodiment ID, which MUST be unique among all
+   * entities.
+   */
+  block->id(m_target->placement_id());
+  /*
+   * This variant is non-owning, because ownership is not needed until we
+   * actually call the place_block operation.
+   */
+  auto variantno = create_variant(block.get());
+
   /* verify block addition to structure is OK */
-  if (!m_target->block_placement_valid(block, cell, z_rotation)) {
+  if (!m_target->block_placement_valid(variantno, cell, z_rotation)) {
     ER_WARN("Block placement at %s,z_rot=%s failed validation: abort placement",
             cell.to_str().c_str(),
             z_rotation.to_str().c_str());
     return false;
   }
-  /* Add block to structure */
+  /*
+   * Add block to structure.
+   *
+   * boost::variant does not play nice with move-only types without lots of
+   * contortions, as far as I can tell, so we need to bend the usual coding
+   * conventions and use a raw pointer which indicates OWNING access within the
+   * scope of the called operation.
+   */
+  auto varianto = create_variant(block.release());
   boost::apply_visitor(operations::place_block(cell, z_rotation, m_target),
-                       block);
-
-  /* Create block embodiment in ARGoS */
-  crepr::embodied_block_variant embodiment =
-      m_sm->make_embodied(block, z_rotation);
+                       varianto);
 
   /*
-   * Associate the created block embodiment with the source block it
-   * came from.
+   * Create block embodiment in ARGoS and associate the created block embodiment
+   * with the source block it came from. This MUST be after the block has been
+   * placed on the structure so that the embodiment is placed at its updated
+   * location.
    */
+  crepr::embodied_block_variant embodiment = m_sm->make_embodied(variantno,
+                                                                 z_rotation,
+                                                                 m_target->id());
   boost::apply_visitor(std::bind(operations::set_block_embodiment(),
                                  std::placeholders::_1,
                                  embodiment),
-                       block);
+                       variantno);
+
   return true;
 } /* place_block() */
 
-boost::optional<crepr::block3D_variant> structure3D_builder::build_block_find(
+crepr::base_block3D* structure3D_builder::build_block_find(
     crepr::block_type type,
     const cds::block3D_vectorno& blocks,
     size_t start) const {
@@ -185,23 +213,20 @@ boost::optional<crepr::block3D_variant> structure3D_builder::build_block_find(
      *
      * are available for selection.
      */
-    if (!m_target->contains(blocks[eff_i]) && !blocks[eff_i]->is_out_of_sight()) {
-      crepr::block3D_variant v;
+    if (!m_target->contains(blocks[eff_i]) &&
+        !blocks[eff_i]->is_out_of_sight()) {
       if (crepr::block_type::ekCUBE == type &&
           crepr::block_type::ekCUBE == blocks[eff_i]->md()->type()) {
-        v = static_cast<crepr::cube_block3D*>(blocks[eff_i]);
         ER_TRACE("Found cube build block%d", blocks[eff_i]->id().v());
-
-        return boost::make_optional(v);
+        return blocks[eff_i];
       } else if (crepr::block_type::ekRAMP == type &&
                  crepr::block_type::ekRAMP == blocks[eff_i]->md()->type()) {
-        v = static_cast<crepr::ramp_block3D*>(blocks[eff_i]);
+        return blocks[eff_i];
         ER_TRACE("Found ramp build block%d", blocks[eff_i]->id().v());
-        return boost::make_optional(v);
       }
     }
   } /* for(i..) */
-  return boost::optional<crepr::block3D_variant>();
+  return nullptr;
 } /* build_block_find() */
 
 bool structure3D_builder::block_placement_valid(
@@ -210,5 +235,18 @@ bool structure3D_builder::block_placement_valid(
     const rmath::radians& z_rotation) const {
   return m_target->block_placement_valid(block, loc, z_rotation);
 } /* block_placement_valid() */
+
+crepr::block3D_variant structure3D_builder::create_variant(
+    crepr::base_block3D* block) const {
+      if (crepr::block_type::ekCUBE == block->md()->type()) {
+        return {static_cast<crepr::cube_block3D*>(block)};
+      } else if (crepr::block_type::ekRAMP == block->md()->type()) {
+        return {static_cast<crepr::ramp_block3D*>(block)};
+      } else {
+        ER_FATAL_SENTINEL("Bad 3D block type %d",
+                          rcppsw::as_underlying(block->md()->type()));
+        return {};
+      }
+} /* create_variant() */
 
 NS_END(structure, silicon);

@@ -60,8 +60,7 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
    * sibreample holes are not feasible unless beam blocks exist, which they do
    * not yet. This may be relaxed at some point in the future.
    */
-  if (lower.topological_holes().size() > 0 ||
-      upper.topological_holes().size() > 0) {
+  if (lower.topological_holes().empty() || upper.topological_holes().empty()) {
     ER_DEBUG("One or both layers contain topological holes");
     return false;
   }

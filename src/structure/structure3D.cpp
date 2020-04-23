@@ -115,17 +115,14 @@ error:
 } /* block_placement_cell_check() */
 
 bool structure3D::contains(const crepr::base_block3D* const query) const {
-  auto it =
-      std::find_if(m_placed.begin(), m_placed.end(), [&](const auto* block) {
-        return block->idcmp(*query);
-      });
-  return m_placed.end() != it;
+  return nullptr != cell_spec_retrieve(query->dloc());
 } /* contains() */
 
-void structure3D::block_add(const crepr::base_block3D* block) {
-  m_placed.push_back(block);
+void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
+  RCSW_UNUSED rtypes::type_uuid id = block->id();
+  m_placed.push_back(std::move(block));
   ER_INFO("Added block%d to structure (%zu total)",
-          block->id().v(),
+          id.v(),
           m_placed.size());
 } /* block_add() */
 
@@ -162,14 +159,14 @@ std::vector<rmath::vector3z> structure3D::spec_to_block_extents(
 } /* spec_to_block_extents() */
 
 structure3D::cell_spec structure3D::cell_spec_calc(
-    const rmath::vector3z& cell) const {
-  ER_DEBUG("Query spec for cell@%s", cell.to_str().c_str());
+    const rmath::vector3z& coord) const {
+  ER_DEBUG("Query spec for cell@%s", coord.to_str().c_str());
   /*
    * Direct key comparison for host cells. This is the default, but I explicitly
    * define it here to clearly differentiate it from searching for blocks which
    * match the specified location based on extents.
    */
-  auto host_pred = [&](const auto& pair) { return pair.first == cell; };
+  auto host_pred = [&](const auto& pair) { return pair.first == coord; };
 
   /* easy case: cubes are 1x1x1, so they have no extents */
   auto cube_it = std::find_if(mc_config.cube_blocks.begin(),
@@ -200,7 +197,7 @@ structure3D::cell_spec structure3D::cell_spec_calc(
      * passed.
      */
     for (auto& e : extents) {
-      if (e == cell) {
+      if (e == coord) {
         return true;
       }
     } /* for(&e..) */
@@ -219,7 +216,7 @@ structure3D::cell_spec structure3D::cell_spec_calc(
                (mc_config.cube_blocks.end() != cube_it);
   ER_ASSERT(count <= 1,
             "Cell@%s config error: found in more than block spec map",
-            cell.to_str().c_str());
+            coord.to_str().c_str());
 
   if (mc_config.cube_blocks.end() != cube_it) {
     return {cfsm::cell3D_state::ekST_HAS_BLOCK,
@@ -286,7 +283,7 @@ structure3D::subtarget_vectorno structure3D::subtargetsno_calc(void) const {
 
 structure3D::cell_spec_map_type structure3D::cell_spec_map_calc(void) {
   cell_spec_map_type ret;
-  ER_DEBUG("Build cell spec map for structure%zu", mc_id);
+  ER_DEBUG("Build cell spec map for structure%d", mc_id.v());
   for (size_t i = 0; i < mc_config.bounding_box.x(); ++i) {
     for (size_t j = 0; j < mc_config.bounding_box.y(); ++j) {
       for (size_t k = 0; k < mc_config.bounding_box.z(); ++k) {
@@ -295,7 +292,7 @@ structure3D::cell_spec_map_type structure3D::cell_spec_map_calc(void) {
       } /* for(k..) */
     }   /* for(j..) */
   }     /* for(i..) */
-  ER_DEBUG("Cell spec map for structure%zu complete", mc_id);
+  ER_DEBUG("Cell spec map for structure%d complete", mc_id.v());
   return ret;
 } /* cell_spec_map_calc() */
 
@@ -315,5 +312,13 @@ const structure3D::cell_spec* structure3D::cell_spec_retrieve(
   }
   return nullptr;
 }
+
+cds::block3D_vectorro structure3D::placed_blocks(void) const {
+  cds::block3D_vectorro ret;
+  for (auto &b : m_placed) {
+    ret.push_back(b.get());
+  } /* for(&b..) */
+  return ret;
+} /* placed_blocks() */
 
 NS_END(structure, silicon);

@@ -73,10 +73,10 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   using subtarget_vectorno = std::vector<subtarget*>;
 
   struct cell_spec {
-    int state;
-    crepr::block_type block_type;
-    rmath::radians z_rotation;
-    size_t extent;
+    int state{};
+    crepr::block_type block_type{};
+    rmath::radians z_rotation{};
+    size_t extent{};
   };
   using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
   using rds::grid3D<cds::cell3D>::operator[];
@@ -90,9 +90,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   const structure3D& operator=(const structure3D&) = delete;
 
   /* structure state metrics */
-  const cds::block3D_vectorro& placed_blocks(void) const override {
-    return m_placed;
-  }
+  cds::block3D_vectorro placed_blocks(void) const override;
 
   /* structure progress metrics */
   size_t n_placed_blocks(void) const override { return m_placed.size(); }
@@ -112,11 +110,14 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
                              const rmath::vector3z& loc,
                              const rmath::radians& z_rotation);
 
-  size_t id(void) const { return mc_id; }
+  rtypes::type_uuid id(void) const { return mc_id; }
 
   /**
-   * \brief Return \c TRUE if the specified block has already been placed on the
-   * structure, and \c FALSE otherwise.
+   * \brief Return \c TRUE if a block with the same ID as the \p query currently
+   * exists in the structure, and \c FALSE otherwise. Search is performed by
+   * block LOCATION, rather than ID, because the structure changes the IDs of
+   * the cloned blocks placed on the structure in order to differentiate them
+   * from the blocks in the arena.
    */
   bool contains(const crepr::base_block3D* query) const;
 
@@ -124,7 +125,7 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
    * \brief Add a block to the structure after verifying its placement is valid
    * via \ref block_addition_valid().
    */
-  void block_add(const crepr::base_block3D* block);
+  void block_add(std::unique_ptr<crepr::base_block3D> block);
 
   /**
    * \brief Return \c TRUE if the structure has been completed and \c FALSE
@@ -167,6 +168,9 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   subtarget* cell_subtarget(const cds::cell3D& cell);
 
   const subtarget_vectorno& subtargets(void) const { return m_subtargetsno; }
+  rtypes::type_uuid placement_id(void) {
+    return rtypes::type_uuid(m_placement_id++);
+  }
 
  private:
   using subtarget_vectoro = std::vector<std::unique_ptr<subtarget>>;
@@ -194,12 +198,13 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   cell_spec_map_type cell_spec_map_calc(void);
 
   /* clang-format off */
-  const size_t                     mc_id;
+  const rtypes::type_uuid          mc_id;
   const size_t                     mc_unit_dim_factor;
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 
-  cds::block3D_vectorro            m_placed{};
+  size_t                           m_placement_id{0};
+  cds::block3D_vectoro             m_placed{};
   cell_spec_map_type               m_cell_spec_map;
   subtarget_vectoro                m_subtargetso;
   subtarget_vectorno               m_subtargetsno;

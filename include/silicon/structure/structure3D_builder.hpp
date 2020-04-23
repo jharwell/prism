@@ -25,6 +25,7 @@
  * Includes
  ******************************************************************************/
 #include <boost/optional.hpp>
+#include <memory>
 
 #include <argos3/plugins/simulator/entities/box_entity.h>
 
@@ -120,7 +121,9 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    * the placed block.
    *
    * If the placement of the block fails validation checks, then no action is
-   * performed.
+   * performed. Ownership of the passed block has already been relinquished, so
+   * even if no action is performed the passed block is still invalid after this
+   * function returns.
    *
    * \param block The block to place.
    * \param cell The \p RELATIVE location of the block within the structure
@@ -130,7 +133,7 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    * \param z_rotation The orientation the block should have when placed at the
    *                   specified location.
    */
-  bool place_block(const crepr::block3D_variant& block,
+  bool place_block(std::unique_ptr<crepr::base_block3D> block,
                    const rmath::vector3z& cell,
                    const rmath::radians& z_rotation);
 
@@ -153,10 +156,9 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    * \param start The starting index within \p blocks, in order to reduce the
    *              complexity of repeated linear scans.
    */
-  boost::optional<crepr::block3D_variant> build_block_find(
-      crepr::block_type type,
-      const cds::block3D_vectorno& blocks,
-      size_t start) const;
+  crepr::base_block3D* build_block_find(crepr::block_type type,
+                                        const cds::block3D_vectorno& blocks,
+                                        size_t start) const;
 
   /**
    * \brief Place a single block as part of \ref build_static().
@@ -166,6 +168,8 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    */
   bool build_static_single(const cds::block3D_vectorno& blocks,
                            size_t search_start);
+
+  crepr::block3D_variant create_variant(crepr::base_block3D* block) const;
 
   /* clang-format off */
   const config::structure3D_builder_config mc_config;

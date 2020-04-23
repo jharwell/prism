@@ -51,10 +51,10 @@ class structure3D;
 class slice2D : public rer::client<slice2D> {
  public:
   struct slice_coords {
-    rmath::vector3z axis;
-    size_t offset;
-    rmath::vector3z ll;
-    rmath::vector3z ur;
+    rmath::vector3z axis{};
+    size_t offset{};
+    rmath::vector3z ll{};
+    rmath::vector3z ur{};
   };
 
   using layer_view = rds::grid3D<cds::cell3D>::const_grid_view;

@@ -25,6 +25,7 @@
  * Includes
  ******************************************************************************/
 #include <boost/variant/static_visitor.hpp>
+#include <memory>
 
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/er/client.hpp"
@@ -61,7 +62,38 @@ class place_block : public rer::client<place_block>,
   place_block(const place_block&) = delete;
   place_block& operator=(const place_block&) = delete;
 
+  /**
+   * \brief Place a cube block onto the structure. The function argument is an
+   * OWNING reference, rather than non-owning (contrary to usual coding
+   * guidelines), because boost::variant and visitation does not play well with
+   * std::unique_ptr, which is what is used when:
+   *
+   * - Robots give up ownership of the block they are carrying to place it on
+   *   the structure, which takes ownership.
+   * - The \ref structure3D builder clones a block in the arena to give to the
+   *   structure, which takes ownership.
+   *
+   * We convert the raw pointer back into an OWNING pointer before doing the
+   * actual work of block placement in \ref do_place(), to maintain consistency
+   * with the coding guidelines as much as possible.
+   */
   void operator()(crepr::cube_block3D* block) const;
+
+  /**
+   * \brief Place a ramp block onto the structure. The function argument is an
+   * OWNING reference, rather than non-owning (contrary to usual coding
+   * guidelines), because boost::variant and visitation does not play well with
+   * std::unique_ptr, which is what is used when:
+   *
+   * - Robots give up ownership of the block they are carrying to place it on
+   *   the structure, which takes ownership.
+   * - The \ref structure3D builder clones a block in the arena to give to the
+   *   structure, which takes ownership.
+   *
+   * We convert the raw pointer back into an OWNING pointer before doing the
+   * actual work of block placement in \ref do_place(), to maintain consistency
+   * with the coding guidelines as much as possible.
+   */
   void operator()(crepr::ramp_block3D* block) const;
 
  private:
@@ -76,6 +108,9 @@ class place_block : public rer::client<place_block>,
    * arena.
    */
   rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
+
+  void do_place(std::unique_ptr<crepr::ramp_block3D> block) const;
+  void do_place(std::unique_ptr<crepr::cube_block3D> block) const;
 
   /* clang-format off */
   const rmath::vector3z          mc_cell;

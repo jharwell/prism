@@ -30,6 +30,8 @@
 #include "rcppsw/config/base_config.hpp"
 #include "rcppsw/math/vector3.hpp"
 
+#include "cosm/ds/config/grid3D_config.hpp"
+
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -57,8 +59,8 @@ struct cube_block_loc_spec {
  */
 struct structure3D_config final : public rconfig::base_config {
   rmath::vector3d              anchor{};
-  rmath::vector3z              bounding_box{};
   rmath::radians               orientation{};
+  cds::config::grid3D_config   bounding_box;
 
   /*
    * We use maps with somewhat redundant (key, value) pairs in order to make the

@@ -28,7 +28,7 @@
 
 #include "cosm/metrics/base_metrics_aggregator.hpp"
 #include "cosm/metrics/config/metrics_config.hpp"
-#include "cosm/ds/config/grid_config.hpp"
+#include "cosm/ds/config/grid2D_config.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/ds/construct_target_vector.hpp"
@@ -60,7 +60,7 @@ class silicon_metrics_aggregator
       public cmetrics::base_metrics_aggregator {
  public:
   silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
-                             const cdconfig::grid_config* gconfig,
+                             const cdconfig::grid2D_config* gconfig,
                              const std::string& output_root,
                              const ds::construct_target_vectorno& targets);
   ~silicon_metrics_aggregator(void) override = default;

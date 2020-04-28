@@ -1,7 +1,7 @@
 /**
- * \file controller_fwd.hpp
+ * \file building_signal.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 202 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,35 +18,41 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
+#ifndef INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_
+#define INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/common/common.hpp"
-#include "rcppsw/mpl/typelist.hpp"
+#include "cosm/fsm/util_signal.hpp"
 
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Macros
+ * Namespaces
  ******************************************************************************/
-#define NON_ORACULAR_CONTROLLER_TYPES controller::constructing_controller
-
-#define ORACULAR_CONTROLLER_TYPES
-
-#define CONTROLLER_TYPES \
-  ORACULAR_CONTROLLER_TYPES, NON_ORACULAR_CONTROLLER_TYPES
+NS_START(silicon, fsm);
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Class Definitions
  ******************************************************************************/
-NS_START(silicon, controller);
-
-class constructing_controller;
-using typelist = rmpl::typelist<constructing_controller>;
+/**
+ * \class building_signal
+ * \ingroup fsm
+ *
+ * \brief Signals that FSMs can use to communicate between sub/super states, and
+ * that can be used to direct them in some way.
+ */
+class building_signal : public cfsm::util_signal {
+ public:
+  enum type {
+    /**
+     * \brief A robot has placed a block on the structure
+     */
+    ekBLOCK_PLACE = cfsm::util_signal::type::ekEXTERNAL_SIGNALS,
+  };
+};
 
 NS_END(controller, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_ */

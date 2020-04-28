@@ -1,5 +1,5 @@
 /**
- * \file controller_fwd.hpp
+ * \file stygmergic_configuration.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,35 +18,54 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
+#ifndef INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_
+#define INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/common/common.hpp"
-#include "rcppsw/mpl/typelist.hpp"
-
 #include "silicon/silicon.hpp"
-
-/*******************************************************************************
- * Macros
- ******************************************************************************/
-#define NON_ORACULAR_CONTROLLER_TYPES controller::constructing_controller
-
-#define ORACULAR_CONTROLLER_TYPES
-
-#define CONTROLLER_TYPES \
-  ORACULAR_CONTROLLER_TYPES, NON_ORACULAR_CONTROLLER_TYPES
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller);
+NS_START(silicon, fsm);
 
-class constructing_controller;
-using typelist = rmpl::typelist<constructing_controller>;
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \brief Represents the various types of stimulating stygmergic configurations
+ * that robots can encounter in the environment as they proceed down their
+ * construction lane.
+ */
+enum class stygmergic_configuration {
+  /**
+   * No configuration has been encountred.
+   */
+  ekNONE,
 
-NS_END(controller, silicon);
+  /**
+   * A configuration in which BOTH the ingress and egress lanes in the
+   * construction lanes have blocks placed up to the same location in X or Y
+   * (depending on structure orientation).
+   */
+  ekLANE_FILLED,
 
-#endif /* INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_ */
+  /**
+   * A configuration in which the ingress lane is missing a block, and there is
+   * one in the egress lane.
+   */
+  ekLANE_GAP_INGRESS,
+
+  /**
+   * A configuration in which the egress lane is missing a block, and there is
+   * one in the ingress lane.
+   *
+   */
+  ekLANE_GAP_EGRESS
+};
+
+NS_END(fsm, silicon);
+
+#endif /* INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_ */

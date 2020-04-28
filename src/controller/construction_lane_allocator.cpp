@@ -52,12 +52,12 @@ std::vector<rmath::vector3d> construction_lane_allocator::lane_locs_calc(
     const sstructure::structure3D* structure) const {
   std::vector<rmath::vector3d> ret;
   if (rmath::radians::kZERO == structure->orientation()) {
-    for (size_t j = 0; j < structure->ysize(); j+=2) {
+    for (size_t j = 0; j < structure->ydsize(); j+=2) {
       auto& cell = structure->access(structure->origind() + rmath::vector3z(0, j, 0));
           ret.push_back(structure->cell_loc_abs(cell));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == structure->orientation()) {
-    for (size_t i = 0; i < structure->ysize(); i+=2) {
+    for (size_t i = 0; i < structure->ydsize(); i+=2) {
       auto& cell = structure->access(structure->origind() + rmath::vector3z(i, 0, 0));
       ret.push_back(structure->cell_loc_abs(cell));
     } /* for(i..) */

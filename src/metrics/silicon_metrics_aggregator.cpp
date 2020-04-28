@@ -53,23 +53,23 @@ NS_START(silicon, metrics);
  ******************************************************************************/
 silicon_metrics_aggregator::silicon_metrics_aggregator(
     const cmconfig::metrics_config* const mconfig,
-    const cdconfig::grid_config* const gconfig,
+    const cdconfig::grid2D_config* const gconfig,
     const std::string& output_root,
     const ds::construct_target_vectorno& targets)
     : ER_CLIENT_INIT("silicon.metrics.aggregator"),
       base_metrics_aggregator(mconfig, output_root) {
   /* register collectors from base class  */
-  auto dims2D = rmath::dvec2zvec(gconfig->upper,
-                                 gconfig->resolution.v());
+  rmath::vector2z dims2D = rmath::dvec2zvec(gconfig->dims,
+                                            gconfig->resolution.v());
   size_t max_height = 0;
   for (auto *target : targets) {
-    max_height = std::max(target->zsize(), max_height);
+    max_height = std::max(target->zdsize(), max_height);
   } /* for(*target..) */
 
   /* robots can be on top of structures, so give a little padding in Z */
-  auto dims3D = rmath::vector3z(dims2D.x(),
-                                dims2D.y(),
-                                max_height + 2);
+  rmath::vector3z dims3D = rmath::vector3z(dims2D.x(),
+                                           dims2D.y(),
+                                           max_height + 2);
 
   register_with_arena_dims2D(mconfig, dims2D);
   register_with_arena_dims3D(mconfig, dims3D);
@@ -192,7 +192,7 @@ void silicon_metrics_aggregator::register_with_target_dims(
      rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE},
   };
 
-  auto extra_args = std::make_tuple(structure->dims());
+  auto extra_args = std::make_tuple(structure->dimsd());
   cmetrics::collector_registerer<extra_args_type> registerer(mconfig,
                                                              creatable_set,
                                                              this,

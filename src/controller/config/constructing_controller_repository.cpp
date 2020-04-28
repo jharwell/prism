@@ -27,7 +27,7 @@
 
 #include "cosm/metrics/config/xml/output_parser.hpp"
 #include "cosm/subsystem/config/xml/actuation_subsystem2D_parser.hpp"
-#include "cosm/subsystem/config/xml/sensing_subsystem2D_parser.hpp"
+#include "cosm/subsystem/config/xml/sensing_subsystemQ3D_parser.hpp"
 
 #include "silicon/controller/config/xml/lane_alloc_parser.hpp"
 
@@ -47,19 +47,19 @@ constructing_controller_repository::constructing_controller_repository(void) {
   parser_register<cscxml::actuation_subsystem2D_parser,
                   csconfig::actuation_subsystem2D_config>(
       cscxml::actuation_subsystem2D_parser::kXMLRoot);
-  parser_register<cscxml::sensing_subsystem2D_parser,
-                  csconfig::sensing_subsystem2D_config>(
-      cscxml::sensing_subsystem2D_parser::kXMLRoot);
+  parser_register<cscxml::sensing_subsystemQ3D_parser,
+                  csconfig::sensing_subsystemQ3D_config>(
+      cscxml::sensing_subsystemQ3D_parser::kXMLRoot);
   parser_register<rmath::config::xml::rng_parser, rmath::config::rng_config>(
       rmath::config::xml::rng_parser::kXMLRoot);
   parser_register<scconfig::xml::lane_alloc_parser, scconfig::lane_alloc_config>(
       scconfig::xml::lane_alloc_parser::kXMLRoot);
 
-  parser_find<cscxml::sensing_subsystem2D_parser>(
-      cscxml::sensing_subsystem2D_parser::kXMLRoot)
+  parser_find<cscxml::sensing_subsystemQ3D_parser>(
+      cscxml::sensing_subsystemQ3D_parser::kXMLRoot)
       ->ground_detection_add("nest");
-  parser_find<cscxml::sensing_subsystem2D_parser>(
-      cscxml::sensing_subsystem2D_parser::kXMLRoot)
+  parser_find<cscxml::sensing_subsystemQ3D_parser>(
+      cscxml::sensing_subsystemQ3D_parser::kXMLRoot)
       ->ground_detection_add("block");
 }
 

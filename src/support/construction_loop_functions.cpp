@@ -45,6 +45,8 @@
 #include "silicon/support/robot_arena_interactor.hpp"
 #include "silicon/support/robot_configurer.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
+#include "silicon/structure/structure3D.hpp"
+#include "silicon/controller/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -89,15 +91,22 @@ struct functor_maps_initializer {
         typeid(controller),
         robot_configurer<T>(
             lf->config()->config_get<cvconfig::visualization_config>()));
-    lf->m_los2D_update_map->emplace(
-        typeid(controller),
-        cfops::robot_los_update<T, carena::base_arena_map<crepr::base_block3D>>(
-            lf->arena_map()));
+    /*
+     * We need to set up the Q3D LOS updaters for EVERY possible construction
+     * target for EVERY controller type.
+     */
+    for (size_t i = 0; i < lf->construct_targets().size(); ++i) {
+      auto& updater = lf->m_losQ3D_updaters[i];
+      updater.emplace(typeid(controller),
+                      ccops::robot_los_update<T,
+                      rds::grid3D_overlay<cds::cell3D>,
+                      repr::builder_los>(lf->construct_targets()[i]));
+    } /* for(i..) */
   }
 
   /* clang-format off */
-  construction_loop_functions * const      lf;
-  detail::configurer_map_type* const config_map;
+  construction_loop_functions * const lf;
+  detail::configurer_map_type* const  config_map;
   /* clang-format on */
 };
 
@@ -110,8 +119,7 @@ construction_loop_functions::construction_loop_functions(void)
     : ER_CLIENT_INIT("silicon.loop.construction"),
       m_metrics_agg(nullptr),
       m_interactor_map(nullptr),
-      m_metrics_map(nullptr),
-      m_los2D_update_map(nullptr) {}
+      m_metrics_map(nullptr) {}
 
 construction_loop_functions::~construction_loop_functions(void) = default;
 
@@ -140,11 +148,11 @@ void construction_loop_functions::private_init(void) {
    * arena map. The arena map pads the size obtained from the XML file after
    * initialization, so we just need to grab it.
    */
-  auto padded_size =
-      rmath::vector2d(arena_map()->xrsize(), arena_map()->yrsize());
+  auto padded_size = rmath::vector2d(arena_map()->xrsize(),
+                                     arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
   auto* output = config()->config_get<cmconfig::output_config>();
-  arena.grid.upper = padded_size;
+  arena.grid.dims = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
       &output->metrics, &arena.grid, output_root(), construct_targets());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
@@ -152,7 +160,7 @@ void construction_loop_functions::private_init(void) {
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
-  m_los2D_update_map = std::make_unique<los2D_updater_map_type>();
+  m_losQ3D_updaters.reserve(construct_targets().size());
 
   /* only needed for initialization, so not a member */
   auto config_map = detail::configurer_map_type();
@@ -295,8 +303,8 @@ argos::CColor construction_loop_functions::GetFloorColor(
  * General Member Functions
  ******************************************************************************/
 void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
-  /* auto controller = static_cast<controller::constructing_controller*>( */
-  /*     &robot.GetControllableEntity().GetController()); */
+  auto controller = static_cast<controller::constructing_controller*>(
+      &robot.GetControllableEntity().GetController());
 
   /*
    * Update robot position, time. This can't be done as part of the robot's
@@ -307,13 +315,8 @@ void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
    */
   /*                            arena_map()->grid_resolution()); */
 
-  /*
-   * @todo Unconditionally use the foraging LOS for now. Once I'm ready to have
-   * robots traverse the structure, this will need to change to the 2D foraging
-   * LOS if they are in the arena, and the 3D construction LOS if they are on
-   * the structure.
-   */
-  /* robot_los2D_update(controller); */
+  /* update robot LOS */
+  robot_losQ3D_update(controller);
 } /* robot_pre_step() */
 
 void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) {
@@ -362,20 +365,39 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
   /* controller->block_manip_recorder()->reset(); */
 } /* robot_post_step() */
 
-void construction_loop_functions::robot_los2D_update(
-    controller::constructing_controller* c) {
-  /* Send robot its new LOS */
-  /* auto it = m_los2D_update_map->find(c->type_index()); */
-  /* ER_ASSERT(m_los2D_update_map->end() != it, */
-  /*           "Controller '%s' type '%s' not in construction LOS update map",
+bool construction_loop_functions::robot_losQ3D_update(
+    controller::constructing_controller* const c) const {
+  /*
+   * Figure out if the robot is current within the 2D bounds of any
+   * structure. If it is, then compute and send it a Q3D LOS from the
+   * structure, if it is not, then clear out the robot's old LOS so it does not
+   * refer to out of date info anymore, and we will get a segfault if it tries
+   * to.
    */
-  /*           c->GetId().c_str(), */
-  /*           c->type_index().name()); */
-  /* auto applicator = ccops::applicator<controller::constructing_controller, */
-  /*                                     cfops::robot_los_update>(c); */
-  /*   boost::apply_visitor(applicator, */
-  /*                        m_los2D_update_map->at(c->type_index())); */
-} /* robot_los2D_update() */
+  auto target_it = std::find_if(construct_targets().begin(),
+                             construct_targets().end(),
+                             [&](auto *target) {
+                               return target->contains(c->dpos2D());
+                             });
+  if (construct_targets().end() == target_it) {
+    c->perception()->los(nullptr);
+    return false;
+  }
+  size_t index = std::distance(construct_targets().begin(), target_it);
+
+  auto updater_it = m_losQ3D_updaters[index].find(c->type_index());
+  ER_ASSERT(m_losQ3D_updaters[index].end() != updater_it,
+            "Controller '%s' type '%s' not in construction LOS update map",
+            c->GetId().c_str(),
+            c->type_index().name());
+  auto applicator = ccops::applicator<controller::constructing_controller,
+                                      ccops::robot_los_update,
+                                      rds::grid3D_overlay<cds::cell3D>,
+                                      repr::builder_los>(c);
+    boost::apply_visitor(applicator,
+                         m_losQ3D_updaters[index].find(c->type_index())->second);
+  return true;
+} /* robot_losQ3D_update() */
 
 using namespace argos; // NOLINT
 

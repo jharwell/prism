@@ -75,7 +75,7 @@ void base_loop_functions::init(ticpp::Element& node) {
   auto* vconfig = config()->config_get<cvconfig::visualization_config>();
   arena_map_init<arena_map_type>(aconfig, vconfig);
 
-  /* initialize structure builder */
+  /* initialize structure builders */
   construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
                     config()->config_get<ssconfig::construct_targets_config>());
 

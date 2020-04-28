@@ -98,7 +98,7 @@ XML configuration:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Required by: [none].
-- Required child attributes if present: [ ``anchor``, ``bounding_box``, ``id``,
+- Required child attributes if present: [ ``anchor``, ``grid``, ``id``,
   ``orientation`` ].
 - Required child tags if present: [ ``ramp_blocks``, ``cube_blocks`` ].
 - Optional child attributes: none.
@@ -111,8 +111,10 @@ XML configuration:
    <construct_targets>
        ...
        <ramp
-           anchor="INT,INT,INT"
-           bounding_box="INT,INT,INT"
+           anchor="FLOAT,FLOAT,FLOAT"
+               <grid>
+                   ...
+               </grid
            id="ramp0"
            orientation="FLOAT">
            <ramp_blocks>
@@ -128,13 +130,37 @@ XML configuration:
 - ``anchor`` - X,Y,Z coordinates of the lower left hand corner of the structure
   specifying its absolute location in the arena.
 
-- ``bounding_box`` - X,Y,Z coordinates specifying the maximum size of the
-  structure in all three dimensions.
-
 - ``id`` - A UUID for the structure.
 
 - ``orientation`` - The angle in radians between the X axis of the structure and
   the X axis of the arena. Can be 0 or pi/2; other values will cause an error.
+
+``construct_targets/ramp/grid``
+"""""""""""""""""""""""""""""""
+
+- Required by: all.
+- Required child attributes if present: [ ``resolution``, ``size`` ].
+- Required child tags if present: none.
+- Optional child attributes: none.
+- Optional child tags: none.
+
+XML configuration:
+
+.. code-block:: XML
+
+   <ramp>
+       ...
+       <grid
+           resolution="FLOAT"
+           size="X, Y, Z"/>
+       ...
+   </ramp>
+
+- ``resolution`` - The resolution that the structure will be represented at, in
+  terms of the size of grid cells. Must be the same as the value passed to the
+  robot controllers.
+
+- ``size`` - The size of the bounding box containing the ramp structure.
 
 ``construct_targets/ramp/ramp_blocks``
 """"""""""""""""""""""""""""""""""""""

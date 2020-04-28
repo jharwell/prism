@@ -42,7 +42,8 @@ NS_START(silicon, structure);
 structure3D::structure3D(const config::structure3D_config* config,
                          const arena_map_type* map,
                          size_t id)
-    : grid3D(config->bounding_box),
+    : grid3D_overlay(config->bounding_box.dims,
+                     config->bounding_box.resolution),
       ER_CLIENT_INIT("silicon.structure.structure3D"),
       mc_id(id),
       mc_unit_dim_factor(unit_dim_factor_calc(map)),
@@ -56,9 +57,9 @@ structure3D::structure3D(const config::structure3D_config* config,
             "Bad structure orientation: '%s'",
             mc_config.orientation.to_str().c_str());
 
-  for (uint i = 0; i < mc_config.bounding_box.x(); ++i) {
-    for (uint j = 0; j < mc_config.bounding_box.y(); ++j) {
-      for (uint k = 0; k < mc_config.bounding_box.z(); ++k) {
+  for (uint i = 0; i < xdsize(); ++i) {
+    for (uint j = 0; j < ydsize(); ++j) {
+      for (uint k = 0; k < zdsize(); ++k) {
         rmath::vector3z c(i, j, k);
         auto& cell = access(c);
         cell.loc(c);
@@ -116,6 +117,10 @@ error:
 
 bool structure3D::contains(const crepr::base_block3D* const query) const {
   return nullptr != cell_spec_retrieve(query->dloc());
+} /* contains() */
+
+bool structure3D::contains(const rmath::vector2z& loc) const {
+  return nullptr != cell_spec_retrieve({loc.x(), loc.y(), 0});
 } /* contains() */
 
 void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
@@ -261,11 +266,11 @@ size_t structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
 structure3D::subtarget_vectoro structure3D::subtargetso_calc(void) const {
   subtarget_vectoro ret;
   if (rmath::radians::kZERO == mc_config.orientation) {
-    for (size_t j = 0; j < ysize() / 2; ++j) {
+    for (size_t j = 0; j < ydsize() / 2; ++j) {
       ret.push_back(std::make_unique<subtarget>(this, j));
     } /* for(j..) */
   } else {
-    for (size_t i = 0; i < xsize() / 2; ++i) {
+    for (size_t i = 0; i < xdsize() / 2; ++i) {
       ret.push_back(std::make_unique<subtarget>(this, i));
     } /* for(i..) */
   }
@@ -284,9 +289,9 @@ structure3D::subtarget_vectorno structure3D::subtargetsno_calc(void) const {
 structure3D::cell_spec_map_type structure3D::cell_spec_map_calc(void) {
   cell_spec_map_type ret;
   ER_DEBUG("Build cell spec map for structure%d", mc_id.v());
-  for (size_t i = 0; i < mc_config.bounding_box.x(); ++i) {
-    for (size_t j = 0; j < mc_config.bounding_box.y(); ++j) {
-      for (size_t k = 0; k < mc_config.bounding_box.z(); ++k) {
+  for (size_t i = 0; i < xdsize(); ++i) {
+    for (size_t j = 0; j < ydsize(); ++j) {
+      for (size_t k = 0; k < zdsize(); ++k) {
         rmath::vector3z c(i, j, k);
         ret.insert({c, cell_spec_calc(c)});
       } /* for(k..) */

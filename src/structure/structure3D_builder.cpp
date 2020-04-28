@@ -97,15 +97,15 @@ static_build_status structure3D_builder::build_static(
 bool structure3D_builder::build_static_single(const cds::block3D_vectorno& blocks,
                                               size_t search_start) {
   size_t index = m_static_state.n_cells;
-  size_t k = index / (m_target->xsize() * m_target->ysize());
+  size_t k = index / (m_target->xdsize() * m_target->ydsize());
 
   /*
    * We need to get the index into the "domain" for a 2D array; not doing the
    * modulo here results in incorrect Y indices once Z > 0.
    */
-  index %= (m_target->xsize() * m_target->ysize());
-  size_t i = index % (m_target->ysize());
-  size_t j = index / (m_target->xsize());
+  index %= (m_target->xdsize() * m_target->ydsize());
+  size_t i = index % (m_target->ydsize());
+  size_t j = index / (m_target->xdsize());
   ER_TRACE("i=%zu,j=%zu,k=%zu", i, j, k);
 
   rmath::vector3z c(i, j, k);

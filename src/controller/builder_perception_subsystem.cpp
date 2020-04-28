@@ -1,5 +1,5 @@
 /**
- * \file controller_fwd.hpp
+ * \file builder_perception_subsystem.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,35 +18,39 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/common/common.hpp"
-#include "rcppsw/mpl/typelist.hpp"
+#include "silicon/controller/builder_perception_subsystem.hpp"
 
-#include "silicon/silicon.hpp"
-
-/*******************************************************************************
- * Macros
- ******************************************************************************/
-#define NON_ORACULAR_CONTROLLER_TYPES controller::constructing_controller
-
-#define ORACULAR_CONTROLLER_TYPES
-
-#define CONTROLLER_TYPES \
-  ORACULAR_CONTROLLER_TYPES, NON_ORACULAR_CONTROLLER_TYPES
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, controller);
 
-class constructing_controller;
-using typelist = rmpl::typelist<constructing_controller>;
+/*******************************************************************************
+ * Constructors/Destructors
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Member Functions
+ ******************************************************************************/
+void builder_perception_subsystem::update() {
+  mc_target = los()->target();
+} /* update() */
+
+const rtypes::discretize_ratio& builder_perception_subsystem::grid_resolution(void) const {
+  return mc_target->resolution();
+} /* grid_resolution() */
+
+rmath::ranged builder_perception_subsystem::structure_xrange(void) const {
+  return mc_target->xrange();
+} /* structure_xrange() */
+
+rmath::ranged builder_perception_subsystem::structure_yrange(void) const {
+  return mc_target->yrange();
+} /* structure_yrange() */
 
 NS_END(controller, silicon);
-
-#endif /* INCLUDE_SILICON_CONTROLLER_CONTROLLER_FWD_HPP_ */

@@ -444,21 +444,21 @@ slice2D::slice_coords slice2D::coords_calc(const rmath::vector3z& axis,
       axis,
           offset,
       {offset, 0, 0},
-      {offset + 1, structure->ysize(), structure->zsize()}
+      {offset + 1, structure->ydsize(), structure->zdsize()}
     };
   } else if (rmath::vector3z::Y == axis) {
     return {
       axis,
           offset,
           {0, offset, 0},
-          {structure->xsize(), offset + 1, structure->zsize()}
+          {structure->xdsize(), offset + 1, structure->zdsize()}
     };
   } else {
     return {
       axis,
           offset,
       {0, 0, offset},
-      {structure->xsize(), structure->ysize(), offset + 1}
+      {structure->xdsize(), structure->ydsize(), offset + 1}
     };
   }
 }

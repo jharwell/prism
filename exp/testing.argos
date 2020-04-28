@@ -142,8 +142,10 @@
         static_build_interval="1"
         static_build_interval_count="1"/>
     <construct_targets>
-      <ramp anchor="4,4,0" bounding_box="8,8,4" id="ramp0"
-            orientation="0.0">
+      <ramp anchor="4.0,4.0,0.0" id="ramp0" orientation="0.0">
+        <grid3D resolution="0.2"
+                size="1.6,1.6,0.8"/>
+        >
         <ramp_blocks>
           <ramp_block cell="0,0,3" id="0" />
           <ramp_block cell="0,1,3" id="1" />
@@ -349,23 +351,18 @@
           <cube_block cell="5,7,0" id="95"
                       />
         </cube_blocks>
-        <subtargets>
-          <subramp id="subramp0"
-                             range="4:12" type="X"
-                             />
-        </subtargets>
       </ramp>
     </construct_targets>
 
     <arena_map>
-    <grid resolution="0.2"
-            size="12, 12, 2"/>
+    <grid2D resolution="0.2"
+            size="12.0, 12.0"/>
       <blocks>
         <distribution
-            dist_type="random">
+            dist_type="dual_source">
           <manifest
-              n_cube="32"
-              n_ramp="32"
+              n_cube="16"
+              n_ramp="16"
               unit_dim="0.4"
               />
         </distribution>
@@ -412,8 +409,8 @@
   <!-- * Physics engines * -->
   <!-- ******************* -->
   <physics_engines>
-    <pointmass3d id="pm0">
-    </pointmass3d>
+    <dynamics2d id="dyn2d0">
+    </dynamics2d>
   </physics_engines>
 
   <!-- ********* -->

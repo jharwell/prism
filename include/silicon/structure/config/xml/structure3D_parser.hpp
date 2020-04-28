@@ -27,8 +27,11 @@
 #include <string>
 #include <memory>
 
-#include "silicon/structure/config/structure3D_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
+
+#include "cosm/ds/config/xml/grid3D_parser.hpp"
+
+#include "silicon/structure/config/structure3D_config.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -64,7 +67,8 @@ class structure3D_parser final : public rconfig::xml::xml_config_parser {
     return m_config.get();
   }
   /* clang-format off */
-  std::unique_ptr<config_type> m_config{nullptr};
+  std::unique_ptr<config_type>    m_config{nullptr};
+  cds::config::xml::grid3D_parser m_grid{};
   /* clang-format on */
 };
 

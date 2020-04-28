@@ -32,7 +32,7 @@ NS_START(silicon, structure, operations);
  * Member Functions
  ******************************************************************************/
 bool validate_spec_layers::operator()(void) const {
-  for (size_t z = 0; z < mc_structure->zsize(); ++z) {
+  for (size_t z = 0; z < mc_structure->zdsize(); ++z) {
     auto slice = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
                                               mc_structure,
                                               z),

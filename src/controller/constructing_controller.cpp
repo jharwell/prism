@@ -33,14 +33,13 @@
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/repr/base_block2D.hpp"
 #include "cosm/robots/footbot/config/saa_xml_names.hpp"
-#include "cosm/robots/footbot/footbot_saa_subsystemQ3D.hpp"
+#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
-#include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
-#include "cosm/subsystem/config/sensing_subsystem2D_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
+#include "silicon/controller/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -51,22 +50,14 @@ NS_START(silicon, controller);
  * Constructors/Destructor
  ******************************************************************************/
 constructing_controller::constructing_controller(void)
-    : ER_CLIENT_INIT("silicon.controller") {}
+    : ER_CLIENT_INIT("silicon.controller"),
+      m_perception(nullptr) {}
 
 constructing_controller::~constructing_controller(void) = default;
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool constructing_controller::in_nest(void) const {
-  return saa()->sensing()->ground()->detect(
-      chal::sensors::ground_sensor::kNestTarget);
-} /* in_nest() */
-
-bool constructing_controller::block_detected(void) const {
-  return saa()->sensing()->ground()->detect("block");
-} /* block_detected() */
-
 void constructing_controller::init(ticpp::Element& node) {
   /* verify environment variables set up for logging */
   ER_ENV_VERIFY();
@@ -91,16 +82,29 @@ void constructing_controller::init(ticpp::Element& node) {
 
   /* initialize sensing and actuation (SAA) subsystem */
   saa_init(repo.config_get<csubsystem::config::actuation_subsystem2D_config>(),
-           repo.config_get<csubsystem::config::sensing_subsystem2D_config>());
+           repo.config_get<csubsystem::config::sensing_subsystemQ3D_config>());
+
+  /* initialize perception */
+  perception_init(repo.config_get<ccontconfig::perception::perception_config>());
 
   /* initialize supervisor */
   supervisor(std::make_unique<cfsm::supervisor_fsm>(saa()));
+
   ndc_pop();
 } /* init() */
+
+double constructing_controller::los_dim(void) const {
+  return perception()->los_dim();
+} /* los_dim() */
 
 void constructing_controller::reset(void) {
   block_carrying_controller::reset();
 }
+
+void constructing_controller::perception_init(
+    const ccontconfig::perception::perception_config* perceptionp) {
+  m_perception = std::make_unique<builder_perception_subsystem>(perceptionp);
+} /* perception_init() */
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {
   std::string dir = base_controllerQ3D::output_init(outputp->output_root,
@@ -124,7 +128,7 @@ void constructing_controller::output_init(const cmconfig::output_config* outputp
 
 void constructing_controller::saa_init(
     const csubsystem::config::actuation_subsystem2D_config* actuation_p,
-    const csubsystem::config::sensing_subsystem2D_config* sensing_p) {
+    const csubsystem::config::sensing_subsystemQ3D_config* sensing_p) {
   using saa_names = crfootbot::config::saa_xml_names;
 
   auto position = chal::sensors::position_sensor(
@@ -176,7 +180,7 @@ void constructing_controller::saa_init(
       csubsystem::actuation_subsystem2D::map_entry_create(diff_drivea),
       csubsystem::actuation_subsystem2D::map_entry_create(leds)};
 
-  base_controllerQ3D::saa(std::make_unique<crfootbot::footbot_saa_subsystemQ3D>(
+  base_controllerQ3D::saa(std::make_unique<crfootbot::footbot_saa_subsystem>(
       position, sensors, actuators, &actuation_p->steering));
 } /* saa_init() */
 
@@ -195,13 +199,23 @@ void constructing_controller::irv_init(const ctv::robot_dynamics_applicator* rda
   }
 } /* irv_init() */
 
-class crfootbot::footbot_saa_subsystemQ3D* constructing_controller::saa(void) {
-  return static_cast<crfootbot::footbot_saa_subsystemQ3D*>(
+class crfootbot::footbot_saa_subsystem* constructing_controller::saa(void) {
+  return static_cast<crfootbot::footbot_saa_subsystem*>(
       base_controllerQ3D::saa());
 }
-const class crfootbot::footbot_saa_subsystemQ3D* constructing_controller::saa(
+const class crfootbot::footbot_saa_subsystem* constructing_controller::saa(
     void) const {
-  return static_cast<const crfootbot::footbot_saa_subsystemQ3D*>(
+  return static_cast<const crfootbot::footbot_saa_subsystem*>(
       base_controllerQ3D::saa());
 }
+
+bool constructing_controller::in_nest(void) const {
+  return saa()->sensing()->ground()->detect(
+      chal::sensors::ground_sensor::kNestTarget);
+} /* in_nest() */
+
+bool constructing_controller::block_detected(void) const {
+  return saa()->sensing()->ground()->detect("block");
+} /* block_detected() */
+
 NS_END(controller, silicon);

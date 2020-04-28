@@ -78,7 +78,7 @@ void silicon_pd_adaptor::pre_kill_cleanup(
      */
     caops::free_block_drop_visitor<crepr::base_block3D> adrop_op(
         *it,
-        rmath::dvec2zvec(constructing->pos2D(), m_map->grid_resolution().v()),
+        rmath::dvec2zvec(constructing->rpos2D(), m_map->grid_resolution().v()),
         m_map->grid_resolution(),
         carena::arena_map_locking::ekALL_HELD);
 

@@ -35,6 +35,9 @@
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
 #include "cosm/repr/base_block2D.hpp"
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
+#include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
+#include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
+#include "cosm/controller/config/perception/perception_config.hpp"
 
 #include "silicon/metrics/blocks/block_manip_events.hpp"
 #include "silicon/silicon.hpp"
@@ -42,11 +45,6 @@
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace cosm::subsystem::config {
-struct actuation_subsystem2D_config;
-struct sensing_subsystem2D_config;
-} // namespace cosm::subsystem::config
-
 namespace cosm::repr {
 class unicell_entity2D;
 } // namespace cosm::repr
@@ -62,7 +60,7 @@ class line_of_sight;
 } // namespace repr
 
 NS_START(controller);
-class base_perception_subsystem;
+class builder_perception_subsystem;
 
 /*******************************************************************************
  * Class Definitions
@@ -103,19 +101,14 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
   /* block carrying controller overrides */
   bool block_detected(void) const override;
 
-  /**
-   * \brief By default controllers have no perception subsystem, and are
-   * basically blind centipedes.
-   */
-  virtual const base_perception_subsystem* perception(void) const {
-    return nullptr;
+  virtual const builder_perception_subsystem* perception(void) const {
+    return m_perception.get();
+  }
+  virtual builder_perception_subsystem* perception(void) {
+    return m_perception.get();
   }
 
-  /**
-   * \brief By default controllers have no perception subsystem, and are
-   * basically blind centipedes.
-   */
-  virtual base_perception_subsystem* perception(void) { return nullptr; }
+  double los_dim(void) const;
 
   /**
    * \brief If \c TRUE, the robot is currently at least most of the way in the
@@ -131,17 +124,21 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
   }
 
  protected:
-  class crfootbot::footbot_saa_subsystemQ3D* saa(void) RCSW_PURE;
-  const class crfootbot::footbot_saa_subsystemQ3D* saa(void) const RCSW_PURE;
+  class crfootbot::footbot_saa_subsystem* saa(void) RCSW_PURE;
+  const class crfootbot::footbot_saa_subsystem* saa(void) const RCSW_PURE;
 
  private:
   void saa_init(
       const csubsystem::config::actuation_subsystem2D_config* actuation_p,
-      const csubsystem::config::sensing_subsystem2D_config* sensing_p);
+      const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
   void output_init(const cmconfig::output_config* outputp);
 
+  void perception_init(
+      const ccontconfig::perception::perception_config* perceptionp);
+
   /* clang-format off */
-  block_manip_recorder_type m_block_manip{};
+  block_manip_recorder_type                     m_block_manip{};
+  std::unique_ptr<builder_perception_subsystem> m_perception;
   /* clang-format on */
 };
 

@@ -35,8 +35,12 @@ void structure3D_parser::parse(const ticpp::Element& node) {
   m_config = std::make_unique<config_type>();
 
   XML_PARSE_ATTR(node, m_config, anchor);
-  XML_PARSE_ATTR(node, m_config, bounding_box);
   XML_PARSE_ATTR(node, m_config, orientation);
+
+  m_grid.parse(node_get(node, cds::config::xml::grid3D_parser::kXMLRoot));
+
+  m_config->bounding_box = *m_grid.config_get<
+    cds::config::xml::grid3D_parser::config_type>();
 
   if (nullptr != node.FirstChild("cube_blocks", false)) {
     auto cube_blocks = node_get(node, "cube_blocks");

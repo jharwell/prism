@@ -29,7 +29,7 @@
 #include <map>
 #include <memory>
 
-#include "rcppsw/ds/grid3D.hpp"
+#include "rcppsw/ds/grid3D_overlay.hpp"
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector3.hpp"
 
@@ -65,7 +65,7 @@ class subtarget;
  * representation/data structure; does not contain any operations other than
  * basic add/remove/etc.
  */
-class structure3D final : public rds::grid3D<cds::cell3D>,
+class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
                           public metrics::structure_state_metrics,
                           public metrics::structure_progress_metrics,
                           public rer::client<structure3D> {
@@ -76,10 +76,10 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
     int state{};
     crepr::block_type block_type{};
     rmath::radians z_rotation{};
-    size_t extent{};
+    size_t extent{0};
   };
   using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
-  using rds::grid3D<cds::cell3D>::operator[];
+  using rds::grid3D_overlay<cds::cell3D>::operator[];
 
   structure3D(const config::structure3D_config* config,
               const arena_map_type* map,
@@ -97,12 +97,11 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
   size_t n_total_blocks(void) const override {
     return mc_config.cube_blocks.size() + mc_config.ramp_blocks.size();
   }
-  rmath::vector3z dims(void) const { return mc_config.bounding_box; }
   rmath::vector3d originr(void) const { return mc_config.anchor; }
   rmath::vector3z origind(void) const {
     return rmath::dvec2zvec(originr(), 1.0);
   }
-  size_t volumetric_size(void) const { return xsize() * ysize() * zsize(); }
+  size_t volumetric_size(void) const { return xdsize() * ydsize() * zdsize(); }
   const rmath::radians& orientation(void) const {
     return mc_config.orientation;
   }
@@ -111,6 +110,8 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
                              const rmath::radians& z_rotation);
 
   rtypes::type_uuid id(void) const { return mc_id; }
+  rmath::ranged xrange(void) const { return rmath::ranged(origind().x(), xrsize()); }
+  rmath::ranged yrange(void) const { return rmath::ranged(origind().y(), yrsize()); }
 
   /**
    * \brief Return \c TRUE if a block with the same ID as the \p query currently
@@ -121,6 +122,15 @@ class structure3D final : public rds::grid3D<cds::cell3D>,
    */
   bool contains(const crepr::base_block3D* query) const;
 
+  /**
+   * \brief Return \c TRUE if the specified 2D location is within the bounds of
+   * the structure, and \c FALSE otherwise.
+   *
+   * For use in determining which construction target out of a set a robot is
+   * currently on to send it the correct LOS.
+   */
+
+  bool contains(const rmath::vector2z& loc) const;
   /**
    * \brief Add a block to the structure after verifying its placement is valid
    * via \ref block_addition_valid().

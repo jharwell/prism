@@ -25,6 +25,7 @@
  * Includes
  ******************************************************************************/
 #include <memory>
+#include <vector>
 
 #include <argos3/plugins/robots/foot-bot/simulator/footbot_entity.h>
 
@@ -32,7 +33,7 @@
 #include "rcppsw/mpl/typelist.hpp"
 
 #include "cosm/controller/operations/metrics_extract.hpp"
-#include "cosm/foraging/operations/robot_los_update.hpp"
+#include "cosm/controller/operations/robot_los_update.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/support/base_loop_functions.hpp"
@@ -43,6 +44,10 @@
 namespace silicon::metrics {
 class silicon_metrics_aggregator;
 } /* namespace silicon::metrics */
+
+namespace silicon::repr {
+class builder_los;
+} /* namespace silicon::repr */
 
 NS_START(silicon, support);
 
@@ -92,16 +97,19 @@ class construction_loop_functions
   using interactor_map_type =
       rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
                                               robot_arena_interactor>::type>;
-  using los2D_updater_map_type = rds::type_map<rmpl::typelist_wrap_apply<
-      controller::typelist,
-      cfops::robot_los_update,
-      carena::base_arena_map<crepr::base_block3D>>::type>;
+
+  using losQ3D_updater_map_type = rds::type_map<rmpl::typelist_wrap_apply<
+                                                  controller::typelist,
+                                                  ccops::robot_los_update,
+                                                  rds::grid3D_overlay<cds::cell3D>,
+                                                  repr::builder_los>::type>;
 
   using metric_extraction_typelist =
       rmpl::typelist<ccops::metrics_extract<controller::constructing_controller,
                                             metrics::silicon_metrics_aggregator>>;
 
   using metric_extraction_map_type = rds::type_map<metric_extraction_typelist>;
+  using losQ3D_updater_vector = std::vector<losQ3D_updater_map_type>;
 
   /**
    * \brief These are friend classes because they are basically just pieces of
@@ -145,17 +153,23 @@ class construction_loop_functions
   argos::CColor GetFloorColor(const argos::CVector2& plane_pos) override RCSW_PURE;
 
   /**
-   * \brief Update the LOS for a robot currently in the arena somewhere, and not
-   * on the structure.
+   * \brief Update the LOS for a robot currently on the structure somewhere and
+   * NOT in the 2D arena (if they are currently somewhere in the 2D arena, then
+   * nothing is done).
+   *
+   * In this project, robots do not have intelligence when foraging for objects,
+   * hence no LOS, because that is not the focus of it--construction is.
+   *
+   * \return \c TRUE if the Q3D LOS for a robot was updated (i.e. the robot WAS
+   * on a structure somewhere), and \c FALSE otherwise.
    */
-
-  void robot_los2D_update(controller::constructing_controller* c);
+  bool robot_losQ3D_update(controller::constructing_controller* c) const;
 
   /* clang-format off */
   std::unique_ptr<metrics::silicon_metrics_aggregator> m_metrics_agg;
   std::unique_ptr<interactor_map_type>                 m_interactor_map;
   std::unique_ptr<metric_extraction_map_type>          m_metrics_map;
-  std::unique_ptr<los2D_updater_map_type>              m_los2D_update_map;
+  losQ3D_updater_vector                                m_losQ3D_updaters{};
   /* clang-format on */
 };
 

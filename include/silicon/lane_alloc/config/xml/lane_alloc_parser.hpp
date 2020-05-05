@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
+#ifndef INCLUDE_SILICON_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
 
 /*******************************************************************************
  * Includes
@@ -27,23 +27,22 @@
 #include <string>
 #include <memory>
 
-#include "silicon/controller/config/lane_alloc_config.hpp"
+#include "silicon/lane_alloc/config/lane_alloc_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller, config, xml);
+NS_START(silicon, lane_alloc, config, xml);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class lane_alloc_parser
- * \ingroup config controller xml
+ * \ingroup lane_alloc config xml
  *
- * \brief Parses XML parameters defining \ref lane_alloc to be constructed at
- * the start of simulation.
+ * \brief Parses XML parameters \ref lane_alloc::allocator objects.
  */
 class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
  public:
@@ -68,6 +67,6 @@ class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
   /* clang-format on */
 };
 
-NS_END(xml, config, controller, silicon);
+NS_END(xml, config, lane_alloc, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_CONFIG_XML_LANE_ALLOC_PARSER_HPP_ */
+#endif /* INCLUDE_SILICON_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_ */

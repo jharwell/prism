@@ -39,7 +39,7 @@
 #include "cosm/tv/robot_dynamics_applicator.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
-#include "silicon/controller/builder_perception_subsystem.hpp"
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -103,7 +103,7 @@ void constructing_controller::reset(void) {
 
 void constructing_controller::perception_init(
     const ccontconfig::perception::perception_config* perceptionp) {
-  m_perception = std::make_unique<builder_perception_subsystem>(perceptionp);
+  m_perception = std::make_unique<perception::builder_perception_subsystem>(perceptionp);
 } /* perception_init() */
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {

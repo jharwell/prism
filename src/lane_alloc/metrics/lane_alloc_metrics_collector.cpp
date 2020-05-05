@@ -21,14 +21,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/metrics/lane_alloc_metrics_collector.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics_collector.hpp"
 
-#include "silicon/controller/metrics/lane_alloc_metrics.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller, metrics);
+NS_START(silicon, lane_alloc, metrics);
 
 /*******************************************************************************
  * Constructors/Destructor
@@ -36,10 +36,12 @@ NS_START(silicon, controller, metrics);
 lane_alloc_metrics_collector::lane_alloc_metrics_collector(
     const std::string& ofname_stem,
     const rtypes::timestep& interval,
+    const rtypes::type_uuid& target_id,
     size_t n_lanes)
     : base_metrics_collector(ofname_stem,
                              interval,
                              rmetrics::output_mode::ekAPPEND),
+      mc_target_id(target_id),
       m_interval(n_lanes),
       m_cum(n_lanes) {}
 
@@ -89,11 +91,11 @@ void lane_alloc_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
-    m_interval[i].alloc_count += m.alloc_count(i);
+    m_interval[i].alloc_count += m.alloc_count(mc_target_id, i);
   } /* for(i..) */
 
   for (size_t i = 0; i < m_cum.size(); ++i) {
-    m_cum[i].alloc_count += m.alloc_count(i);
+    m_cum[i].alloc_count += m.alloc_count(mc_target_id, i);
   } /* for(i..) */
 } /* collect() */
 
@@ -101,4 +103,4 @@ void lane_alloc_metrics_collector::reset_after_interval(void) {
   std::fill(m_interval.begin(), m_interval.end(), stats{});
 } /* reset_after_interval() */
 
-NS_END(metrics, controller, silicon);
+NS_END(metrics, lane_alloc, silicon);

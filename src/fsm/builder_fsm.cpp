@@ -23,14 +23,16 @@
  ******************************************************************************/
 #include "silicon/fsm/builder_fsm.hpp"
 
+#include "rcppsw/patterns/fsm/event.hpp"
+
 #include "cosm/repr/base_block2D.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/robots/footbot/footbot_sensing_subsystem.hpp"
-#include "cosm/fsm/util_signal.hpp"
+#include "cosm/spatial/fsm/util_signal.hpp"
 #include "cosm/ds/cell3D.hpp"
 
-#include "silicon/controller/builder_perception_subsystem.hpp"
-#include "silicon/fsm/building_signal.hpp"
+#include "silicon/fsm/construction_signal.hpp"
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -45,7 +47,7 @@ const rmath::radians builder_fsm::kROBOT_AZIMUTH_TOL = rmath::radians(0.10);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-builder_fsm::builder_fsm(const controller::builder_perception_subsystem* perception,
+builder_fsm::builder_fsm(const scperception::builder_perception_subsystem* perception,
                          crfootbot::footbot_saa_subsystem* saa,
                          rmath::rng* rng)
     : util_hfsm(saa, rng, fsm_state::ekST_MAX_STATES),
@@ -57,7 +59,6 @@ builder_fsm::builder_fsm(const controller::builder_perception_subsystem* percept
       HFSM_CONSTRUCT_STATE(wait_for_block_place, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(acquire_egress_lane, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(post_structure_egress, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
       HFSM_DEFINE_STATE_MAP(
           mc_state_map,
@@ -86,45 +87,27 @@ builder_fsm::builder_fsm(const controller::builder_perception_subsystem* percept
                                      nullptr,
                                      nullptr,
                                      &exit_structure_egress),
-          HFSM_STATE_MAP_ENTRY_EX_ALL(&post_structure_egress,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr),
           HFSM_STATE_MAP_ENTRY_EX(&finished)),
       mc_perception(perception) {}
 
 /*******************************************************************************
  * States
  ******************************************************************************/
-HFSM_STATE_DEFINE(builder_fsm, start, lane_acq_argument* data) {
-  m_lane_data = *data;
-  ER_ASSERT(lane_alignment_verify_pos(m_lane_data.ingress_point(),
-                                      -m_lane_data.orientation()),
-            "Bad alignment (position) on FSM start");
-  ER_ASSERT(lane_alignment_verify_pos(m_lane_data.ingress_point(),
-                                      -m_lane_data.orientation()),
-            "Bad alignment (orientation) on FSM start");
-
-  auto path = calc_frontier_set_path();
-  internal_event(ekST_ACQUIRE_FRONTIER_SET,
-                   std::make_unique<csteer2D::ds::path_state>(path));
-
-  return cfsm::util_signal::ekHANDLED;
+HFSM_STATE_DEFINE_ND(builder_fsm, start) {
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_ENTRY_DEFINE_ND(builder_fsm, entry_acquire_frontier_set) {
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
-  saa()->actuation()->actuator<chal::actuators::led_actuator>()->set_color(-1,
-                                                                           rutils::color::kBLUE);
 }
 
 HFSM_STATE_DEFINE(builder_fsm,
                  acquire_frontier_set,
                  csteer2D::ds::path_state* state) {
-  ER_ASSERT(lane_alignment_verify_pos(m_lane_data.ingress_point(),
-                                      -m_lane_data.orientation()),
+  ER_ASSERT(lane_alignment_verify_pos(m_lane.ingress().to_2D(),
+                                      -m_lane.orientation()),
             "Bad alignment (position) during frontier set acqusition");
-  ER_ASSERT(lane_alignment_verify_azimuth(-m_lane_data.orientation()),
+  ER_ASSERT(lane_alignment_verify_azimuth(-m_lane.orientation()),
             "Bad alignment (orientation) during frontier set acquisition");
 
   auto acq = frontier_set_acquisition();
@@ -139,13 +122,12 @@ HFSM_STATE_DEFINE(builder_fsm,
   } else if (stygmergic_configuration::ekNONE == acq) {
     /* no robots in front, but not there yet */
     saa()->steer_force2D().accum(saa()->steer_force2D().path_following(state));
-    saa()->steer_force2D_apply();
   } else { /* arrived! */
     auto path = calc_placement_path(acq);
     internal_event(ekST_ACQUIRE_PLACEMENT_LOC,
                    std::make_unique<csteer2D::ds::path_state>(path));
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE(builder_fsm,
@@ -165,24 +147,23 @@ HFSM_STATE_DEFINE(builder_fsm,
     auto force = saa()->steer_force2D().path_following(path);
     if (force.is_pd()) {
       saa()->steer_force2D().accum(force);
-      saa()->steer_force2D_apply();
     } else {
       internal_event(ekST_WAIT_FOR_BLOCK_PLACE);
     }
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE(builder_fsm,
                   wait_for_block_place,
                   const rpfsm::event_data* data) {
-  if (building_signal::ekBLOCK_PLACE == data->signal()) {
+  if (construction_signal::ekBLOCK_PLACE == data->signal()) {
     ER_INFO("Block placement signal received");
     auto path = calc_path_to_egress();
     internal_event(ekST_ACQUIRE_EGRESS_LANE,
                    std::make_unique<csteer2D::ds::path_state>(path));
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE(builder_fsm,
@@ -195,44 +176,49 @@ HFSM_STATE_DEFINE(builder_fsm,
     auto force = saa()->steer_force2D().path_following(path);
     if (force.is_pd()) {
       saa()->steer_force2D().accum(force);
-      saa()->steer_force2D_apply();
     } else {
       auto egress_path = calc_egress_path();
       internal_event(ekST_STRUCTURE_EGRESS,
                      std::make_unique<csteer2D::ds::path_state>(egress_path));
     }
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE(builder_fsm,
                   structure_egress,
                   csteer2D::ds::path_state* path) {
-  ER_ASSERT(lane_alignment_verify_pos(m_lane_data.ingress_point(),
-                                      m_lane_data.orientation()),
+  ER_ASSERT(lane_alignment_verify_pos(m_lane.egress().to_2D(),
+                                      m_lane.orientation()),
             "Bad alignment (position) on structure egress");
-  ER_ASSERT(lane_alignment_verify_pos(m_lane_data.ingress_point(),
-                                      m_lane_data.orientation()),
+  ER_ASSERT(lane_alignment_verify_pos(m_lane.egress().to_2D(),
+                                      m_lane.orientation()),
             "Bad alignment (orientation) on structure egress");
-
+  bool in_ct_zone = mc_perception->structure_xrange().contains(saa()->sensing()->rpos2D().x()) &&
+                    mc_perception->structure_yrange().contains(saa()->sensing()->rpos2D().y()) &&
+                    saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest");
   /*
    * A robot in front of us is too close--wait for it to move before
    * continuing.
    */
-  if (robot_trajectory_proximity()) {
+  if (in_ct_zone && robot_trajectory_proximity()) {
     internal_event(ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
-  } else if (!mc_perception->structure_xrange().contains(saa()->sensing()->rpos2D().x()) &&
-             !mc_perception->structure_yrange().contains(saa()->sensing()->rpos2D().y()) &&
-             !saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest")) {
-    internal_event(ekST_POST_STRUCTURE_EGRESS,
-                   std::make_unique<csteer2D::ds::path_state>(*path));
-  } else { /* still on structure */
+  } else { /* left construction zone */
     auto force = saa()->steer_force2D().path_following(path);
-    saa()->steer_force2D().accum(force);
-    saa()->steer_force2D_apply();
+    if (force.is_pd()) {
+      saa()->steer_force2D().accum(force);
+
+      /* back in 2D arena, so go back to obstacle avoidance */
+      auto * prox = saa()->sensing()->sensor<chal::sensors::proximity_sensor>();
+      if (auto obs = prox->avg_prox_obj()) {
+        saa()->steer_force2D().accum(saa()->steer_force2D().avoidance(*obs));
+      }
+    } else {
+      internal_event(ekST_FINISHED);
+    }
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_EXIT_DEFINE(builder_fsm, exit_structure_egress) {
@@ -242,26 +228,6 @@ HFSM_EXIT_DEFINE(builder_fsm, exit_structure_egress) {
    * don't need it anymore at this point.
    */
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->disable();
-  saa()->actuation()->actuator<chal::actuators::led_actuator>()->set_color(-1, rutils::color::kBLACK);
-}
-
-HFSM_STATE_DEFINE(builder_fsm,
-                  post_structure_egress,
-                  csteer2D::ds::path_state* path) {
-  auto force = saa()->steer_force2D().path_following(path);
-  if (force.is_pd()) {
-    saa()->steer_force2D().accum(force);
-
-    /* back in 2D arena, so go back to obstacle avoidance */
-    auto * prox = saa()->sensing()->sensor<chal::sensors::proximity_sensor>();
-    if (auto obs = prox->avg_prox_obj()) {
-      saa()->steer_force2D().accum(saa()->steer_force2D().avoidance(*obs));
-    }
-    saa()->steer_force2D_apply();
-  } else {
-    internal_event(ekST_FINISHED);
-  }
-  return cfsm::util_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE_ND(builder_fsm, finished) {
@@ -272,7 +238,7 @@ HFSM_STATE_DEFINE_ND(builder_fsm, finished) {
   auto* sensor = saa()->sensing()->sensor<chal::sensors::ground_sensor>();
   ER_ASSERT(!sensor->detect("nest"),
             "In finished state but still in construction zone");
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE(builder_fsm, wait_for_robot, const robot_wait_data* data) {
@@ -285,38 +251,41 @@ HFSM_STATE_DEFINE(builder_fsm, wait_for_robot, const robot_wait_data* data) {
              !robot_manhattan_proximity()) {
     internal_event(previous_state());
   }
-  return cfsm::util_signal::ekHANDLED;
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 /*******************************************************************************
- * Member Functions
+ * Taskable Interface
  ******************************************************************************/
-void builder_fsm::task_start(const cta::taskable_argument* c_arg) {
+void builder_fsm::task_start(cta::taskable_argument* c_arg) {
   static const uint8_t kTRANSITIONS[] = {
-    cfsm::util_signal::ekFATAL, /* start */
-    cfsm::util_signal::ekFATAL, /* acquire_frontier_set */
-    cfsm::util_signal::ekFATAL, /* wait_for_robot */
-    cfsm::util_signal::ekFATAL, /* acquire placement loc */
-    cfsm::util_signal::ekFATAL, /* wait for block place */
-    cfsm::util_signal::ekFATAL, /* acquire egress lane */
-    cfsm::util_signal::ekFATAL, /* structure egress */
-    cfsm::util_signal::ekFATAL, /* post structure egress */
+    ekST_ACQUIRE_FRONTIER_SET, /* start */
+    rpfsm::event_signal::ekFATAL, /* acquire_frontier_set */
+    rpfsm::event_signal::ekFATAL, /* wait_for_robot */
+    rpfsm::event_signal::ekFATAL, /* acquire placement loc */
+    rpfsm::event_signal::ekFATAL, /* wait for block place */
+    rpfsm::event_signal::ekFATAL, /* acquire egress lane */
+    rpfsm::event_signal::ekFATAL, /* structure egress */
     ekST_ACQUIRE_FRONTIER_SET,  /* finished */
   };
   FSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, ekST_MAX_STATES);
 
-  auto* const a = dynamic_cast<const lane_acq_argument*>(c_arg);
-  ER_ASSERT(nullptr != a, "Bad lane acquisition data argument");
+  auto* const a = dynamic_cast<repr::construction_lane*>(c_arg);
+  ER_ASSERT(nullptr != a, "Bad construction lane argument");
+  m_lane = std::move(*a);
+
+  auto path = calc_frontier_set_path();
   external_event(kTRANSITIONS[current_state()],
-                 std::make_unique<lane_acq_argument>(a->ingress_point(),
-                                                     a->egress_point(),
-                                                     a->orientation()));
+                 std::make_unique<csteer2D::ds::path_state>(path));
 } /* task_start() */
 
 void builder_fsm::task_execute(void) {
-  inject_event(cfsm::util_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  inject_event(rpfsm::event_signal::ekRUN, rpfsm::event_type::ekNORMAL);
 } /* task_execute() */
 
+/*******************************************************************************
+ * Member Functions
+ ******************************************************************************/
 void builder_fsm::init(void) {
   actuation()->reset();
   util_hfsm::init();
@@ -368,15 +337,15 @@ stygmergic_configuration builder_fsm::frontier_set_acquisition(void) const {
   rmath::vector3z ingress_abs;
   rmath::vector3z egress_abs;
 
-  if (rmath::radians::kZERO == m_lane_data.orientation()) {
+  if (rmath::radians::kZERO == m_lane.orientation()) {
     ingress_abs = pos - rmath::vector3z::X * 2;
     egress_abs = pos - rmath::vector3z::X * 2 + rmath::vector3z::Y;
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane_data.orientation()) {
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
     ingress_abs = pos - rmath::vector3z::Y * 2;
     egress_abs = pos - rmath::vector3z::Y * 2 - rmath::vector3z::X;
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      m_lane_data.orientation().to_str().c_str());
+                      m_lane.orientation().to_str().c_str());
   }
   auto origin = mc_perception->los()->abs_ll();
   bool ingress_has_block = mc_perception->los()->contains_loc(ingress_abs - origin) &&
@@ -395,32 +364,15 @@ stygmergic_configuration builder_fsm::frontier_set_acquisition(void) const {
   }
 } /* frontier_set_acquisition() */
 
-std::vector<rmath::vector2d> builder_fsm::calc_path_to_egress(void) const {
-  std::vector<rmath::vector2d> path;
-  auto pos = saa()->sensing()->dpos2D();
-  if (rmath::radians::kZERO == m_lane_data.orientation() &&
-      !lane_alignment_verify_pos(m_lane_data.egress_point(),
-                                 m_lane_data.orientation())) {
-    path.push_back(rmath::zvec2dvec({pos.x(), pos.y() + 1},
-                                    mc_perception->grid_resolution().v()));
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane_data.orientation() &&
-             !lane_alignment_verify_pos(m_lane_data.egress_point(),
-                                        m_lane_data.orientation())) {
-    path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                    mc_perception->grid_resolution().v()));
-  }
-  return path;
-} /* calc_path_to_egress() */
-
 std::vector<rmath::vector2d> builder_fsm::calc_egress_path(void) {
   std::vector<rmath::vector2d> path;
   auto pos = saa()->sensing()->rpos2D();
 
-  if (rmath::radians::kZERO == m_lane_data.orientation()) {
+  if (rmath::radians::kZERO == m_lane.orientation()) {
     double x = rng()->uniform(mc_perception->structure_xrange().ub(),
                               mc_perception->arena_xrange().ub());
     path.push_back({x, pos.y()});
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane_data.orientation()) {
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
     double y = rng()->uniform(mc_perception->structure_yrange().ub(),
                               mc_perception->arena_yrange().ub());
     path.push_back({pos.x(), y});
@@ -428,11 +380,28 @@ std::vector<rmath::vector2d> builder_fsm::calc_egress_path(void) {
   return path;
 } /* calc_egress_path() */
 
+std::vector<rmath::vector2d> builder_fsm::calc_path_to_egress(void) const {
+  std::vector<rmath::vector2d> path;
+  auto pos = saa()->sensing()->dpos2D();
+  if (rmath::radians::kZERO == m_lane.orientation() &&
+      !lane_alignment_verify_pos(m_lane.egress().to_2D(),
+                                 m_lane.orientation())) {
+    path.push_back(rmath::zvec2dvec({pos.x(), pos.y() + 1},
+                                    mc_perception->grid_resolution().v()));
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation() &&
+             !lane_alignment_verify_pos(m_lane.egress().to_2D(),
+                                        m_lane.orientation())) {
+    path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
+                                    mc_perception->grid_resolution().v()));
+  }
+  return path;
+} /* calc_path_to_egress() */
+
 std::vector<rmath::vector2d> builder_fsm::calc_placement_path(
     stygmergic_configuration acq) const {
   std::vector<rmath::vector2d> path;
   auto pos = saa()->sensing()->dpos2D();
-  if (rmath::radians::kZERO == m_lane_data.orientation()) {
+  if (rmath::radians::kZERO == m_lane.orientation()) {
     if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
                                       mc_perception->grid_resolution().v()));
@@ -442,7 +411,7 @@ std::vector<rmath::vector2d> builder_fsm::calc_placement_path(
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y() + 1},
                                       mc_perception->grid_resolution().v()));
     }
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane_data.orientation()) {
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
     if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x(), pos.y() - 1},
                                       mc_perception->grid_resolution().v()));
@@ -465,16 +434,16 @@ std::vector<rmath::vector2d> builder_fsm::calc_frontier_set_path(void) const {
    * structure being created is not needed and the robot can be more
    * stygmergic.
    */
-  if (rmath::radians::kZERO == m_lane_data.orientation()) {
-    path.push_back({0.0, m_lane_data.ingress_point().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane_data.orientation()) {
+  if (rmath::radians::kZERO == m_lane.orientation()) {
+    path.push_back({0.0, m_lane.ingress().y()});
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
     /*
      * Simple path to go from the robots current position to the back of the
      * structure (end will never be reached). This is done so a reference to the
      * structure being created is not needed and the robot can be more
      * stygmergic.
      */
-    path.push_back({m_lane_data.ingress_point().x(), 0.0});
+    path.push_back({m_lane.ingress().x(), 0.0});
   }
   return path;
 } /* calc_frontier_set_path() */

@@ -41,7 +41,7 @@
 #include "silicon/structure/metrics/subtargets_metrics_collector.hpp"
 #include "silicon/structure/subtarget.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/controller/metrics/lane_alloc_metrics_collector.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics_collector.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -79,8 +79,10 @@ silicon_metrics_aggregator::silicon_metrics_aggregator(
   for (auto *target : targets) {
     register_standard_target(mconfig, target);
     register_with_target_lanes(mconfig, target);
+    register_with_target_lanes_and_id(mconfig, target);
     register_with_target_dims(mconfig, target);
   } /* for(*target..) */
+
   reset_all();
 }
 
@@ -110,6 +112,14 @@ void silicon_metrics_aggregator::collect_from_structure(
             *st);
   } /* for(*t..) */
 } /* collect_from_structure() */
+
+void silicon_metrics_aggregator::collect_from_controller(
+    const controller::constructing_controller* c,
+    const rtypes::type_uuid& structure_id) {
+  if (rtypes::constants::kNoUUID != structure_id) {
+    collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc", *c);
+  }
+} /* collect_from_controller() */
 
 void silicon_metrics_aggregator::register_standard_non_target(
     const cmconfig::metrics_config* mconfig) {
@@ -156,8 +166,7 @@ void silicon_metrics_aggregator::register_with_target_lanes(
     const sstructure::structure3D* structure) {
   using extra_args_type = std::tuple<size_t>;
   using collector_typelist = rmpl::typelist<
-    rmpl::identity<structure::metrics::subtargets_metrics_collector>,
-    rmpl::identity<controller::metrics::lane_alloc_metrics_collector>
+    rmpl::identity<structure::metrics::subtargets_metrics_collector>
     >;
 
   cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
@@ -165,10 +174,6 @@ void silicon_metrics_aggregator::register_with_target_lanes(
      "structure" + rcppsw::to_string(structure->id()) + "_subtargets",
      "structure" + rcppsw::to_string(structure->id()) + "::subtargets",
      rmetrics::output_mode::ekAPPEND},
-    {typeid(controller::metrics::lane_alloc_metrics_collector),
-     "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
-     "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
-     rmetrics::output_mode::ekAPPEND}
   };
   auto extra_args = std::make_tuple(structure->subtargets().size());
   cmetrics::collector_registerer<extra_args_type> registerer(mconfig,
@@ -177,6 +182,29 @@ void silicon_metrics_aggregator::register_with_target_lanes(
                                                              extra_args);
   boost::mpl::for_each<collector_typelist>(registerer);
 } /* register_with_target_lanes() */
+
+void silicon_metrics_aggregator::register_with_target_lanes_and_id(
+    const cmconfig::metrics_config* mconfig,
+    const sstructure::structure3D* structure) {
+  using extra_args_type = std::tuple<rtypes::type_uuid, size_t>;
+  using collector_typelist = rmpl::typelist<
+    rmpl::identity<slametrics::lane_alloc_metrics_collector>
+    >;
+
+  cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
+    {typeid(slametrics::lane_alloc_metrics_collector),
+     "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
+     "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
+     rmetrics::output_mode::ekAPPEND}
+  };
+  auto extra_args = std::make_tuple(structure->id(),
+                                    structure->subtargets().size());
+  cmetrics::collector_registerer<extra_args_type> registerer(mconfig,
+                                                             creatable_set,
+                                                             this,
+                                                             extra_args);
+  boost::mpl::for_each<collector_typelist>(registerer);
+} /* register_with_target_lanes_and_id() */
 
 void silicon_metrics_aggregator::register_with_target_dims(
     const cmconfig::metrics_config* mconfig,

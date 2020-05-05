@@ -1,5 +1,5 @@
 /**
- * \file construction_lane_allocator.hpp
+ * \file allocator.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,21 +18,25 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONSTRUCTION_LANE_ALLOCATOR_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONSTRUCTION_LANE_ALLOCATOR_HPP_
+#ifndef INCLUDE_SILICON_LANE_ALLOC_ALLOCATOR_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_ALLOCATOR_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <vector>
+#include <map>
+#include <utility>
 
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/math/rng.hpp"
+#include "rcppsw/types/type_uuid.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/controller/config/lane_alloc_config.hpp"
-#include "silicon/controller/metrics/lane_alloc_metrics.hpp"
+#include "silicon/lane_alloc/config/lane_alloc_config.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -41,45 +45,58 @@ namespace silicon::structure {
 class structure3D;
 } /* namespace silicon::structure */
 
-NS_START(silicon, controller);
+NS_START(silicon, lane_alloc);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class construction_lane_allocator
- * \ingroup controller
+ * \class allocator
+ * \ingroup lane_alloc
  *
  * \brief Given the specification for a \ref structure 3D, its current progress,
  * robot location, etc., allocate a construction lane within the structure for
  * the calling robot to use.
  */
-class construction_lane_allocator : public rer::client<construction_lane_allocator>,
-                                    public metrics::lane_alloc_metrics {
+class allocator : public rer::client<allocator>,
+                  public slametrics::lane_alloc_metrics {
  public:
   static constexpr const char kPolicyRandom[] = "random";
   static constexpr const char kPolicyLRU[] = "lru";
   static constexpr const char kPolicyClosest[] = "closest";
 
-  construction_lane_allocator(const config::lane_alloc_config* config,
-                              const sstructure::structure3D* structure,
-                              rmath::rng* rng);
+  allocator(const config::lane_alloc_config* config,
+            rmath::rng* rng);
 
   /* Not copy constructable/assignable by default */
-  construction_lane_allocator(const construction_lane_allocator&) = delete;
-  const construction_lane_allocator& operator=(const construction_lane_allocator&) = delete;
+  allocator(const allocator&) = delete;
+  const allocator& operator=(const allocator&) = delete;
 
   /* lane allocation metrics */
-  size_t alloc_count(size_t id) const override { return m_alloc_counts[id]; }
+  size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
 
-  size_t operator()(const rmath::vector3d& robot_loc);
+  repr::construction_lane operator()(const rmath::vector3d& robot_loc,
+                                     const sstructure::structure3D* target);
 
  private:
+  struct allocation_history {
+    allocation_history(size_t n_lanes, size_t prev) :
+        alloc_counts(n_lanes), prev_lane(prev) {}
+
+    std::vector<size_t> alloc_counts{};
+    size_t prev_lane{0};
+  };
+
+  struct lane_locs {
+    rmath::vector3d ingress{};
+    rmath::vector3d egress{};
+  };
+
   /**
    * \brief Compute the locations of the entry point for each of the
    * construction lanes in the structure.
    *
-   * Uses a Reference to the \ref structure3D to be built. Kind of cheating, but
+   * Uses a reference to the \ref structure3D to be built. Kind of cheating, but
    * as long as robots don't use THIS reference to the structure to obtain
    * oracular information about construction progress, and only use it to simply
    * calculations regardless lane allocation, then I think it is OK.
@@ -89,19 +106,17 @@ class construction_lane_allocator : public rer::client<construction_lane_allocat
    * passed via XML or to the constructor to correctly calculate absolute
    * locations.
    */
-  std::vector<rmath::vector3d> lane_locs_calc(
+  std::vector<lane_locs> lane_locs_calc(
       const sstructure::structure3D* structure) const;
 
   /* clang-format off */
-  const config::lane_alloc_config    mc_config;
-  const std::vector<rmath::vector3d> mc_lane_locs;
+  const config::lane_alloc_config                 mc_config;
 
-  size_t                             m_prev_lane;
-  rmath::rng*                        m_rng;
-  std::vector<size_t>                m_alloc_counts{};
+  rmath::rng*                                     m_rng;
+  std::map<rtypes::type_uuid, allocation_history> m_history{};
   /* clang-format on */
 };
 
-NS_END(controller, silicon);
+NS_END(lane_alloc, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_CONSTRUCTION_LANE_ALLOCATOR_HPP_ */
+#endif /* INCLUDE_SILICON_LANE_ALLOC_~ALLOCATOR_HPP_ */

@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
-#define INCLUDE_SILICON_CONTROLLER_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
+#define INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
 
 /*******************************************************************************
  * Includes
@@ -35,14 +35,14 @@ namespace silicon::structure {
 class structure3D;
 } /* namespace silicon::structure */
 
-NS_START(silicon, controller);
+NS_START(silicon, controller, perception);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class builder_perception_subsystem
- * \ingroup controller
+ * \ingroup controller perception
  *
  * \brief Base class for robot perception common to all builder controllers. It
  * is memory less; that is, it just stores the current LOS and allows the robot
@@ -77,6 +77,8 @@ class builder_perception_subsystem : public ccperception::base_perception_subsys
   rmath::ranged structure_xrange(void) const;
   rmath::ranged structure_yrange(void) const;
 
+  const structure::structure3D* target(void) const { return mc_target; }
+
  private:
   /* clang-format off */
   const rmath::ranged          mc_arena_xrange;
@@ -85,6 +87,6 @@ class builder_perception_subsystem : public ccperception::base_perception_subsys
   /* clang-format on */
 };
 
-NS_END(controller, silicon);
+NS_END(perception, controller, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_BUILDER_PERCEPTION_SUBSYSTEM_HPP_ */
+#endif /* INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_ */

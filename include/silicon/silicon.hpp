@@ -42,7 +42,13 @@ namespace tv {}
 
 namespace controller {
 namespace config {}
+namespace perception {}
 } /* namespace controller */
+
+namespace lane_alloc {
+namespace metrics {}
+namespace config {}
+}/* namespace lane_alloc */
 
 } /* namespace silicon */
 
@@ -55,5 +61,10 @@ namespace sstv = ssupport::tv;
 
 namespace scontroller = silicon::controller;
 namespace scconfig = scontroller::config;;
+namespace scperception = scontroller::perception;
+
+namespace slane_alloc = silicon::lane_alloc;
+namespace slametrics = slane_alloc::metrics;
+namespace slaconfig = slane_alloc::config;
 
 #endif /* INCLUDE_SILICON_SILICON_HPP_ */

@@ -1,5 +1,5 @@
 /**
- * \file builder_perception_subsystem.cpp
+ * \file lane_alloc_parser.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,36 +21,20 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/builder_perception_subsystem.hpp"
-
-#include "silicon/structure/structure3D.hpp"
+#include "silicon/lane_alloc/config/xml/lane_alloc_parser.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller);
-
-/*******************************************************************************
- * Constructors/Destructors
- ******************************************************************************/
+NS_START(silicon, lane_alloc, config, xml);
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void builder_perception_subsystem::update() {
-  mc_target = los()->target();
-} /* update() */
+void lane_alloc_parser::parse(const ticpp::Element& node) {
+  m_config = std::make_unique<config_type>();
 
-const rtypes::discretize_ratio& builder_perception_subsystem::grid_resolution(void) const {
-  return mc_target->resolution();
-} /* grid_resolution() */
+  XML_PARSE_ATTR(node, m_config, policy);
+} /* parse() */
 
-rmath::ranged builder_perception_subsystem::structure_xrange(void) const {
-  return mc_target->xrange();
-} /* structure_xrange() */
-
-rmath::ranged builder_perception_subsystem::structure_yrange(void) const {
-  return mc_target->yrange();
-} /* structure_yrange() */
-
-NS_END(controller, silicon);
+NS_END(xml, config, lane_alloc, silicon);

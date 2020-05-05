@@ -45,8 +45,14 @@ enum class construction_transport_goal {
   ekNONE = -1,
 
   /**
-   * \brief A robot has acquired and picked up a block and is currently taking
-   * it to the construction site to be placed on the structure.
+   * A robot has acquired and picked up a block and is currently taking it to
+   * the construction site.
+   */
+
+  ekNEST,
+  /**
+   * A robot has arrived in the construction site and is taking its block
+   * somewhere on the structure.
    */
   ekSTRUCTURE
 };

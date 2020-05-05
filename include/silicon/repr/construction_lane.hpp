@@ -1,5 +1,5 @@
 /**
- * \file lane_acq_data.hpp
+ * \file construction_lane.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,14 +18,13 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_LANE_ACQ_DATA_HPP_
-#define INCLUDE_SILICON_FSM_LANE_ACQ_DATA_HPP_
+#ifndef INCLUDE_SILICON_REPR_CONSTRUCTION_LANE_HPP_
+#define INCLUDE_SILICON_REPR_CONSTRUCTION_LANE_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/math/vector2.hpp"
-#include "rcppsw/patterns/fsm/event.hpp"
+#include "rcppsw/math/vector3.hpp"
 
 #include "cosm/ta/taskable_argument.hpp"
 
@@ -34,44 +33,50 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, repr);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class lane_acq_argument
- * \ingroup fsm
+ * \class construction_lane
+ * \ingroup repr
  *
- * \brief An argument that can be passed to a \ref ta::taskable function
- * containing information necessary for acquisition of ingress/egress lanes of a
- * construction lane.
+ * \brief Representation of a construction lane, as returned by \ref
+ * lane_alloc::allocator.
  */
-class lane_acq_argument final : public cta::taskable_argument,
-                                public rpfsm::event_data {
+class construction_lane : public cta::taskable_argument {
  public:
-  lane_acq_argument(void) = default;
-  lane_acq_argument(const rmath::vector2d& ingress_point,
-                    const rmath::vector2d& egress_point,
-                    const rmath::radians& orientation)
-      : m_ingress_point(ingress_point),
-        m_egress_point(egress_point),
-        m_orientation(orientation) {}
+  construction_lane(void) = default;
+  construction_lane(size_t id,
+                    const rmath::radians&  orientation,
+                    const rmath::vector3d& ingress,
+                    const rmath::vector3d& egress)
+      : m_id(id),
+        m_orientation(orientation),
+        m_ingress(ingress),
+        m_egress(egress) {}
 
-  ~lane_acq_argument(void) override = default;
+  construction_lane& operator=(construction_lane&&) = default;
 
-  const rmath::vector2d& ingress_point(void) const { return m_ingress_point; }
-  const rmath::vector2d& egress_point(void) const { return m_egress_point; }
+  /* Not copy constructable/assignable by default */
+  construction_lane(const construction_lane&) = delete;
+  const construction_lane& operator=(const construction_lane&) = delete;
+
+  size_t id(void) const { return m_id; }
   const rmath::radians& orientation(void) const { return m_orientation; }
+  const rmath::vector3d& ingress(void) const { return m_ingress; }
+  const rmath::vector3d& egress(void) const { return m_egress; }
 
  private:
   /* clang-format off */
-  rmath::vector2d m_ingress_point{};
-  rmath::vector2d m_egress_point{};
+  size_t          m_id{0};
   rmath::radians  m_orientation{};
+  rmath::vector3d m_ingress{};
+  rmath::vector3d m_egress{};
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(repr, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_LANE_ACQ_ARGUMENT_HPP_ */
+#endif /* INCLUDE_SILICON_REPR_CONSTRUCTION_LANE_HPP_ */

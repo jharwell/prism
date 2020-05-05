@@ -1,5 +1,5 @@
 /**
- * \file lane_alloc_config.hpp
+ * \file builder_perception_subsystem.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,36 +18,39 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_CONFIG_LANE_ALLOC_CONFIG_HPP_
-#define INCLUDE_SILICON_CONTROLLER_CONFIG_LANE_ALLOC_CONFIG_HPP_
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <string>
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
-#include "rcppsw/config/base_config.hpp"
-
-#include "silicon/silicon.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller, config);
+NS_START(silicon, controller, perception);
 
 /*******************************************************************************
- * Struct Definitions
+ * Constructors/Destructors
  ******************************************************************************/
-/**
- * \struct lane_alloc_config
- * \ingroup controller config
- *
- * \brief Parsed configuration for  \ref construction_lane_allocator objects
- */
-struct lane_alloc_config final : public rconfig::base_config {
-  std::string policy{};
-};
 
-NS_END(config, controler, silicon);
+/*******************************************************************************
+ * Member Functions
+ ******************************************************************************/
+void builder_perception_subsystem::update() {
+  mc_target = los()->target();
+} /* update() */
 
-#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_LANE_ALLOC_CONFIG_HPP_ */
+const rtypes::discretize_ratio& builder_perception_subsystem::grid_resolution(void) const {
+  return mc_target->resolution();
+} /* grid_resolution() */
+
+rmath::ranged builder_perception_subsystem::structure_xrange(void) const {
+  return mc_target->xrange();
+} /* structure_xrange() */
+
+rmath::ranged builder_perception_subsystem::structure_yrange(void) const {
+  return mc_target->yrange();
+} /* structure_yrange() */
+
+NS_END(perception, controller, silicon);

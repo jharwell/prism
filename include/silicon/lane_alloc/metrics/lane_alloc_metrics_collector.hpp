@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
-#define INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
+#ifndef INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
 
 /*******************************************************************************
  * Includes
@@ -29,19 +29,21 @@
 #include <vector>
 
 #include "rcppsw/metrics/base_metrics_collector.hpp"
+#include "rcppsw/types/type_uuid.hpp"
+
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller, metrics);
+NS_START(silicon, lane_alloc, metrics);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class lane_alloc_metrics_collector
- * \ingroup controller metrics
+ * \ingroup lane_alloc metrics
  *
  * \brief Collector for \ref lane_alloc_metrics within a single \ref
  * structure3D.
@@ -55,10 +57,13 @@ class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collect
   /**
    * \param ofname_stem The output file name stem.
    * \param interval Collection interval.
-   * \param n_lanes # construct lanes in target.
+   * \param target_id ID of the target structure from which lane allocation
+   *                  metrics will be gathered.
+   * \param n_lanes # of lanes on the target structure.
    */
   lane_alloc_metrics_collector(const std::string& ofname_stem,
                                const rtypes::timestep& interval,
+                               const rtypes::type_uuid& target_id,
                                size_t n_lanes);
 
   void reset(void) override;
@@ -75,11 +80,13 @@ class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collect
   boost::optional<std::string> csv_line_build(void) override;
 
   /* clang-format off */
-  std::vector<stats> m_interval{};
-  std::vector<stats> m_cum{};
+  const rtypes::type_uuid mc_target_id;
+
+  std::vector<stats>      m_interval{};
+  std::vector<stats>      m_cum{};
   /* clang-format on */
 };
 
-NS_END(metrics, controller, silicon);
+NS_END(metrics, lane_alloc, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_ */

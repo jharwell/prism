@@ -24,7 +24,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/fsm/metrics/goal_acq_metrics.hpp"
+#include "cosm/spatial/metrics/goal_acq_metrics.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -49,19 +49,19 @@ enum class construction_acq_goal {
 /*******************************************************************************
  * Operators
  ******************************************************************************/
-bool operator==(const cfsm::metrics::goal_acq_metrics::goal_type& goal1,
+bool operator==(const csmetrics::goal_acq_metrics::goal_type& goal1,
                 const construction_acq_goal& goal2) RCSW_PURE;
 
 bool operator==(const construction_acq_goal& goal1,
-                const cfsm::metrics::goal_acq_metrics::goal_type& goal2) RCSW_PURE;
+                const csmetrics::goal_acq_metrics::goal_type& goal2) RCSW_PURE;
 
-bool operator!=(const cfsm::metrics::goal_acq_metrics::goal_type& goal1,
+bool operator!=(const csmetrics::goal_acq_metrics::goal_type& goal1,
                 const construction_acq_goal& goal2) RCSW_PURE;
 
 bool operator!=(const construction_acq_goal& goal1,
-                const cfsm::metrics::goal_acq_metrics::goal_type& goal2) RCSW_PURE;
+                const csmetrics::goal_acq_metrics::goal_type& goal2) RCSW_PURE;
 
-cfsm::metrics::goal_acq_metrics::goal_type to_goal_type(
+csmetrics::goal_acq_metrics::goal_type to_goal_type(
     const construction_acq_goal& goal);
 
 NS_END(fsm, silicon);

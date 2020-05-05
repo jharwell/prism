@@ -1,5 +1,5 @@
 /**
- * \file lane_alloc_parser.cpp
+ * \file lane_alloc_config.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,23 +18,36 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_LANE_ALLOC_CONFIG_LANE_ALLOC_CONFIG_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_CONFIG_LANE_ALLOC_CONFIG_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/config/xml/lane_alloc_parser.hpp"
+#include <string>
+
+#include "rcppsw/config/base_config.hpp"
+
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller, config, xml);
+NS_START(silicon, lane_alloc, config);
 
 /*******************************************************************************
- * Member Functions
+ * Struct Definitions
  ******************************************************************************/
-void lane_alloc_parser::parse(const ticpp::Element& node) {
-  m_config = std::make_unique<config_type>();
+/**
+ * \struct lane_alloc_config
+ * \ingroup lane_alloc config
+ *
+ * \brief Parsed configuration for  \ref lane_alloc::allocator objects
+ */
+struct lane_alloc_config final : public rconfig::base_config {
+  std::string policy{};
+};
 
-  XML_PARSE_ATTR(node, m_config, policy);
-} /* parse() */
+NS_END(config, controler, silicon);
 
-NS_END(xml, config, controller, silicon);
+#endif /* INCLUDE_SILICON_STRUCTURE_CONFIG_LANE_ALLOC_CONFIG_HPP_ */

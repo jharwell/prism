@@ -30,19 +30,19 @@
 
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 #include "cosm/ta/taskable.hpp"
-#include "cosm/fsm/util_hfsm.hpp"
+#include "cosm/spatial/fsm/util_hfsm.hpp"
 #include "cosm/steer2D/ds/path_state.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/fsm/lane_acq_argument.hpp"
+#include "silicon/repr/construction_lane.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace silicon::controller {
+namespace silicon::controller::perception {
 class builder_perception_subsystem;
-} /* namespace silicon::controller */
+} /* namespace silicon::perception */
 
 NS_START(silicon, fsm);
 
@@ -61,11 +61,11 @@ NS_START(silicon, fsm);
  * structure returned to the 2D arena, it signals that it has completed its
  * task.
  */
-class builder_fsm : public cfsm::util_hfsm,
+class builder_fsm : public csfsm::util_hfsm,
                     public cta::taskable,
                     public rer::client<builder_fsm> {
  public:
-  builder_fsm(const controller::builder_perception_subsystem* perception,
+  builder_fsm(const scperception::builder_perception_subsystem* perception,
               crfootbot::footbot_saa_subsystem* saa,
               rmath::rng* rng);
 
@@ -81,7 +81,7 @@ class builder_fsm : public cfsm::util_hfsm,
     return current_state() != ekST_START && current_state() != ekST_FINISHED;
   }
   void task_execute(void) override;
-  void task_start(const cta::taskable_argument* c_arg) override;
+  void task_start(cta::taskable_argument* c_arg) override;
   bool task_finished(void) const override {
     return current_state() == ekST_FINISHED;
   }
@@ -128,12 +128,6 @@ class builder_fsm : public cfsm::util_hfsm,
     ekST_STRUCTURE_EGRESS,
 
     /**
-     * The robot has left the structure via the egress lane and is returning to
-     * its selected point within the arena.
-     */
-    ekST_POST_STRUCTURE_EGRESS,
-
-    /**
      * The robot has left the structure and returned to the arena.
      */
     ekST_FINISHED,
@@ -169,7 +163,7 @@ class builder_fsm : public cfsm::util_hfsm,
   HFSM_ENTRY_INHERIT_ND(util_hfsm, entry_wait_for_signal);
 
   /* builder states */
-  HFSM_STATE_DECLARE(builder_fsm, start, lane_acq_argument);
+  HFSM_STATE_DECLARE_ND(builder_fsm, start);
   HFSM_STATE_DECLARE(builder_fsm,
                      acquire_frontier_set,
                      csteer2D::ds::path_state);
@@ -189,9 +183,7 @@ class builder_fsm : public cfsm::util_hfsm,
                      structure_egress,
                      csteer2D::ds::path_state);
   HFSM_EXIT_DECLARE(builder_fsm, exit_structure_egress);
-  HFSM_STATE_DECLARE(builder_fsm,
-                     post_structure_egress,
-                     csteer2D::ds::path_state);
+
   HFSM_STATE_DECLARE_ND(builder_fsm, finished);
 
   HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
@@ -251,9 +243,9 @@ class builder_fsm : public cfsm::util_hfsm,
    */
   std::vector<rmath::vector2d> calc_path_to_egress(void) const;
 
-    /**
-   * \brief Calculate the path from the position at which the robot has entered
-   * the egress lane to the edge of and off the structure/construction zone.
+  /**
+   * \brief Calculate the path from the robot's current position in the egress
+   * lane off of the structure and back to the 2D arena.
    */
   std::vector<rmath::vector2d> calc_egress_path(void);
 
@@ -266,9 +258,9 @@ class builder_fsm : public cfsm::util_hfsm,
       stygmergic_configuration acq) const;
 
   /* clang-format off */
-  const controller::builder_perception_subsystem* mc_perception;
+  const scperception::builder_perception_subsystem* mc_perception;
 
-  lane_acq_argument                               m_lane_data{};
+  repr::construction_lane                           m_lane{};
   /* clang-format on */
 };
 

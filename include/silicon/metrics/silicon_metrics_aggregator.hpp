@@ -32,6 +32,7 @@
 
 #include "silicon/silicon.hpp"
 #include "silicon/ds/construct_target_vector.hpp"
+#include "silicon/controller/controller_fwd.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -67,6 +68,8 @@ class silicon_metrics_aggregator
 
   void collect_from_loop(const support::base_loop_functions* loop);
   void collect_from_structure(const structure::structure3D* structure);
+  void collect_from_controller(const controller::constructing_controller* c,
+                               const rtypes::type_uuid& structure_id);
 
  private:
   /**
@@ -88,6 +91,13 @@ class silicon_metrics_aggregator
    */
   void register_with_target_lanes(const cmconfig::metrics_config* mconfig,
                                   const sstructure::structure3D* structure);
+
+  /**
+   * \brief Register collectors that need extra arguments that pertain to
+   * construction targets (# construction lanes and structure ID).
+   */
+  void register_with_target_lanes_and_id(const cmconfig::metrics_config* mconfig,
+                                         const sstructure::structure3D* structure);
 
   /**
    * \brief Register collectors that need extra arguments that pertain to

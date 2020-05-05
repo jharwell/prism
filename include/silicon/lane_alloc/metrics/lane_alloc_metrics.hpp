@@ -18,40 +18,42 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_
-#define INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_
+#ifndef INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include "rcppsw/metrics/base_metrics.hpp"
+#include "rcppsw/types/type_uuid.hpp"
 
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller, metrics);
+NS_START(silicon, lane_alloc, metrics);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class lane_alloc_metrics
- * \ingroup controller metrics
+ * \ingroup lane_alloc metrics
  *
- * \brief Interface defining the metrics to be collected from \ref
- * construction_lane_allocator instances during/about the lane allocation process.
+ * \brief Interface defining the metrics to be collected from \ref allocator
+ * instances during/about the lane allocation process.
  */
 class lane_alloc_metrics : public rmetrics::base_metrics {
  public:
   /**
    * \brief Return the total # of times the construction lane with the specified
-   * ID has been allocated.
+   * ID has been allocated on the specified target structure.
    */
-  virtual size_t alloc_count(size_t id) const = 0;
+  virtual size_t alloc_count(const rtypes::type_uuid& target,
+                             size_t id) const = 0;
 };
 
-NS_END(metrics, controller, silicon);
+NS_END(metrics, lane_alloc, silicon);
 
-#endif /* INCLUDE_SILICON_CONTROLLER_METRICS_LANE_ALLOC_METRICS_HPP_ */
+#endif /* INCLUDE_SILICON_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_ */

@@ -46,7 +46,7 @@
 #include "silicon/support/robot_configurer.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/controller/builder_perception_subsystem.hpp"
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

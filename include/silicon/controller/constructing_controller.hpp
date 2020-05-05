@@ -49,18 +49,11 @@ namespace cosm::repr {
 class unicell_entity2D;
 } // namespace cosm::repr
 
-namespace rcppsw::math::config {
-struct rng_config;
-} // namespace rcppsw::math::config
-
-NS_START(silicon);
-
-namespace repr {
-class line_of_sight;
-} // namespace repr
-
-NS_START(controller);
+namespace silicon::controller::perception {
 class builder_perception_subsystem;
+} /* namespace silicon::controller::perception */
+
+NS_START(silicon, controller);
 
 /*******************************************************************************
  * Class Definitions
@@ -101,10 +94,10 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
   /* block carrying controller overrides */
   bool block_detected(void) const override;
 
-  virtual const builder_perception_subsystem* perception(void) const {
+  virtual const perception::builder_perception_subsystem* perception(void) const {
     return m_perception.get();
   }
-  virtual builder_perception_subsystem* perception(void) {
+  virtual perception::builder_perception_subsystem* perception(void) {
     return m_perception.get();
   }
 
@@ -137,8 +130,8 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
       const ccontconfig::perception::perception_config* perceptionp);
 
   /* clang-format off */
-  block_manip_recorder_type                     m_block_manip{};
-  std::unique_ptr<builder_perception_subsystem> m_perception;
+  block_manip_recorder_type                                 m_block_manip{};
+  std::unique_ptr<perception::builder_perception_subsystem> m_perception;
   /* clang-format on */
 };
 

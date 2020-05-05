@@ -1,7 +1,7 @@
 /**
- * \file building_signal.hpp
+ * \file construction_signal.hpp
  *
- * \copyright 202 John Harwell, All rights reserved.
+ * \copyright 2020 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,13 +18,13 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_
-#define INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_
+#ifndef INCLUDE_SILICON_FSM_CONSTRUCTION_SIGNAL_HPP_
+#define INCLUDE_SILICON_FSM_CONSTRUCTION_SIGNAL_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/fsm/util_signal.hpp"
+#include "cosm/spatial/fsm/util_signal.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -37,22 +37,33 @@ NS_START(silicon, fsm);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class building_signal
+ * \class construction_signal
  * \ingroup fsm
  *
  * \brief Signals that FSMs can use to communicate between sub/super states, and
  * that can be used to direct them in some way.
  */
-class building_signal : public cfsm::util_signal {
+class construction_signal : public csfsm::util_signal {
  public:
   enum type {
     /**
      * \brief A robot has placed a block on the structure
      */
-    ekBLOCK_PLACE = cfsm::util_signal::type::ekEXTERNAL_SIGNALS,
+    ekBLOCK_PLACE = csfsm::util_signal::type::ekEXTERNAL_SIGNALS,
+
+    /**
+     * A robot has picked up a block while foraging
+     */
+    ekFORAGING_BLOCK_PICKUP,
+
+    /**
+     * A block a robot was trying to pickup has vanished while it was in the
+     * process of doing so.
+     */
+    ekFORAGING_BLOCK_VANISHED,
   };
 };
 
 NS_END(controller, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_BUILDING_SIGNAL_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CONSTRUCTION_SIGNAL_HPP_ */

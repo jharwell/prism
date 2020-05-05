@@ -27,7 +27,6 @@
 #include <string>
 #include <boost/optional.hpp>
 
-#include "cosm/fsm/metrics/goal_acq_metrics.hpp"
 #include "cosm/arena/base_arena_map.hpp"
 
 #include "silicon/support/tv/block_op_src.hpp"

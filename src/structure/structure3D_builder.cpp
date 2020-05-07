@@ -249,4 +249,11 @@ crepr::block3D_variant structure3D_builder::create_variant(
       }
 } /* create_variant() */
 
+void structure3D_builder::reset(void) {
+  m_static_state.n_cells = 0;
+} /* reset() */
+
+rtypes::type_uuid structure3D_builder::target_id(void) const {
+  return m_target->id();
+} /* target_id() */
 NS_END(structure, silicon);

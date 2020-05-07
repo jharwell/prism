@@ -1,5 +1,5 @@
 /**
- * \file constructor_fsm.hpp
+ * \file fcrw_bst_fsm.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_CONSTRUCTOR_FSM_HPP_
-#define INCLUDE_SILICON_FSM_CONSTRUCTOR_FSM_HPP_
+#ifndef INCLUDE_SILICON_FSM_FCRW_BST_FSM_HPP_
+#define INCLUDE_SILICON_FSM_FCRW_BST_FSM_HPP_
 
 /*******************************************************************************
  * Includes
@@ -34,49 +34,49 @@
 #include "cosm/fsm/block_transporter.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/fsm/builder_fsm.hpp"
+#include "silicon/fsm/acquire_block_placement_site_fsm.hpp"
+#include "silicon/fsm/structure_egress_fsm.hpp"
 #include "silicon/fsm/construction_transport_goal.hpp"
 #include "silicon/lane_alloc/allocator.hpp"
+#include "silicon/fsm/block_placer.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace silicon::controller::perception {
-class builder_perception_subsystem;
-} /* namespace silicon::controller */
-
 NS_START(silicon, fsm);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class constructor_fsm
+ * \class fcrw_bst_fsm
  * \ingroup fsm
  *
- * \brief The FSM for the most basic construction definition: each robot
- * executing this FSM:
+ * \brief The FSM for CRW Foraging (FCRW), Single Target Building (BST). Each
+ * robot executing this FSM:
  *
- * - Roams around randomly until it finds a block
+ * - Roams around randomly until it finds a block (Foraging CRW)
  * - Brings the block to the nest
  * - Runs the \ref builder_fsm to traverse the structure, place the block on the
- *   structure, and then leave the structure.
+ *   structure, and then leave the structure, assuming there is a single
+ *   structure present in the arena (Single Target).
  *
  * After these steps have been done, it signals it has completed its task.
  */
-class constructor_fsm final : public csfsm::util_hfsm,
-                              public rer::client<constructor_fsm>,
-                              public csmetrics::goal_acq_metrics,
-                              public cfsm::block_transporter<construction_transport_goal>,
-                              public cta::taskable {
+class fcrw_bst_fsm final : public csfsm::util_hfsm,
+                           public rer::client<fcrw_bst_fsm>,
+                           public csmetrics::goal_acq_metrics,
+                           public cfsm::block_transporter<construction_transport_goal>,
+                           public cta::taskable,
+                           public block_placer {
  public:
-  constructor_fsm(const slaconfig::lane_alloc_config* allocator_config,
+  fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
                   const scperception::builder_perception_subsystem* perception,
                   crfootbot::footbot_saa_subsystem* saa,
                   rmath::rng* rng);
 
-  constructor_fsm(const constructor_fsm&) = delete;
-  constructor_fsm& operator=(const constructor_fsm&) = delete;
+  fcrw_bst_fsm(const fcrw_bst_fsm&) = delete;
+  fcrw_bst_fsm& operator=(const fcrw_bst_fsm&) = delete;
 
   /* foraging collision metrics */
   bool in_collision_avoidance(void) const override RCSW_PURE;
@@ -86,7 +86,7 @@ class constructor_fsm final : public csfsm::util_hfsm,
   rmath::vector2z avoidance_loc2D(void) const override;
   rmath::vector3z avoidance_loc3D(void) const override;
 
-  /* foraging goal acquisition metrics */
+  /* goal acquisition metrics */
   csmetrics::goal_acq_metrics::goal_type acquisition_goal(void) const override RCSW_PURE;
   exp_status is_exploring_for_goal(void) const override RCSW_PURE;
   bool is_vectoring_to_goal(void) const override { return false; }
@@ -110,16 +110,13 @@ class constructor_fsm final : public csfsm::util_hfsm,
     }
   void task_reset(void) override { init(); }
 
+  /* block placer overrides */
+  boost::optional<block_placer::placement_info> block_placement_info(void) const override;
+
   /**
    * \brief (Re)-initialize the FSM.
    */
   void init(void) override;
-
-  /**
-   * \brief Run the FSM in its current state, without injecting an event.
-   */
-  void run(void);
-
  private:
   enum fsm_states {
     ekST_START,
@@ -141,9 +138,20 @@ class constructor_fsm final : public csfsm::util_hfsm,
     ekST_TRANSPORT_TO_NEST,
 
     /**
-     * The \ref builder_fsm is running.
+     * A block has been placed on the structure, wait to get the placement
+     * signal.
      */
-    ekST_BUILD,
+    ekST_WAIT_FOR_BLOCK_PLACE,
+
+    /**
+     * The \ref acquire_block_placement_site_fsm is running.
+     */
+    ekST_STRUCTURE_BUILD,
+
+    /**
+     * The \ref structure_egress_fsm is running.
+     */
+    ekST_STRUCTURE_EGRESS,
     ekST_FINISHED,
     ekST_MAX_STATES
   };
@@ -170,15 +178,16 @@ class constructor_fsm final : public csfsm::util_hfsm,
   HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
 
   /* crw fsm states */
-  HFSM_STATE_DECLARE_ND(constructor_fsm, start);
-  HFSM_STATE_DECLARE_ND(constructor_fsm, forage);
-  HFSM_STATE_DECLARE(constructor_fsm, wait_for_block_pickup,
-                     rpfsm::event_data);
-  HFSM_STATE_DECLARE(constructor_fsm, transport_to_nest, nest_transport_data);
-  HFSM_ENTRY_DECLARE_ND(constructor_fsm, entry_transport_to_nest);
-  HFSM_EXIT_DECLARE(constructor_fsm, exit_transport_to_nest);
-  HFSM_STATE_DECLARE_ND(constructor_fsm, build);
-  HFSM_STATE_DECLARE_ND(builder_fsm, finished);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, start);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, forage);
+  HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data);
+  HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_place, rpfsm::event_data);
+  HFSM_STATE_DECLARE(fcrw_bst_fsm, transport_to_nest, nest_transport_data);
+  HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_transport_to_nest);
+  HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_transport_to_nest);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_build);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_egress);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, finished);
 
   /**
    * \brief Defines the state map for the FSM.
@@ -198,10 +207,11 @@ class constructor_fsm final : public csfsm::util_hfsm,
   lane_alloc::allocator                             m_allocator;
   repr::construction_lane                           m_lane{};
   csfsm::explore_for_goal_fsm                       m_forage_fsm;
-  fsm::builder_fsm                                  m_build_fsm;
+  acquire_block_placement_site_fsm                  m_block_place_fsm;
+  structure_egress_fsm                              m_structure_egress_fsm;
   /* clang-format on */
 };
 
 NS_END(fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_CONSTRUCTOR_FSM_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_FCRW_BST_FSM_HPP_ */

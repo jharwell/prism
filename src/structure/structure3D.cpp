@@ -27,6 +27,7 @@
 #include <boost/variant/static_visitor.hpp>
 
 #include "cosm/arena/base_arena_map.hpp"
+#include "cosm/ds/operations/cell3D_empty.hpp"
 
 #include "silicon/structure/operations/validate_placement.hpp"
 #include "silicon/structure/subtarget.hpp"
@@ -40,7 +41,7 @@ NS_START(silicon, structure);
  * Constructors/Destructors
  ******************************************************************************/
 structure3D::structure3D(const config::structure3D_config* config,
-                         const arena_map_type* map,
+                         const carena::base_arena_map* map,
                          size_t id)
     : grid3D_overlay(config->bounding_box.dims,
                      config->bounding_box.resolution),
@@ -116,7 +117,7 @@ error:
 } /* block_placement_cell_check() */
 
 bool structure3D::contains(const crepr::base_block3D* const query) const {
-  return nullptr != cell_spec_retrieve(query->dloc());
+  return nullptr != cell_spec_retrieve(query->dpos3D());
 } /* contains() */
 
 bool structure3D::contains(const rmath::vector2z& loc) const {
@@ -251,7 +252,7 @@ rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
                          mc_arena_grid_res.v();
 } /* cell_loc_abs() */
 
-size_t structure3D::unit_dim_factor_calc(const arena_map_type* map) const {
+size_t structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
   double block_unit_dim =
       std::min(map->blocks()[0]->dims3D().x(), map->blocks()[0]->dims3D().y());
   ER_ASSERT(
@@ -325,5 +326,20 @@ cds::block3D_vectorro structure3D::placed_blocks(void) const {
   } /* for(&b..) */
   return ret;
 } /* placed_blocks() */
+
+void structure3D::reset(void) {
+  m_placed.clear();
+  m_placement_id = 0;
+
+  for (uint i = 0; i < xdsize(); ++i) {
+    for (uint j = 0; j < ydsize(); ++j) {
+      for (uint k = 0; k < zdsize(); ++k) {
+        rmath::vector3z coord(i, j, k);
+        cdops::cell3D_empty op(coord);
+        op.visit(access(coord));
+      } /* for(k..) */
+    }   /* for(j..) */
+  }     /* for(i..) */
+} /* reset() */
 
 NS_END(structure, silicon);

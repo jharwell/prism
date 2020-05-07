@@ -49,7 +49,7 @@ std::list<std::string> env_dynamics_metrics_collector::csv_header_cols(
       /* clang-format off */
       "swarm_motion_throttle",
       "arena_block_manip_penalty",
-      "structure_block_manip_penalty"
+      "ct_block_manip_penalty"
       /* clang-format on */
   };
   merged.splice(merged.end(), cols);
@@ -69,7 +69,7 @@ void env_dynamics_metrics_collector::collect(
   auto& m = dynamic_cast<const env_dynamics_metrics&>(metrics);
   m_avg_motion_throttle = m.avg_motion_throttle();
   m_arena_block_manip_penalty = m.arena_block_manip_penalty();
-  m_structure_block_manip_penalty = m.structure_block_manip_penalty();
+  m_structure_block_manip_penalty = m.ct_block_manip_penalty();
 } /* collect() */
 
 NS_END(metrics, tv, support, silicon);

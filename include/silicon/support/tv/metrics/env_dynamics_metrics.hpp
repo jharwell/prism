@@ -51,7 +51,7 @@ class env_dynamics_metrics : public ctv::metrics::base_env_dynamics_metrics {
    * \brief Return the current value of the penalty for manipulating blocks on
    * the structure.
    */
-  virtual rtypes::timestep structure_block_manip_penalty(void) const = 0;
+  virtual rtypes::timestep ct_block_manip_penalty(void) const = 0;
 };
 
 NS_END(metrics, tv, support, silicon);

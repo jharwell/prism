@@ -52,7 +52,7 @@ NS_START(silicon, support, tv);
  */
 class block_op_filter : public rer::client<block_op_filter> {
  public:
-  explicit block_op_filter(const carena::base_arena_map<crepr::base_block3D>* const map)
+  explicit block_op_filter(const carena::base_arena_map* const map)
       : ER_CLIENT_INIT("silicon.support.tv.block_op_filter"),
         mc_map(map) {}
 
@@ -76,9 +76,9 @@ class block_op_filter : public rer::client<block_op_filter> {
      * transporting it (even if it IS currently in the nest), nothing to do.
      */
     switch (src) {
-      case block_op_src::ekFREE_PICKUP:
+      case block_op_src::ekARENA_PICKUP:
         return free_pickup_filter(controller);
-      case block_op_src::ekSTRUCTURE_PLACEMENT:
+      case block_op_src::ekCT_BLOCK_MANIP:
         return structure_placement_filter(controller);
       default:
         ER_FATAL_SENTINEL("Unhandled penalty type %d", static_cast<int>(src));
@@ -101,11 +101,11 @@ class block_op_filter : public rer::client<block_op_filter> {
      * file.
      */
     if (!(controller.goal_acquired() &&
-          fsm::construction_acq_goal::ekBLOCK == controller.acquisition_goal())) {
+          fsm::construction_acq_goal::ekFORAGING_BLOCK == controller.acquisition_goal())) {
       return op_filter_status::ekROBOT_INTERNAL_UNREADY;
     }
 
-    auto id = mc_map->robot_on_block(controller.pos2D(),
+    auto id = mc_map->robot_on_block(controller.rpos2D(),
                                      controller.entity_acquired_id());
     if (rtypes::constants::kNoUUID == id) {
       return op_filter_status::ekROBOT_NOT_ON_BLOCK;
@@ -121,15 +121,15 @@ class block_op_filter : public rer::client<block_op_filter> {
    */
   template <typename TControllerType>
   op_filter_status structure_placement_filter(const TControllerType& controller) const {
-    if (!(controller.on_structure() && controller.goal_acquired() &&
-          fsm::construction_transport_goal::ekSTRUCTURE == controller.block_transport_goal())) {
+    if (!(controller.in_nest() && controller.goal_acquired() &&
+          fsm::construction_transport_goal::ekCT_BLOCK_PLACEMENT_SITE == controller.block_transport_goal())) {
       return op_filter_status::ekROBOT_INTERNAL_UNREADY;
     }
     return op_filter_status::ekSATISFIED;
   }
 
   /* clang-format off */
-  const carena::base_arena_map<crepr::base_block3D>* const mc_map;
+  const carena::base_arena_map* const mc_map;
   /* clang-format on */
 };
 NS_END(tv, support, silicon);

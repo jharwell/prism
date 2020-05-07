@@ -31,12 +31,12 @@
 
 #include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/metrics/config/output_config.hpp"
-#include "cosm/repr/base_block2D.hpp"
 #include "cosm/robots/footbot/config/saa_xml_names.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
+#include "cosm/repr/base_block3D.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"

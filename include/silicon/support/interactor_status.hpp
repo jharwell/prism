@@ -25,7 +25,6 @@
  * Includes
  ******************************************************************************/
 #include "rcppsw/common/common.hpp"
-#include "rcppsw/utils/maskable_enum.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -43,15 +42,20 @@ NS_START(silicon, support);
  */
 enum class interactor_status {
   /**
-   * \brief No event occured (i.e. the robot did not meet the requirements for
-   * the interaction).
+   * No event occured (i.e. the robot did not meet the requirements for the
+   * interaction).
    */
   ekNO_EVENT = 1 << 0,
 
   /**
-   * \brief The robot placed a block on the \ref structure3D.
+   * The robot placed a block on the \ref structure3D.
    */
-  ekSTRUCTURE_BLOCK_PLACE = 1 << 1,
+  ekCT_BLOCK_PLACE = 1 << 1,
+
+  /**
+   * A robot picked up a block from the arena.
+   */
+  ekARENA_FREE_BLOCK_PICKUP = 1 << 2,
 };
 
 NS_END(support, silicon);

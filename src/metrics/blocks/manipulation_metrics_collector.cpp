@@ -51,9 +51,9 @@ std::list<std::string> manipulation_metrics_collector::csv_header_cols(
   auto cols = std::list<std::string>{
       /* clang-format off */
     "int_avg_arena_pickup_events",
-    "int_avg_arena_drop_events",
     "int_avg_arena_pickup_penalty",
-    "int_avg_arena_drop_penalty",
+    "int_avg_ct_placement_events",
+    "int_avg_ct_placement_penalty",
       /* clang-format on */
   };
   merged.splice(merged.end(), cols);
@@ -72,15 +72,10 @@ boost::optional<std::string> manipulation_metrics_collector::csv_line_build(void
   std::string line;
 
   line += csv_entry_intavg(m_interval.arena_pickup_events);
-  line += csv_entry_intavg(m_interval.arena_drop_events);
-
   line += csv_entry_domavg(m_interval.arena_pickup_penalty,
                            m_interval.arena_pickup_events);
-  line += csv_entry_domavg(m_interval.arena_drop_penalty,
-                           m_interval.arena_drop_events);
 
   line += csv_entry_intavg(m_interval.structure_place_events);
-
   line += csv_entry_domavg(m_interval.structure_place_penalty,
                            m_interval.structure_place_events);
 
@@ -95,11 +90,6 @@ void manipulation_metrics_collector::collect(
   m_interval.arena_pickup_penalty +=
       m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
 
-  m_interval.arena_drop_events +=
-      m.status(metrics::blocks::block_manip_events::ekARENA_DROP);
-  m_interval.arena_drop_penalty +=
-      m.penalty(metrics::blocks::block_manip_events::ekARENA_DROP).v();
-
   m_interval.structure_place_events +=
       m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
   m_interval.structure_place_penalty +=
@@ -108,9 +98,7 @@ void manipulation_metrics_collector::collect(
 
 void manipulation_metrics_collector::reset_after_interval(void) {
   m_interval.arena_pickup_events = 0;
-  m_interval.arena_drop_events = 0;
   m_interval.arena_pickup_penalty = 0;
-  m_interval.arena_drop_penalty = 0;
 
   m_interval.structure_place_events = 0;
   m_interval.structure_place_penalty = 0;

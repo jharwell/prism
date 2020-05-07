@@ -81,9 +81,9 @@ class builder_perception_subsystem : public ccperception::base_perception_subsys
 
  private:
   /* clang-format off */
-  const rmath::ranged          mc_arena_xrange;
-  const rmath::ranged          mc_arena_yrange;
-  const structure::structure3D *mc_target{nullptr};
+  const rmath::ranged           mc_arena_xrange;
+  const rmath::ranged           mc_arena_yrange;
+  const structure::structure3D* mc_target{nullptr};
   /* clang-format on */
 };
 

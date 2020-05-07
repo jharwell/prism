@@ -41,12 +41,13 @@ enum class block_op_src {
   /**
    * \brief Pick up a free block from somewhere in the the arena.
    */
-  ekFREE_PICKUP,
+  ekARENA_PICKUP,
 
   /**
-   * \brief Place a block somewhere on the in-progress \ref structure3D.
+   * \brief Manipulate a block somewhere on an in-progress (construction target)
+   * \ref structure3D.
    */
-  ekSTRUCTURE_PLACEMENT,
+  ekCT_BLOCK_MANIP,
 };
 
 NS_END(tv, support, silicon);

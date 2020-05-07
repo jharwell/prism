@@ -65,8 +65,8 @@ void place_block::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
    */
   rmath::vector3d cell_loc =
       m_structure->cell_loc_abs(m_structure->access(mc_cell));
-  block->rloc(cell_loc + embodiment_offset_calc(block.get()));
-  block->dloc(m_structure->origind() + mc_cell);
+  block->rpos3D(cell_loc + embodiment_offset_calc(block.get()));
+  block->dpos3D(m_structure->origind() + mc_cell);
 
   /* actually add the block to the structure */
   m_structure->block_add(std::move(block));
@@ -94,8 +94,8 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
    */
   rmath::vector3d cell_loc =
       m_structure->cell_loc_abs(m_structure->access(mc_cell));
-  block->rloc(cell_loc + embodiment_offset_calc(block.get()));
-  block->dloc(m_structure->origind() + mc_cell);
+  block->rpos3D(cell_loc + embodiment_offset_calc(block.get()));
+  block->dpos3D(m_structure->origind() + mc_cell);
 
   /* update cells for block extent */
   if (rmath::radians::kZERO == mc_z_rot) {

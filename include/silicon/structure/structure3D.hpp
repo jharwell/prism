@@ -47,7 +47,6 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace cosm::arena {
-template <typename T>
 class base_arena_map;
 } /* namespace cosm::arena */
 
@@ -78,11 +77,10 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     rmath::radians z_rotation{};
     size_t extent{0};
   };
-  using arena_map_type = carena::base_arena_map<crepr::base_block3D>;
   using rds::grid3D_overlay<cds::cell3D>::operator[];
 
   structure3D(const config::structure3D_config* config,
-              const arena_map_type* map,
+              const carena::base_arena_map* map,
               size_t id);
   ~structure3D(void) override;
 
@@ -182,6 +180,8 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     return rtypes::type_uuid(m_placement_id++);
   }
 
+  void reset(void);
+
  private:
   using subtarget_vectoro = std::vector<std::unique_ptr<subtarget>>;
   using cell_spec_map_type = std::map<rmath::vector3z, cell_spec>;
@@ -192,7 +192,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    */
   static constexpr const uint kRAMP_BLOCK_EXTENT_SIZE = 2;
 
-  size_t unit_dim_factor_calc(const arena_map_type* map) const;
+  size_t unit_dim_factor_calc(const carena::base_arena_map* map) const;
 
   subtarget_vectoro subtargetso_calc(void) const;
   subtarget_vectorno subtargetsno_calc(void) const;

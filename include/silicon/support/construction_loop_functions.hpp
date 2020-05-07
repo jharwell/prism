@@ -49,6 +49,10 @@ namespace silicon::repr {
 class builder_los;
 } /* namespace silicon::repr */
 
+namespace silicon::structure {
+class structure3D;
+} /* namespace silicon::structure */
+
 NS_START(silicon, support);
 
 template <typename ControllerType>
@@ -104,11 +108,11 @@ class construction_loop_functions
                                                   rds::grid3D_overlay<cds::cell3D>,
                                                   repr::builder_los>::type>;
 
-  using metric_extraction_typelist =
-      rmpl::typelist<ccops::metrics_extract<controller::constructing_controller,
-                                            metrics::silicon_metrics_aggregator>>;
+  using metric_extraction_map_type = rds::type_map<rmpl::typelist_wrap_apply<
+                                                     controller::typelist,
+                                                     ccops::metrics_extract,
+                                                     metrics::silicon_metrics_aggregator>::type>;
 
-  using metric_extraction_map_type = rds::type_map<metric_extraction_typelist>;
   using losQ3D_updater_vector = std::vector<losQ3D_updater_map_type>;
 
   /**
@@ -164,6 +168,8 @@ class construction_loop_functions
    * on a structure somewhere), and \c FALSE otherwise.
    */
   bool robot_losQ3D_update(controller::constructing_controller* c) const;
+
+  structure::structure3D* robot_target(const controller::constructing_controller* c) const;
 
   /* clang-format off */
   std::unique_ptr<metrics::silicon_metrics_aggregator> m_metrics_agg;

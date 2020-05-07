@@ -36,7 +36,7 @@ given type.
 - Required child attributes if present: [ ``build_src`` ].
 - Required child tags if present: none.
 - Optional child attributes: [ ``static_build_interval``,
-``static_build_interval_count`` ].
+  ``static_build_interval_count`` ].
 - Optional child tags: [ ``usage_penalty`` ].
 
 XML configuration:
@@ -110,13 +110,12 @@ XML configuration:
 
    <construct_targets>
        ...
-       <ramp
-           anchor="FLOAT,FLOAT,FLOAT"
-               <grid>
-                   ...
-               </grid
-           id="ramp0"
-           orientation="FLOAT">
+       <ramp anchor="FLOAT,FLOAT,FLOAT"
+             id="ramp0"
+             orientation="FLOAT">
+           <grid>
+               ...
+           </grid>
            <ramp_blocks>
                ...
            </ramp_blocks>

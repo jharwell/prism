@@ -23,6 +23,8 @@
  ******************************************************************************/
 #include "silicon/structure/metrics/structure_state_metrics_collector.hpp"
 
+#include "cosm/repr/base_block3D.hpp"
+
 #include "silicon/structure/metrics/structure_state_metrics.hpp"
 
 /*******************************************************************************
@@ -39,7 +41,7 @@ void structure_state_metrics_collector::collect(
   inc_total_count(m.placed_blocks().size());
 
   for (auto* b : m.placed_blocks()) {
-    inc_cell_count(b->dloc());
+    inc_cell_count(b->dpos3D());
   } /* for(*b..) */
 } /* collect() */
 

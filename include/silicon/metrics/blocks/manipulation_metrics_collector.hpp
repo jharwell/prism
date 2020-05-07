@@ -71,9 +71,7 @@ class manipulation_metrics_collector final : public rmetrics::base_metrics_colle
    */
   struct stats {
     std::atomic_uint arena_pickup_events{0};
-    std::atomic_uint arena_drop_events{0};
     std::atomic_uint arena_pickup_penalty{0};
-    std::atomic_uint arena_drop_penalty{0};
 
     std::atomic_uint structure_place_events{0};
     std::atomic_uint structure_place_penalty{0};

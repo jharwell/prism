@@ -28,16 +28,14 @@
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
 #include "cosm/repr/base_block3D.hpp"
 
+#include "silicon/controller/controller_fwd.hpp"
+
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 namespace cosm::arena {
-template<typename T>
 class base_arena_map;
 } /* namespace cosm::arena */
-namespace silicon::controller {
-class constructing_controller;
-} /* namespace silicon::controller */
 
 NS_START(silicon, support, tv);
 
@@ -58,7 +56,7 @@ class silicon_pd_adaptor : rer::client<silicon_pd_adaptor>,
   silicon_pd_adaptor(const ctv::config::population_dynamics_config* config,
                      cpal::argos_sm_adaptor* sm,
                      env_dynamics_type *envd,
-                     carena::base_arena_map<crepr::base_block3D>* map,
+                     carena::base_arena_map* map,
                      rmath::rng* rng);
 
   /* Not copy constructable/assignable by default */
@@ -70,7 +68,7 @@ class silicon_pd_adaptor : rer::client<silicon_pd_adaptor>,
 
  private:
   /* clang-format off */
-  carena::base_arena_map<crepr::base_block3D>* m_map;
+  carena::base_arena_map* m_map;
   /* clang-format on */
 };
 

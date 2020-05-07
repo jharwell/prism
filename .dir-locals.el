@@ -21,6 +21,8 @@
                "/usr/lib/x86_64-linux-gnu/qt5//mkspecs/linux-g++-64")))
           (setq flycheck-clang-include-path includes-list)
           (setq flycheck-gcc-include-path includes-list)
+          (setq flycheck-c/c++-gcc-executable "gcc-9")
+
           (add-to-list 'flycheck-clang-args "-std=c++17")
           (add-to-list 'flycheck-clang-args "-fPIC")
           (add-to-list 'flycheck-clang-args (concat "-isystem" (substitute-in-file-name
@@ -33,6 +35,7 @@
           (add-to-list 'flycheck-gcc-args "-fPIC")
           (add-to-list 'flycheck-gcc-definitions "COSM_HAL_TARGET=HAL_TARGET_ARGOS_FOOTBOT")
           (add-to-list 'flycheck-gcc-args "-std=c++17")
+
           (add-to-list 'flycheck-gcc-args (concat "-isystem" (substitute-in-file-name
                                                               "$rcppsw")))
           (add-to-list 'flycheck-gcc-args (concat "-isystem" (substitute-in-file-name

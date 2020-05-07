@@ -29,15 +29,9 @@
 #include "cosm/pal/argos_swarm_iterator.hpp"
 #include "cosm/vis/config/visualization_config.hpp"
 
-#include "silicon/controller/constructing_controller.hpp"
-#include "silicon/structure/config/construct_targets_config.hpp"
-#include "silicon/structure/config/structure3D_builder_config.hpp"
-#include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/operations/validate_spec.hpp"
-#include "silicon/structure/structure3D.hpp"
-#include "silicon/structure/structure3D_builder.hpp"
 #include "silicon/support/tv/config/tv_manager_config.hpp"
 #include "silicon/support/tv/silicon_pd_adaptor.hpp"
+#include "silicon/structure/ct_manager.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -73,11 +67,13 @@ void base_loop_functions::init(ticpp::Element& node) {
   /* initialize arena map and distribute blocks */
   auto* aconfig = config()->config_get<caconfig::arena_map_config>();
   auto* vconfig = config()->config_get<cvconfig::visualization_config>();
-  arena_map_init<arena_map_type>(aconfig, vconfig);
+  arena_map_init<carena::base_arena_map>(aconfig, vconfig);
 
-  /* initialize structure builders */
+  /* initialize construction */
+  auto* tv = config()->config_get<tv::config::tv_manager_config>();
   construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
-                    config()->config_get<ssconfig::construct_targets_config>());
+                    config()->config_get<ssconfig::construct_targets_config>(),
+                    &tv->env_dynamics.block_manip_penalty);
 
   /* initialize temporal variance injection */
   tv_init(config()->config_get<tv::config::tv_manager_config>());
@@ -128,7 +124,7 @@ void base_loop_functions::output_init(const cmconfig::output_config* output) {
                  output_root() + "/support.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.loop"),
                  output_root() + "/sim.log");
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.foraging.ds.arena_map"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.arena.base_arena_map"),
                  output_root() + "/sim.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.metrics"),
                  output_root() + "/metrics.log");
@@ -136,26 +132,15 @@ void base_loop_functions::output_init(const cmconfig::output_config* output) {
 } /* output_init() */
 
 void base_loop_functions::construction_init(
-    const ssconfig::structure3D_builder_config* builder_config,
-    const ssconfig::construct_targets_config* targets_config) {
-  ER_INFO("Initializing %zu construction targets",
-          targets_config->targets.size());
-  for (size_t i = 0; i < targets_config->targets.size(); ++i) {
-    ER_INFO("Initializing construction target %zu", i);
-    auto target =
-        std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
-                                                  arena_map(),
-                                                  i);
-    if (ssops::validate_spec(target.get())()) {
-      m_targetsno.push_back(target.get());
-      m_targetso.push_back(std::move(target));
-      m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
-          builder_config, m_targetso[i].get(), this));
-      ER_INFO("Initialized construction target %zu", i);
-    } else {
-      ER_INFO("Construction targets %zu invalid: will not be built", i);
-    }
-  } /* for(i..) */
+    const ssconfig::structure3D_builder_config* const builder_config,
+    const ssconfig::construct_targets_config* const targets_config,
+    const rct::config::waveform_config* placement_penalty_config) {
+  ER_INFO("Initializing construction targets manager");
+  m_ct_manager = std::make_unique<structure::ct_manager>(
+      arena_map(),
+      this,
+      tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
+  m_ct_manager->init(builder_config, targets_config, placement_penalty_config);
 } /* construction_init() */
 
 /*******************************************************************************
@@ -166,15 +151,13 @@ void base_loop_functions::pre_step(void) {
    * Needs to be before robot controllers are run, so they run with the correct
    * throttling/are subjected to the correct penalties, etc.
    */
+  rtypes::timestep t(GetSpace().GetSimulationClock());
   if (nullptr != m_tv_manager) {
-    m_tv_manager->update(rtypes::timestep(GetSpace().GetSimulationClock()));
+    m_tv_manager->update(t);
   }
-  for (auto& builder : m_builderso) {
-    if (builder->build_static_enabled()) {
-      builder->build_static(arena_map()->blocks(),
-                            rtypes::timestep(GetSpace().GetSimulationClock()));
-    }
-  } /* for(&builder..) */
+
+  /* update structure builders if static builds are enabled */
+  m_ct_manager->update(t);
 } /* pre_step() */
 
 void base_loop_functions::post_step(void) {
@@ -183,6 +166,7 @@ void base_loop_functions::post_step(void) {
 
 void base_loop_functions::reset(void) {
   arena_map()->distribute_all_blocks();
+  m_ct_manager->reset();
 } /* reset() */
 
 NS_END(support, silicon);

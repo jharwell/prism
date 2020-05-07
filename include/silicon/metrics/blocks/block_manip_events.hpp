@@ -36,7 +36,6 @@ NS_START(silicon, metrics, blocks);
  ******************************************************************************/
 enum block_manip_events {
   ekARENA_PICKUP,
-  ekARENA_DROP,
   ekSTRUCTURE_PLACE,
   ekMAX_EVENTS
 };

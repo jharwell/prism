@@ -32,16 +32,15 @@
 
 #include "silicon/controller/constructing_controller.hpp"
 #include "silicon/metrics/blocks/manipulation_metrics_collector.hpp"
-#include "silicon/support/base_loop_functions.hpp"
 #include "silicon/support/tv/metrics/env_dynamics_metrics.hpp"
 #include "silicon/support/tv/metrics/env_dynamics_metrics_collector.hpp"
-#include "silicon/support/tv/tv_manager.hpp"
 #include "silicon/structure/metrics/structure_progress_metrics_collector.hpp"
 #include "silicon/structure/metrics/structure_state_metrics_collector.hpp"
 #include "silicon/structure/metrics/subtargets_metrics_collector.hpp"
 #include "silicon/structure/subtarget.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics_collector.hpp"
+#include "silicon/structure/ct_manager.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -89,29 +88,30 @@ silicon_metrics_aggregator::silicon_metrics_aggregator(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void silicon_metrics_aggregator::collect_from_loop(
-    const support::base_loop_functions* const loop) {
+void silicon_metrics_aggregator::collect_from_tv(
+    const support::tv::tv_manager* const tvm) {
   collect("tv::environment",
-          *loop->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
+          *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
 
-  if (loop->tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>()) {
+  if (nullptr != tvm->dynamics<ctv::dynamics_type::ekPOPULATION>()) {
     collect("tv::population",
-            *loop->tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>());
+            *tvm->dynamics<ctv::dynamics_type::ekPOPULATION>());
   }
-} /* collect_from_loop() */
+} /* collect_from_tv() */
 
-void silicon_metrics_aggregator::collect_from_structure(
-    const structure::structure3D* structure) {
-  collect("structure" + rcppsw::to_string(structure->id()) + "::state",
-          *structure);
-  collect("structure" + rcppsw::to_string(structure->id()) + "::progress",
-          *structure);
-
-  for (auto *st : structure->subtargets()) {
-    collect("structure" + rcppsw::to_string(structure->id()) + "::subtargets",
-            *st);
-  } /* for(*t..) */
-} /* collect_from_structure() */
+void silicon_metrics_aggregator::collect_from_ct(
+    const structure::ct_manager* manager) {
+  for (auto *target : manager->targets()) {
+    collect("structure" + rcppsw::to_string(target->id()) + "::state",
+            *target);
+    collect("structure" + rcppsw::to_string(target->id()) + "::progress",
+            *target);
+    for (auto *st : target->subtargets()) {
+      collect("structure" + rcppsw::to_string(target->id()) + "::subtargets",
+              *st);
+    } /* for(*t..) */
+  } /* for(*target..) */
+} /* collect_from_ct() */
 
 void silicon_metrics_aggregator::collect_from_controller(
     const controller::constructing_controller* c,

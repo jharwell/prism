@@ -38,13 +38,10 @@ NS_START(silicon, support, tv);
  ******************************************************************************/
 env_dynamics::env_dynamics(const tv::config::env_dynamics_config* const config,
                            const support::base_loop_functions* const lf,
-                           carena::base_arena_map<crepr::base_block3D>* const map)
+                           carena::base_arena_map* const map)
     : ER_CLIENT_INIT("silicon.support.tv.env_dynamics"),
       m_rda(&config->rda, lf),
-      m_fb_pickup(map, &config->block_manip_penalty, "Free Block Pickup"),
-      m_structure_placement(map,
-                            &config->block_manip_penalty,
-                            "Structure Block Placement") {}
+      m_fb_pickup(map, &config->block_manip_penalty, "Free Block Pickup") {}
 
 /*******************************************************************************
  * Member Functions
@@ -59,13 +56,17 @@ double env_dynamics::avg_motion_throttle(void) const {
 } /* avg_motion_throttle() */
 
 rtypes::timestep env_dynamics::arena_block_manip_penalty(void) const {
-  return penalty_handler(block_op_src::ekFREE_PICKUP)->penalty_calc(m_timestep);
+  return penalty_handler(block_op_src::ekARENA_PICKUP)->penalty_calc(m_timestep);
 } /* arena_block_manip_penalty() */
 
-rtypes::timestep env_dynamics::structure_block_manip_penalty(void) const {
-  return penalty_handler(block_op_src::ekSTRUCTURE_PLACEMENT)
-      ->penalty_calc(m_timestep);
-} /* structure_block_manip_penalty() */
+rtypes::timestep env_dynamics::ct_block_manip_penalty(void) const {
+  /*
+   * Relies on homogeneously applied penalties for all block manipulation events
+   * in all structures.
+   */
+  return ct_penalty_handler(block_op_src::ekCT_BLOCK_MANIP,
+                            rtypes::type_uuid(0))->penalty_calc(m_timestep);
+} /* ct_block_manip_penalty() */
 
 void env_dynamics::register_controller(
     const cpal::argos_controllerQ3D_adaptor& c) {

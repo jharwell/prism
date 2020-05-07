@@ -47,12 +47,12 @@ class construction_signal : public csfsm::util_signal {
  public:
   enum type {
     /**
-     * \brief A robot has placed a block on the structure
+     * \brief A robot has placed a block on a construction target.
      */
-    ekBLOCK_PLACE = csfsm::util_signal::type::ekEXTERNAL_SIGNALS,
+    ekCT_BLOCK_PLACE = csfsm::util_signal::type::ekEXTERNAL_SIGNALS,
 
     /**
-     * A robot has picked up a block while foraging
+     * A robot has picked up a block while foraging.
      */
     ekFORAGING_BLOCK_PICKUP,
 

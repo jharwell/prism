@@ -46,7 +46,6 @@ namespace cosm::pal {
 class argos_sm_adaptor;
 } /* namespace cosm::pal */
 namespace cosm::arena {
-template <typename T>
 class base_arena_map;
 } /* namespace cosm::arena */
 
@@ -91,6 +90,8 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
                              const rmath::vector3z& loc,
                              const rmath::radians& z_rotation) const;
 
+  rtypes::type_uuid target_id(void) const;
+
   /**
    * \brief Determine if static building via loop functions is enabled.
    */
@@ -127,15 +128,17 @@ class structure3D_builder final : public rer::client<structure3D_builder> {
    *
    * \param block The block to place.
    * \param cell The \p RELATIVE location of the block within the structure
-   *            (i.e. its internal coordinates). A cubical block within the
-   *            structure ocuupies \p ONE cell, regardless of its size in the
-   *           arena.
+   *             (i.e. its internal coordinates). A cubical block within the
+   *             structure ocupies \p ONE cell, regardless of its size in the
+   *             arena.
    * \param z_rotation The orientation the block should have when placed at the
    *                   specified location.
    */
   bool place_block(std::unique_ptr<crepr::base_block3D> block,
                    const rmath::vector3z& cell,
                    const rmath::radians& z_rotation);
+
+  void reset(void);
 
  private:
   /**

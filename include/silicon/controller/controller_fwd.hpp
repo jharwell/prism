@@ -32,7 +32,7 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#define NON_ORACULAR_CONTROLLER_TYPES controller::constructing_controller
+#define NON_ORACULAR_CONTROLLER_TYPES controller::fcrw_bst_controller
 
 #define ORACULAR_CONTROLLER_TYPES
 
@@ -44,8 +44,9 @@
  ******************************************************************************/
 NS_START(silicon, controller);
 
+class fcrw_bst_controller;
 class constructing_controller;
-using typelist = rmpl::typelist<constructing_controller>;
+using typelist = rmpl::typelist<fcrw_bst_controller>;
 
 NS_END(controller, silicon);
 

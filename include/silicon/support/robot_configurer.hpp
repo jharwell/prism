@@ -33,10 +33,6 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
-
 NS_START(silicon, support);
 
 /*******************************************************************************
@@ -48,23 +44,20 @@ NS_START(silicon, support);
  *
  * \brief Functor to perform controller configuration during initialization.
  */
-template <typename TControllerType>
+template <typename TController>
 class robot_configurer : public boost::static_visitor<void> {
  public:
-  explicit robot_configurer(const cvconfig::visualization_config* const vis_config,
-                            const sstructure::structure3D* structure)
+  explicit robot_configurer(const cvconfig::visualization_config* const vis_config)
       : mc_vis_config(vis_config) {}
 
-  void operator()(TControllerType* const c) const {
+  void operator()(TController* const c) const {
     if (nullptr != mc_vis_config) {
-      c->display_los(mc_vis_config->robot_los);
       c->display_id(mc_vis_config->robot_id);
     }
   }
 
  private:
   /* clang-format off */
-  const sstructure::structure3D*               mc_structure;
   const cvconfig::visualization_config * const mc_vis_config;
   /* clang-format on */
 };

@@ -37,7 +37,7 @@
 #include "cosm/controller/operations/metrics_extract.hpp"
 #include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/metrics/blocks/transport_metrics_collector.hpp"
-#include "cosm/operations/robot_arena_interaction_applicator.hpp"
+#include "cosm/interactors/applicator.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
 
 #include "silicon/metrics/silicon_metrics_aggregator.hpp"
@@ -47,6 +47,8 @@
 #include "silicon/support/tv/tv_manager.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/controller/fcrw_bst_controller.hpp"
+#include "silicon/structure/ct_manager.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -80,7 +82,7 @@ struct functor_maps_initializer {
         typeid(controller),
         robot_arena_interactor<T>(
             lf->arena_map(),
-            lf->m_metrics_agg.get(),
+            lf->ct_manager(),
             lf->floor(),
             lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>()));
     lf->m_metrics_map->emplace(
@@ -95,12 +97,12 @@ struct functor_maps_initializer {
      * We need to set up the Q3D LOS updaters for EVERY possible construction
      * target for EVERY controller type.
      */
-    for (size_t i = 0; i < lf->construct_targets().size(); ++i) {
+    for (size_t i = 0; i < lf->ct_manager()->targets().size(); ++i) {
       auto& updater = lf->m_losQ3D_updaters[i];
       updater.emplace(typeid(controller),
                       ccops::robot_los_update<T,
                       rds::grid3D_overlay<cds::cell3D>,
-                      repr::builder_los>(lf->construct_targets()[i]));
+                      repr::builder_los>(lf->ct_manager()->targets()[i]));
     } /* for(i..) */
   }
 
@@ -154,13 +156,13 @@ void construction_loop_functions::private_init(void) {
   auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.dims = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
-      &output->metrics, &arena.grid, output_root(), construct_targets());
+      &output->metrics, &arena.grid, output_root(), ct_manager()->targets());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
-  m_losQ3D_updaters.reserve(construct_targets().size());
+  m_losQ3D_updaters.reserve(ct_manager()->targets().size());
 
   /* only needed for initialization, so not a member */
   auto config_map = detail::configurer_map_type();
@@ -170,21 +172,18 @@ void construction_loop_functions::private_init(void) {
    * functors/type maps for all construction controller types.
    */
   detail::functor_maps_initializer f_initializer(&config_map, this);
-  /* boost::mpl::for_each<controller::typelist>(f_initializer); */
+  boost::mpl::for_each<controller::typelist>(f_initializer);
 
   /* configure robots */
   auto cb = [&](auto* controller) {
-    /* ER_ASSERT(config_map.end() != config_map.find(controller->type_index()),
-     */
-    /*           "Controller '%s' type '%s' not in construction configuration
-     * map", */
-    /*           controller->GetId().c_str(), */
-    /*           controller->type_index().name()); */
-    /* auto applicator = ccops::applicator<controller::constructing_controller,
-     */
-    /* robot_configurer>(controller); */
-    /* /\* boost::apply_visitor(applicator, *\/ */
-    /*                      config_map.at(controller->type_index())); */
+    ER_ASSERT(config_map.end() != config_map.find(controller->type_index()),
+              "Controller '%s' type '%s' not in construction configuration map",
+              controller->GetId().c_str(),
+              controller->type_index().name());
+    auto applicator = ccops::applicator<controller::constructing_controller,
+    robot_configurer>(controller);
+    boost::apply_visitor(applicator,
+                         config_map.at(controller->type_index()));
   };
 
   /*
@@ -239,7 +238,7 @@ void construction_loop_functions::post_step(void) {
       false); /* @todo never converged until that stuff is incorporated... */
 
   /* Collect metrics from loop functions */
-  m_metrics_agg->collect_from_loop(this);
+  m_metrics_agg->collect_from_ct(ct_manager());
 
   m_metrics_agg->metrics_write(rmetrics::output_mode::ekTRUNCATE);
   m_metrics_agg->metrics_write(rmetrics::output_mode::ekCREATE);
@@ -281,7 +280,7 @@ argos::CColor construction_loop_functions::GetFloorColor(
      * If Z > 0, the block is on the structure, so no need to even do the
      * comparisons for determining floor structure.
      */
-    if (block->rloc3D().z() > 0) {
+    if (block->rpos3D().z() > 0) {
       continue;
     }
     /*
@@ -311,79 +310,67 @@ void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
    * control step because we need access to information only available in the
    * loop functions.
    */
-  /* controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()),
-   */
-  /*                            arena_map()->grid_resolution()); */
+  controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()),
+                             arena_map()->grid_resolution());
 
   /* update robot LOS */
   robot_losQ3D_update(controller);
 } /* robot_pre_step() */
 
 void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) {
-  /* auto controller = static_cast<controller::constructing_controller*>( */
-  /*     &robot.GetControllableEntity().GetController()); */
-  /*
-   * Watch the robot interact with its environment after physics have been
-   * updated and its controller has run.
-   */
-  /* auto it = m_interactor_map->find(controller->type_index()); */
-  /* ER_ASSERT(m_interactor_map->end() != it, */
-  /*           "Controller '%s' type '%s' not in construction interactor map",
-   */
-  /*           controller->GetId().c_str(), */
-  /*           controller->type_index().name()); */
-
-  /* auto iapplicator = */
-  /*     cops::robot_arena_interaction_applicator<controller::constructing_controller,
-   */
-  /*                                              robot_arena_interactor>( */
-  /*                                                  controller, */
-  /*                                                  rtypes::timestep(GetSpace().GetSimulationClock()));
-   */
-  /* /\* auto status = *\/ */
-  /*     boost::apply_visitor(iapplicator, */
-  /*                          m_interactor_map->at(controller->type_index()));
-   */
+  auto controller = static_cast<controller::constructing_controller*>(
+      &robot.GetControllableEntity().GetController());
 
   /*
-   * Collect metrics from robot, now that it has finished interacting with the
-   * environment and no more changes to its state will occur this timestep.
+   * Watch the robot interact with its environment after physics have been */
+  /* updated and its controller has run.
    */
-  /* auto it2 = m_metrics_map->find(controller->type_index()); */
-  /* ER_ASSERT(m_metrics_map->end() != it2, */
-  /*           "Controller '%s' type '%s' not in construction metrics map", */
-  /*           controller->GetId().c_str(), */
-  /*           controller->type_index().name()); */
-  /* auto mapplicator = ccops::applicator<controller::constructing_controller,
-   */
-  /*                                      ccops::metrics_extract, */
-  /*                                      metrics::silicon_metrics_aggregator>(controller);
-   */
-  /* boost::apply_visitor(mapplicator,
-   * m_metrics_map->at(controller->type_index())); */
+  auto it = m_interactor_map->find(controller->type_index());
+  ER_ASSERT(m_interactor_map->end() != it,
+            "Controller '%s' type '%s' not in construction interactor map",
+            controller->GetId().c_str(),
+            controller->type_index().name());
 
-  /* controller->block_manip_recorder()->reset(); */
+  auto iapplicator =
+      cinteractors::applicator<controller::constructing_controller,
+                               robot_arena_interactor>(
+                                   controller,
+                                   rtypes::timestep(GetSpace().GetSimulationClock()));
+  auto status =
+      boost::apply_visitor(iapplicator,
+                           m_interactor_map->at(controller->type_index()));
+
+  /* Collect metrics from robot, now that it has finished interacting with the */
+  /* environment and no more changes to its state will occur this timestep. */
+  auto it2 = m_metrics_map->find(controller->type_index());
+  ER_ASSERT(m_metrics_map->end() != it2,
+            "Controller '%s' type '%s' not in construction metrics map",
+            controller->GetId().c_str(),
+            controller->type_index().name());
+  auto mapplicator = ccops::applicator<controller::constructing_controller,
+                                       ccops::metrics_extract,
+                                       metrics::silicon_metrics_aggregator>(controller);
+  auto target = robot_target(controller);
+  if (nullptr != target) {
+    auto visitor = [&](const auto& v) { mapplicator(v, target->id()); };
+    boost::apply_visitor(visitor, m_metrics_map->at(controller->type_index()));
+  }
+
+
+  controller->block_manip_recorder()->reset();
 } /* robot_post_step() */
 
 bool construction_loop_functions::robot_losQ3D_update(
     controller::constructing_controller* const c) const {
-  /*
-   * Figure out if the robot is current within the 2D bounds of any
-   * structure. If it is, then compute and send it a Q3D LOS from the
-   * structure, if it is not, then clear out the robot's old LOS so it does not
-   * refer to out of date info anymore, and we will get a segfault if it tries
-   * to.
-   */
-  auto target_it = std::find_if(construct_targets().begin(),
-                             construct_targets().end(),
-                             [&](auto *target) {
-                               return target->contains(c->dpos2D());
-                             });
-  if (construct_targets().end() == target_it) {
+  auto target = robot_target(c);
+  if (nullptr == target) {
     c->perception()->los(nullptr);
     return false;
   }
-  size_t index = std::distance(construct_targets().begin(), target_it);
+  size_t index = std::distance(ct_manager()->targets().begin(),
+                               std::find(ct_manager()->targets().begin(),
+                                         ct_manager()->targets().end(),
+                                         target));
 
   auto updater_it = m_losQ3D_updaters[index].find(c->type_index());
   ER_ASSERT(m_losQ3D_updaters[index].end() != updater_it,
@@ -398,6 +385,27 @@ bool construction_loop_functions::robot_losQ3D_update(
                          m_losQ3D_updaters[index].find(c->type_index())->second);
   return true;
 } /* robot_losQ3D_update() */
+
+structure::structure3D* construction_loop_functions::robot_target(
+const controller::constructing_controller* c) const {
+  /*
+   * Figure out if the robot is current within the 2D bounds of any
+   * structure. If it is, then compute and send it a Q3D LOS from the structure,
+   * if it is not, then clear out the robot's old LOS so it does not refer to
+   * out of date info anymore, and we will get a segfault if it tries to.
+   */
+  auto target_it = std::find_if(ct_manager()->targets().begin(),
+                                ct_manager()->targets().end(),
+                                [&](auto *target) {
+                                  return target->contains(c->dpos2D());
+                                });
+
+  if (ct_manager()->targets().end() == target_it) {
+    return nullptr;
+  } else {
+    return (*target_it);
+  }
+} /* robot_target() */
 
 using namespace argos; // NOLINT
 

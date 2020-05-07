@@ -26,6 +26,8 @@
  ******************************************************************************/
 #include <string>
 
+#include "rcppsw/types/type_uuid.hpp"
+
 #include "cosm/metrics/base_metrics_aggregator.hpp"
 #include "cosm/metrics/config/metrics_config.hpp"
 #include "cosm/ds/config/grid2D_config.hpp"
@@ -33,15 +35,13 @@
 #include "silicon/silicon.hpp"
 #include "silicon/ds/construct_target_vector.hpp"
 #include "silicon/controller/controller_fwd.hpp"
+#include "silicon/support/tv/tv_manager.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace silicon::support {
-class base_loop_functions;
-}
 namespace silicon::structure {
-class structure3D;
+class ct_manager;
 } /* namespace silicon::structure */
 
 NS_START(silicon, metrics);
@@ -66,8 +66,8 @@ class silicon_metrics_aggregator
                              const ds::construct_target_vectorno& targets);
   ~silicon_metrics_aggregator(void) override = default;
 
-  void collect_from_loop(const support::base_loop_functions* loop);
-  void collect_from_structure(const structure::structure3D* structure);
+  void collect_from_tv(const support::tv::tv_manager* tvm);
+  void collect_from_ct(const structure::ct_manager* manager);
   void collect_from_controller(const controller::constructing_controller* c,
                                const rtypes::type_uuid& structure_id);
 

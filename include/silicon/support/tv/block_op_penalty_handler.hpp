@@ -30,8 +30,8 @@
 #include "rcppsw/types/type_uuid.hpp"
 
 #include "cosm/tv/temporal_penalty_handler.hpp"
-#include "cosm/foraging/tv/penalty_id_calculator.hpp"
 
+#include "silicon/support/tv/block_op_penalty_id_calculator.hpp"
 #include "silicon/support/tv/block_op_filter.hpp"
 
 /*******************************************************************************
@@ -52,17 +52,21 @@ NS_START(silicon, support, tv);
 class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
                                        public rer::client<block_op_penalty_handler> {
  public:
-  block_op_penalty_handler(carena::base_arena_map<crepr::base_block3D>* const map,
+  block_op_penalty_handler(carena::base_arena_map* const map,
                            const rct::config::waveform_config* const config,
                            const std::string& name)
       : temporal_penalty_handler(config, name),
         ER_CLIENT_INIT("silicon.support.tv.block_op_penalty_handler"),
         mc_map(map),
-        m_filter(mc_map) {}
+        m_filter(mc_map),
+        m_id_calc(mc_map) {}
 
   ~block_op_penalty_handler(void) override = default;
-  block_op_penalty_handler& operator=(const block_op_penalty_handler& other) =
-      delete;
+  block_op_penalty_handler(block_op_penalty_handler&&) = default;
+  block_op_penalty_handler& operator=(block_op_penalty_handler&&) = default;
+
+  /* Not copy assignable/copy constructible by default */
+  block_op_penalty_handler& operator=(const block_op_penalty_handler&) = delete;
   block_op_penalty_handler(const block_op_penalty_handler&) = delete;
 
   /**
@@ -70,16 +74,14 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
    * trying to drop/pickup a block. If so, create a \ref temporal_penalty object
    * and associate it with the robot.
    *
-   * \tparam TControllerType The type of the controller. Must be a template
-   * parameter, because of the goal acquisition determination done by \ref
-   * block_op_filter.
+   f* \tparam TController The type of the controller. Must be a template *
+   parameter, because of the goal acquisition determination done by \ref *
+   block_op_filter.
    *
    * \param controller The robot to check.
    * \param src The penalty source (i.e. what event caused this penalty to be
    *            applied).
    * \param t The current timestep.
-   * \param prox_dist The minimum distance that the cache site needs to be from
-   *                  all caches in the arena.
    */
   template<typename TControllerType>
   op_filter_status penalty_init(const TControllerType& controller,
@@ -95,10 +97,10 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
 
     rtypes::type_uuid id = m_id_calc(controller, src);
     rtypes::timestep orig_duration = penalty_calc(t);
-    auto duration RCSW_UNUSED = penalty_add(&controller,
-                                            id,
-                                            orig_duration,
-                                            t);
+    rtypes::timestep RCSW_UNUSED duration = penalty_add(&controller,
+                                                        id,
+                                                        orig_duration,
+                                                        t);
 
     ER_INFO("%s: block%d start=%u, penalty=%u, adjusted penalty=%u src=%d",
             controller.GetId().c_str(),
@@ -113,10 +115,10 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
 
  private:
   /* clang-format off */
-  const carena::base_arena_map<crepr::base_block3D>* const mc_map;
+  const carena::base_arena_map* const mc_map;
 
-  block_op_filter                                          m_filter;
-  cforaging::tv::penalty_id_calculator                     m_id_calc{};
+  block_op_filter                     m_filter;
+  block_op_penalty_id_calculator      m_id_calc;
   /* clang-format on */
 };
 NS_END(tv, support, silicon);

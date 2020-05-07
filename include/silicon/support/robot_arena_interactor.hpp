@@ -29,6 +29,13 @@
 
 #include "silicon/silicon.hpp"
 #include "silicon/support/interactor_status.hpp"
+#include "silicon/support/tv/env_dynamics.hpp"
+#include "silicon/support/mpl/arena_block_pickup_spec.hpp"
+#include "silicon/support/mpl/ct_block_place_spec.hpp"
+#include "silicon/support/arena_block_pickup_interactor.hpp"
+#include "silicon/support/tv/block_op_src.hpp"
+#include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/support/ct_block_place_interactor.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -48,23 +55,24 @@ NS_START(silicon, support);
  * Including:
  *
  */
-template <typename T>
-class robot_arena_interactor final
-    : public rer::client<robot_arena_interactor<T>> {
+template <typename TControllerType>
+class robot_arena_interactor final :
+    public rer::client<robot_arena_interactor<TControllerType>> {
  public:
-  robot_arena_interactor(void)
-      : ER_CLIENT_INIT("silicon.support.robot_arena_interactor") {}
+  robot_arena_interactor(carena::base_arena_map* const map,
+                         sstructure::ct_manager* manager,
+                         argos::CFloorEntity* const floor,
+                         tv::env_dynamics* const envd)
+      : ER_CLIENT_INIT("silicon.support.robot_arena_interactor"),
+        m_arena_pickup(map,
+                       floor,
+                       envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
+        m_block_place(manager) {}
 
-  /**
-   * \brief Interactors should generally NOT be copy constructable/assignable,
-   * but is needed to use these classes with boost::variant.
-   *
-   * \todo Supposedly in recent versions of boost you can use variants with
-   * move-constructible-only types (which is what this class SHOULD be), but I
-   * cannot get this to work (the default move constructor needs to be noexcept
-   * I think, and is not being interpreted as such).
-   */
-  robot_arena_interactor(const robot_arena_interactor&) = default;
+  robot_arena_interactor(robot_arena_interactor&&) = default;
+
+  /* not copy constructible/assignable by default */
+  robot_arena_interactor(const robot_arena_interactor&) = delete;
   robot_arena_interactor& operator=(const robot_arena_interactor&) = delete;
 
   /**
@@ -73,16 +81,22 @@ class robot_arena_interactor final
    * \param controller The controller to handle interactions for.
    * \param t The current timestep.
    */
-  interactor_status operator()(T& controller, const rtypes::timestep& t) {
+  interactor_status operator()(TControllerType& controller,
+                               const rtypes::timestep& t) {
     if (controller.is_carrying_block()) {
-      return m_nest_drop_interactor(controller, t);
+      return interactor_status::ekNO_EVENT;
     } else { /* The foot-bot has no block item */
-      return m_free_pickup_interactor(controller, t);
+      return m_arena_pickup(controller, t);
     }
   }
 
  private:
+  using arena_pickup_spec = typename mpl::arena_block_pickup_spec<controller::typelist>;
+  using block_place_spec = typename mpl::ct_block_place_spec<controller::typelist>;
+
   /* clang-format off */
+  arena_block_pickup_interactor<TControllerType, arena_pickup_spec> m_arena_pickup;
+  ct_block_place_interactor<TControllerType, block_place_spec>      m_block_place;
   /* clang-format on */
 };
 

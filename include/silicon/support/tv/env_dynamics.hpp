@@ -25,6 +25,8 @@
  * Includes
  ******************************************************************************/
 #include <list>
+#include <map>
+#include <utility>
 
 #include "rcppsw/er/client.hpp"
 
@@ -73,10 +75,9 @@ class env_dynamics final : public rer::client<env_dynamics>,
   using const_penalty_handlers = std::list<const ctv::temporal_penalty_handler*>;
   using penalty_handlers = std::list<ctv::temporal_penalty_handler*>;
   using rda_adaptor_type = cpal::tv::argos_rda_adaptor<controller::constructing_controller>;
-
   env_dynamics(const tv::config::env_dynamics_config * config,
                const support::base_loop_functions* lf,
-               carena::base_arena_map<crepr::base_block3D>* map);
+               carena::base_arena_map* map);
 
   env_dynamics(const env_dynamics&) = delete;
   const env_dynamics& operator=(const env_dynamics&) = delete;
@@ -84,12 +85,27 @@ class env_dynamics final : public rer::client<env_dynamics>,
   /* environmental variance metrics */
   double avg_motion_throttle(void) const override;
   rtypes::timestep arena_block_manip_penalty(void) const override;
-  rtypes::timestep structure_block_manip_penalty(void) const override;
+  rtypes::timestep ct_block_manip_penalty(void) const override;
 
-  /* COSM env_dynamics overrides */
+  /* COSM environment dynamics overrides */
   void register_controller(const cpal::argos_controllerQ3D_adaptor& c) override;
   void unregister_controller(const cpal::argos_controllerQ3D_adaptor& c) override;
   bool penalties_flush(const cpal::argos_controllerQ3D_adaptor& c) override;
+
+  /**
+   * \brief Register the handlers from a \ref structure::structure3D object with
+   * the environment dynamics, one per construction lane.
+   *
+   * This cannot be done by the environment dynamics, because it cannot know in
+   * general how many structures will be present in the environment, or what
+   * their IDs will be.
+   */
+  void ct_placement_handler_register(const rtypes::type_uuid& target_id,
+                                     std::unique_ptr<block_op_penalty_handler> handler) {
+    m_ct_placement.emplace(std::make_pair(target_id, std::move(handler)));
+    ER_INFO("Registered placement handler for target%s",
+            rcppsw::to_string(target_id).c_str());
+  }
 
   /**
    * \brief Update the state of applied variances. Should be called once per
@@ -99,50 +115,98 @@ class env_dynamics final : public rer::client<env_dynamics>,
 
   const rda_adaptor_type* rda_adaptor(void) const { return &m_rda; }
 
+  const block_op_penalty_handler* penalty_handler(const block_op_src& src) const {
+    return const_cast<env_dynamics*>(this)->penalty_handler_impl(src);
+  }
+
+
   /**
    * \brief Return non-owning reference to a penalty handler for the specified
    * type of block operation; scope of usage must not exceed that of the
    * instance of this class used to generate the reference.
    */
-  const block_op_penalty_handler* penalty_handler(const block_op_src& src) const {
-    return const_cast<env_dynamics*>(this)->penalty_handler(src);
-  }
   block_op_penalty_handler* penalty_handler(const block_op_src& src) {
+    return penalty_handler_impl(src);
+  }
+
+  /**
+   * \brief Return non-owning reference to a penalty handler for the specified
+   * type of block operation for the specified construction target. Return
+   * non-owning reference to the handler vector; scope of usage must not exceed
+   * that of the instance of this class used to generate the reference.
+   */
+  const block_op_penalty_handler* ct_penalty_handler(const block_op_src& src,
+                                                     const rtypes::type_uuid& id) const {
+    return const_cast<env_dynamics*>(this)->penalty_handler_impl(src, id);
+  }
+  block_op_penalty_handler* ct_penalty_handler(const block_op_src& src,
+                                               const rtypes::type_uuid& id) {
+    return penalty_handler_impl(src, id);
+  }
+
+  /**
+   * \brief Get the full list of all possible penalty handlers.
+   *
+   * This is a flatten hierarchy of:
+   *
+   * - Free block pickup handler
+   * - All the handlers that are associated with all construction targets.
+   */
+  const_penalty_handlers all_penalty_handlers(void) const {
+    const_penalty_handlers ret;
+    ret.push_back(penalty_handler(block_op_src::ekARENA_PICKUP));
+    for (auto &pair : m_ct_placement) {
+      ret.push_back(pair.second.get());
+    } /* for(&pair..) */
+    return ret;
+  }
+
+
+ private:
+  using ct_placement_handler_map = std::map<rtypes::type_uuid,
+                                            std::unique_ptr<block_op_penalty_handler>>;
+
+  block_op_penalty_handler* penalty_handler_impl(
+      const block_op_src& src) {
     switch (src) {
-      case block_op_src::ekFREE_PICKUP:
+      case block_op_src::ekARENA_PICKUP:
         return &m_fb_pickup;
-      case block_op_src::ekSTRUCTURE_PLACEMENT:
-        return &m_structure_placement;
       default:
         ER_FATAL_SENTINEL("Bad penalty source %d", static_cast<int>(src));
     } /* switch() */
     return nullptr;
   }
 
-  /**
-   * \brief Get the full list of all possible penalty handlers. Note that for
-   * some controller types there are handlers in the returned list for which a
-   * controller can *NEVER* be serving a penalty for.
-   */
-  const_penalty_handlers all_penalty_handlers(void) const {
-    return {penalty_handler(block_op_src::ekFREE_PICKUP),
-          penalty_handler(block_op_src::ekSTRUCTURE_PLACEMENT),
-          };
+  block_op_penalty_handler* penalty_handler_impl(const block_op_src& src,
+                                                 const rtypes::type_uuid& target_id) {
+    switch (src) {
+      case block_op_src::ekCT_BLOCK_MANIP:
+        {
+          auto it = m_ct_placement.find(target_id);
+          if (m_ct_placement.end() == it) {
+            return nullptr;
+          }
+          return it->second.get();
+        }
+      default:
+        ER_FATAL_SENTINEL("Bad penalty source %d", static_cast<int>(src));
+    } /* switch() */
+    return nullptr;
   }
-
-
- private:
   penalty_handlers all_penalty_handlers(void) {
-    return {penalty_handler(block_op_src::ekFREE_PICKUP),
-          penalty_handler(block_op_src::ekSTRUCTURE_PLACEMENT),
-          };
+    penalty_handlers ret;
+    ret.push_back(penalty_handler(block_op_src::ekARENA_PICKUP));
+    for (auto &pair : m_ct_placement) {
+      ret.push_back(pair.second.get());
+    } /* for(&pair..) */
+    return ret;
   }
 
   /* clang-format off */
   rtypes::timestep         m_timestep{rtypes::timestep(0)};
   rda_adaptor_type         m_rda;
   block_op_penalty_handler m_fb_pickup;
-  block_op_penalty_handler m_structure_placement;
+  ct_placement_handler_map m_ct_placement{};
   /* clang-format on */
 };
 

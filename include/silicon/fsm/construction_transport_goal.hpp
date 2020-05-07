@@ -48,13 +48,13 @@ enum class construction_transport_goal {
    * A robot has acquired and picked up a block and is currently taking it to
    * the construction site.
    */
+  ekCONSTRUCTION_SITE,
 
-  ekNEST,
   /**
    * A robot has arrived in the construction site and is taking its block
-   * somewhere on the structure.
+   * somewhere on the construct target.
    */
-  ekSTRUCTURE
+  ekCT_BLOCK_PLACEMENT_SITE
 };
 
 NS_END(fsm, silicon);

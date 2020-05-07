@@ -42,8 +42,15 @@ NS_START(silicon, fsm);
  */
 enum class construction_acq_goal {
   ekNONE = -1,
-  ekBLOCK,
-  ekSTRUCTURE,
+  /**
+   * The robot is looking for a block in the environment via foraging.
+   */
+  ekFORAGING_BLOCK,
+
+  /**
+   * The robot is acquiring a block placement location on a target structure.
+   */
+  ekBLOCK_PLACEMENT_SITE,
 };
 
 /*******************************************************************************

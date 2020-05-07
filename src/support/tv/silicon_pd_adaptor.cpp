@@ -40,7 +40,7 @@ silicon_pd_adaptor::silicon_pd_adaptor(
     const ctv::config::population_dynamics_config* config,
     cpal::argos_sm_adaptor* sm,
     env_dynamics_type* envd,
-    carena::base_arena_map<crepr::base_block3D>* map,
+    carena::base_arena_map* map,
     rmath::rng* rng)
     : ER_CLIENT_INIT("silicon.support.tv.silicon_pd_adaptor"),
       argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(
@@ -76,7 +76,7 @@ void silicon_pd_adaptor::pre_kill_cleanup(
      * dynamics are always applied AFTER all robots have had their control steps
      * run, we are in a non-concurrent context, so no reason to grab them.
      */
-    caops::free_block_drop_visitor<crepr::base_block3D> adrop_op(
+    caops::free_block_drop_visitor adrop_op(
         *it,
         rmath::dvec2zvec(constructing->rpos2D(), m_map->grid_resolution().v()),
         m_map->grid_resolution(),

@@ -37,7 +37,7 @@
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
 #include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
-#include "cosm/controller/config/perception/perception_config.hpp"
+#include "cosm/subsystem/perception/config/perception_config.hpp"
 #include "cosm/fsm/block_transporter.hpp"
 
 #include "silicon/metrics/blocks/block_manip_events.hpp"
@@ -132,8 +132,7 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
       const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
   void output_init(const cmconfig::output_config* outputp);
 
-  void perception_init(
-      const ccontconfig::perception::perception_config* perceptionp);
+  void perception_init(const cspconfig::perception_config* perceptionp);
 
   /* clang-format off */
   block_manip_recorder_type                                 m_block_manip{};

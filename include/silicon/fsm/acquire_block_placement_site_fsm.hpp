@@ -25,6 +25,8 @@
  * Includes
  ******************************************************************************/
 #include <vector>
+#include <memory>
+
 #include <boost/optional.hpp>
 
 #include "cosm/steer2D/ds/path_state.hpp"
@@ -56,7 +58,7 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
               crfootbot::footbot_saa_subsystem* saa,
               rmath::rng* rng);
 
-  ~acquire_block_placement_site_fsm(void) override = default;
+  ~acquire_block_placement_site_fsm(void) override;
 
   /* not copy constructible or copy assignable by default */
   acquire_block_placement_site_fsm(const acquire_block_placement_site_fsm&) = delete;
@@ -121,14 +123,13 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
 
   /* FSM states */
   HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
-  HFSM_STATE_DECLARE(acquire_block_placement_site_fsm,
-                     acquire_frontier_set,
-                     csteer2D::ds::path_state);
+  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
+                        acquire_frontier_set);
+
   HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
                         entry_acquire_frontier_set);
-  HFSM_STATE_DECLARE(acquire_block_placement_site_fsm,
-                     acquire_placement_loc,
-                     csteer2D::ds::path_state);
+  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
+                        acquire_placement_loc);
 
   HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
 
@@ -148,7 +149,7 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
    * \brief Calculate the path from the robot's current position to the frontier
    * set.
    */
-  std::vector<rmath::vector2d> calc_frontier_set_path(void) const;
+  std::vector<rmath::vector2d> calc_frontier_set_path(void);
 
   /**
    * \brief Calculate the path from the location at which the robot has reached
@@ -157,6 +158,10 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
    */
   std::vector<rmath::vector2d> calc_placement_path(
       const stygmergic_configuration& acq) const;
+
+  /* clang-format off */
+  std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};
+  /* clang-format on */
 };
 
 NS_END(fsm, silicon);

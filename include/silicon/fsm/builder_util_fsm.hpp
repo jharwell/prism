@@ -62,6 +62,21 @@ class builder_util_fsm : public csfsm::util_hfsm,
                          public cta::taskable,
                          public rer::client<builder_util_fsm> {
  public:
+
+  /**
+   * How close the robot needs to be to the vectors representing the
+   * ingress/egress lanes in terms of difference in position. If they veer
+   * outside of this, an assertion will be triggered.
+   */
+  static constexpr const double kLANE_VECTOR_DIST_TOL = 0.2;
+
+  /**
+   * How close the robot needs to be to a given angle in order to be considered
+   * to have that azimuth heading. If they veer outside of this range, an
+   * assertion will be triggered while traversing the ingress/egress lanes.
+   */
+  static const rmath::radians kROBOT_AZIMUTH_TOL;
+
   builder_util_fsm(const scperception::builder_perception_subsystem* perception,
                    crfootbot::footbot_saa_subsystem* saa,
                    rmath::rng* rng,
@@ -97,20 +112,6 @@ class builder_util_fsm : public csfsm::util_hfsm,
     explicit robot_wait_data(robot_proximity_type in) : prox_type(in) {}
     robot_proximity_type prox_type;
   };
-
-  /**
-   * How close the robot needs to be to the vectors representing the
-   * ingress/egress lanes in terms of difference in position. If they veer
-   * outside of this, an assertion will be triggered.
-   */
-  static constexpr const double kLANE_VECTOR_DIST_TOL = 0.2;
-
-  /**
-   * How close the robot needs to be to a given angle in order to be considered
-   * to have that azimuth heading. If they veer outside of this range, an
-   * assertion will be triggered while traversing the ingress/egress lanes.
-   */
-  static const rmath::radians kROBOT_AZIMUTH_TOL;
 
   const scperception::builder_perception_subsystem* perception(void) const {
     return mc_perception;

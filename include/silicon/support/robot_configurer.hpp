@@ -25,10 +25,14 @@
  * Includes
  ******************************************************************************/
 #include <boost/variant/static_visitor.hpp>
+#include <memory>
+#include <utility>
 
 #include "cosm/vis/config/visualization_config.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
+#include "silicon/ds/ct_vector.hpp"
+#include "silicon/controller/perception/perception_receptor.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -47,18 +51,34 @@ NS_START(silicon, support);
 template <typename TController>
 class robot_configurer : public boost::static_visitor<void> {
  public:
-  explicit robot_configurer(const cvconfig::visualization_config* const vis_config)
-      : mc_vis_config(vis_config) {}
+  robot_configurer(const cvconfig::visualization_config* const vis_config,
+                   const sds::ct_vectorro& targets)
+      : mc_vis_config(vis_config),
+        mc_targets(targets) {}
+
+  robot_configurer(robot_configurer&&) = default;
+
+  /* Not copy constructible/assignable by default  */
+  robot_configurer(const robot_configurer&) = delete;
+  const robot_configurer& operator=(const robot_configurer&) = delete;
 
   void operator()(TController* const c) const {
     if (nullptr != mc_vis_config) {
       c->display_id(mc_vis_config->robot_id);
     }
+    scperception::perception_receptor::ct_info_vector infos;
+    for (auto *t : mc_targets) {
+      infos.push_back(scperception::ct_skel_info(t));
+    } /* for(&t..) */
+
+    auto receptor = std::make_unique<scperception::perception_receptor>(infos);
+    c->perception()->receptor(std::move(receptor));
   }
 
  private:
   /* clang-format off */
   const cvconfig::visualization_config * const mc_vis_config;
+  const sds::ct_vectorro                       mc_targets;
   /* clang-format on */
 };
 

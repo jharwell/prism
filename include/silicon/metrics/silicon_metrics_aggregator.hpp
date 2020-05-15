@@ -33,7 +33,7 @@
 #include "cosm/ds/config/grid2D_config.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/ds/construct_target_vector.hpp"
+#include "silicon/ds/ct_vector.hpp"
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
 
@@ -63,12 +63,14 @@ class silicon_metrics_aggregator
   silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
                              const cdconfig::grid2D_config* gconfig,
                              const std::string& output_root,
-                             const ds::construct_target_vectorno& targets);
+                             const ds::ct_vectorno& targets);
   ~silicon_metrics_aggregator(void) override = default;
 
   void collect_from_tv(const support::tv::tv_manager* tvm);
   void collect_from_ct(const structure::ct_manager* manager);
-  void collect_from_controller(const controller::constructing_controller* c,
+
+  template<typename TController>
+  void collect_from_controller(const TController* c,
                                const rtypes::type_uuid& structure_id);
 
  private:

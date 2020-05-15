@@ -64,22 +64,23 @@ void ct_manager::init(
         std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
                                                   m_arena_map,
                                                   i);
-    if (ssops::validate_spec(target.get())()) {
-      /* one handler per target */
-      auto name = "structure" + rcppsw::to_string(target->id()) + "placement_penalty";
-      auto handler = std::make_unique<sstv::block_op_penalty_handler>(m_arena_map,
-                                                                      placement_penalty_config,
-                                                                      name);
-      m_envd->ct_placement_handler_register(target->id(), std::move(handler));
-
-      m_targetsno.push_back(target.get());
-      m_targetso.push_back(std::move(target));
-      m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
-          builder_config, m_targetso[i].get(), m_sm));
-      ER_INFO("Initialized construction target %zu", i);
-    } else {
-      ER_INFO("Construction targets %zu invalid: will not be built", i);
+    if (!construction_feasible(target.get())) {
+      ER_WARN("Construction target%s infeasible: will not be built",
+              rcppsw::to_string(target->id()).c_str());
+      continue;
     }
+    auto name = "structure" + rcppsw::to_string(target->id()) + "placement_penalty";
+    auto handler = std::make_unique<sstv::block_op_penalty_handler>(m_arena_map,
+                                                                    placement_penalty_config,
+                                                                    name);
+    m_envd->ct_placement_handler_register(target->id(), std::move(handler));
+
+    m_targetsno.push_back(target.get());
+    m_targetsro.push_back(target.get());
+    m_targetso.push_back(std::move(target));
+    m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
+        builder_config, m_targetso[i].get(), m_sm));
+    ER_INFO("Initialized construction target %zu", i);
   } /* for(i..) */
 } /* init() */
 
@@ -124,5 +125,23 @@ structure3D* ct_manager::target_lookup(
   }
   return nullptr;
 } /* target_lookup() */
+
+bool ct_manager::construction_feasible(const structure3D* target) const {
+  if (!ssops::validate_spec(target)()) {
+    ER_WARN("Construction target%s invalid",
+            rcppsw::to_string(target->id()).c_str());
+    return false;
+  }
+  for (auto &existing_t : m_targetso) {
+    if (existing_t->xrange().overlaps_with(target->xrange()) &&
+        existing_t->yrange().overlaps_with(target->yrange())) {
+      ER_WARN("Construction target%s overlaps with target%s",
+              rcppsw::to_string(target->id()).c_str(),
+              rcppsw::to_string(existing_t->id()).c_str());
+      return false;
+    }
+  } /* for(..&existing_t) */
+  return true;
+} /* construction_feasible() */
 
 NS_END(structure, silicon);

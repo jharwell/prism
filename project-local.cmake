@@ -68,14 +68,14 @@ if ("${COSM_BUILD_FOR}" MATCHES "ARGOS" OR "${COSM_BUILD_FOR}" MATCHES "MSI")
     ${${target}_LIBRARY_DIRS}
     /usr/lib/argos3
     /usr/local/lib/argos3
-    ${LOCAL_INSTALL_PREFIX}/lib/argos3
+    ${COSM_PROJECT_DEPS_PREFIX}/lib/argos3
     )
   if ("${COSM_BUILD_FOR}" MATCHES "MSI")
     # For nlopt
     set(${target}_LIBRARY_DIRS
       ${$target}_LIBRARY_DIRS}
-      ${LOCAL_INSTALL_PREFIX}/lib/argos3
-      ${LOCAL_INSTALL_PREFIX}/lib64)
+      ${COSM_PROJECT_DEPS_PREFIX}/lib/argos3
+      ${COSM_PROJECT_DEPS_PREFIX}/lib64)
   endif()
 endif()
 
@@ -98,13 +98,6 @@ set(${target}_INCLUDE_DIRS
 set(${target}_SYS_INCLUDE_DIRS
   ${cosm_SYS_INCLUDE_DIRS}
   ${NLOPT_INCLUDE_DIRS})
-
-if ("${COSM_BUILD_FOR}" MATCHES "ARGOS")
-  set(${target}_SYS_INCLUDE_DIRS
-    ${${target}_SYS_INCLUDE_DIRS}
-  ${LOCAL_INSTALL_PREFIX}/include
-  )
-endif()
 
 target_include_directories(${target} PUBLIC ${${target}_INCLUDE_DIRS})
 

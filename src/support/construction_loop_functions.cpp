@@ -31,6 +31,7 @@
 #include "silicon/support/construction_loop_functions.hpp"
 
 #include <boost/mpl/for_each.hpp>
+#include <cmath>
 
 #include "cosm/arena/config/arena_map_config.hpp"
 #include "cosm/controller/operations/applicator.hpp"
@@ -92,17 +93,18 @@ struct functor_maps_initializer {
     config_map->emplace(
         typeid(controller),
         robot_configurer<T>(
-            lf->config()->config_get<cvconfig::visualization_config>()));
+            lf->config()->config_get<cvconfig::visualization_config>(),
+            lf->ct_manager()->targetsro()));
     /*
      * We need to set up the Q3D LOS updaters for EVERY possible construction
      * target for EVERY controller type.
      */
-    for (size_t i = 0; i < lf->ct_manager()->targets().size(); ++i) {
+    for (size_t i = 0; i < lf->ct_manager()->targetsno().size(); ++i) {
       auto& updater = lf->m_losQ3D_updaters[i];
       updater.emplace(typeid(controller),
                       ccops::robot_los_update<T,
                       rds::grid3D_overlay<cds::cell3D>,
-                      repr::builder_los>(lf->ct_manager()->targets()[i]));
+                      repr::builder_los>(lf->ct_manager()->targetsno()[i]));
     } /* for(i..) */
   }
 
@@ -156,13 +158,20 @@ void construction_loop_functions::private_init(void) {
   auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.dims = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
-      &output->metrics, &arena.grid, output_root(), ct_manager()->targets());
+      &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
-  m_losQ3D_updaters.reserve(ct_manager()->targets().size());
+
+  /*
+   * Each construction target needs its own LOS update map for ALL controller
+   * types.
+   */
+  for (size_t i = 0; i < ct_manager()->targetsno().size(); ++i) {
+    m_losQ3D_updaters.push_back(losQ3D_updater_map_type());
+  } /* for(i..) */
 
   /* only needed for initialization, so not a member */
   auto config_map = detail::configurer_map_type();
@@ -269,11 +278,15 @@ void construction_loop_functions::reset(void) {
 argos::CColor construction_loop_functions::GetFloorColor(
     const argos::CVector2& plane_pos) {
   rmath::vector2d tmp(plane_pos.GetX(), plane_pos.GetY());
-  if (arena_map()->nest().contains_point(tmp)) {
-    return argos::CColor(arena_map()->nest().color().red(),
-                         arena_map()->nest().color().green(),
-                         arena_map()->nest().color().blue());
-  }
+
+  /* check if the point is inside any of the nests */
+  for (auto *nest : arena_map()->nests()) {
+    if (nest->contains_point(tmp)) {
+      return argos::CColor(nest->color().red(),
+                           nest->color().green(),
+                           nest->color().blue());
+    }
+  } /* for(*nest..) */
 
   for (auto* block : arena_map()->blocks()) {
     /*
@@ -362,14 +375,14 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
 
 bool construction_loop_functions::robot_losQ3D_update(
     controller::constructing_controller* const c) const {
-  auto target = robot_target(c);
+  auto* target = robot_target(c);
   if (nullptr == target) {
     c->perception()->los(nullptr);
     return false;
   }
-  size_t index = std::distance(ct_manager()->targets().begin(),
-                               std::find(ct_manager()->targets().begin(),
-                                         ct_manager()->targets().end(),
+  size_t index = std::distance(ct_manager()->targetsno().begin(),
+                               std::find(ct_manager()->targetsno().begin(),
+                                         ct_manager()->targetsno().end(),
                                          target));
 
   auto updater_it = m_losQ3D_updaters[index].find(c->type_index());
@@ -394,13 +407,13 @@ const controller::constructing_controller* c) const {
    * if it is not, then clear out the robot's old LOS so it does not refer to
    * out of date info anymore, and we will get a segfault if it tries to.
    */
-  auto target_it = std::find_if(ct_manager()->targets().begin(),
-                                ct_manager()->targets().end(),
+  auto target_it = std::find_if(ct_manager()->targetsno().begin(),
+                                ct_manager()->targetsno().end(),
                                 [&](auto *target) {
-                                  return target->contains(c->dpos2D());
+                                  return target->contains(c->rpos2D());
                                 });
 
-  if (ct_manager()->targets().end() == target_it) {
+  if (ct_manager()->targetsno().end() == target_it) {
     return nullptr;
   } else {
     return (*target_it);

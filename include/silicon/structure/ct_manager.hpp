@@ -32,7 +32,7 @@
 #include "rcppsw/er/client.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/ds/construct_target_vector.hpp"
+#include "silicon/ds/ct_vector.hpp"
 #include "silicon/support/tv/env_dynamics.hpp"
 
 /*******************************************************************************
@@ -101,8 +101,11 @@ class ct_manager : public rer::client<ct_manager> {
    * \brief The vector of all targets to be built in the arena.
    */
 
-  const ds::construct_target_vectorno& targets(void) const {
+  const ds::ct_vectorno& targetsno(void) const {
     return m_targetsno;
+  }
+  const ds::ct_vectorro& targetsro(void) const {
+    return m_targetsro;
   }
 
   const support::tv::block_op_penalty_handler* placement_handler(
@@ -144,6 +147,14 @@ class ct_manager : public rer::client<ct_manager> {
   void reset(void);
 
  private:
+  /**
+   * \brief Determine if construction of the specified target is feasible.
+   *
+   * - Does it pass internal validation?
+   * - Does it overlap with other targets?
+   */
+  bool construction_feasible(const structure3D* target) const;
+
   using builders_vectoro_type =
       std::vector<std::unique_ptr<structure::structure3D_builder>>;
 
@@ -151,12 +162,13 @@ class ct_manager : public rer::client<ct_manager> {
   structure3D* target_lookup(const rtypes::type_uuid& id) const;
 
   /* clang-format off */
-  carena::base_arena_map*               m_arena_map;
-  cpal::argos_sm_adaptor*               m_sm;
-  support::tv::env_dynamics*            m_envd;
-  ds::construct_target_vectoro          m_targetso{};
-  ds::construct_target_vectorno         m_targetsno{};
-  builders_vectoro_type                 m_builderso{};
+  carena::base_arena_map*    m_arena_map;
+  cpal::argos_sm_adaptor*    m_sm;
+  support::tv::env_dynamics* m_envd;
+  ds::ct_vectoro             m_targetso{};
+  ds::ct_vectorno            m_targetsno{};
+  ds::ct_vectorro            m_targetsro{};
+  builders_vectoro_type      m_builderso{};
   /* clang-format on */
 };
 

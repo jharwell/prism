@@ -120,8 +120,8 @@ bool structure3D::contains(const crepr::base_block3D* const query) const {
   return nullptr != cell_spec_retrieve(query->dpos3D());
 } /* contains() */
 
-bool structure3D::contains(const rmath::vector2z& loc) const {
-  return nullptr != cell_spec_retrieve({loc.x(), loc.y(), 0});
+bool structure3D::contains(const rmath::vector2d& loc) const {
+  return xrange().contains(loc.x()) && yrange().contains(loc.y());
 } /* contains() */
 
 void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {

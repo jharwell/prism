@@ -46,7 +46,7 @@ fcrw_bst_fsm::fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
                                  crfootbot::footbot_saa_subsystem* const saa,
                                  rmath::rng* rng)
     : util_hfsm(saa, rng, ekST_MAX_STATES),
-      ER_CLIENT_INIT("silicon.fsm.depth0.crw"),
+      ER_CLIENT_INIT("silicon.fsm.fcrw_bst"),
       HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(wait_for_block_pickup, hfsm::top_state()),
@@ -86,20 +86,27 @@ fcrw_bst_fsm::fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
  * States
  ******************************************************************************/
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, start) {
+  if (fsm_states::ekST_START != last_state()) {
+    ER_DEBUG("Executing ekST_START");
+  }
   internal_event(ekST_FORAGE);
   return fsm::construction_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, forage) {
+  if (fsm_states::ekST_FORAGE != last_state()) {
+    ER_DEBUG("Executing ekST_FORAGE");
+  }
+
   if (!m_forage_fsm.task_running()) {
     m_forage_fsm.task_reset();
     m_forage_fsm.task_start(nullptr);
   }
+  m_forage_fsm.task_execute();
 
-  if (!m_forage_fsm.task_finished()) {
+  if (m_forage_fsm.task_finished()) {
+    ER_DEBUG("Foraging finished");
     internal_event(ekST_WAIT_FOR_BLOCK_PICKUP);
-  } else {
-    m_forage_fsm.task_execute();
   }
   return fsm::construction_signal::ekHANDLED;
 }
@@ -109,14 +116,19 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm,
                   rpfsm::event_data* data) {
   if (fsm::construction_signal::ekFORAGING_BLOCK_PICKUP == data->signal()) {
     ER_INFO("Block pickup signal received while foraging");
+    ER_ASSERT(nullptr != mc_perception->nearest_ct(),
+              "Cannot allocate construction lane: No known construction targets");
+
     /* allocate construction lane */
-    m_lane = m_allocator(sensing()->rpos3D(),
-                         mc_perception->target());
+    m_lane = m_allocator(sensing()->rpos3D(), mc_perception->nearest_ct());
     auto path = calc_transport_path(m_lane);
+    ER_INFO("Calculated transport path to lane ingress with %zu waypoints",
+            path.size());
     auto transport_data = std::make_unique<nest_transport_data>(
         csteer2D::ds::path_state(path),
         m_lane.ingress(),
         sensing()->rpos3D());
+    event_data_hold(true);
     internal_event(ekST_TRANSPORT_TO_NEST, std::move(transport_data));
   } else if (fsm::construction_signal::ekFORAGING_BLOCK_VANISHED == data->signal()) {
     ER_INFO("Block vanished signal received while foraging");
@@ -131,24 +143,46 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm,
   auto * light = sensing()->sensor<chal::sensors::light_sensor>();
   auto light_force = saa()->steer_force2D().phototaxis(light->readings());
   auto path_force = saa()->steer_force2D().path_following(&data->path);
+  auto polar_force = calc_transport_polar_force();
 
-  /*
-   * The closer the robot gets to the target structure, the more important it is
-   * that it is EXACTLY aligned with its chosen construction lane. So, apply a
-   * weighting factor to the two steering forces in order to achieve this.
-   */
-  double factor = (sensing()->rpos3D() - data->ingress).length() /
-                  (data->transport_start - data->ingress).length();
-  saa()->steer_force2D().accum(light_force * factor + path_force * (1.0 - factor));
-  if (sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest")) {
-    internal_event(ekST_STRUCTURE_BUILD);
+  ER_TRACE("Distance from transport start/to ingress: %f/%f",
+           (data->transport_start - data->ingress).length(),
+           (sensing()->rpos3D() - data->ingress).length());
+  ER_TRACE("Lane alignment: %s",
+           (sensing()->azimuth() + m_lane.orientation()).to_str().c_str());
+
+  if (polar_force.is_pd()) {
+    saa()->steer_force2D().accum(path_force);
+  } else {
+    /*
+     * The closer the robot gets to the target structure, the more important it
+     * is that it is EXACTLY aligned with its chosen construction lane. So,
+     * apply a weighting factor to the two steering forces in order to achieve
+     * this.
+     */
+    double factor = (sensing()->rpos3D() - data->ingress).length() /
+                    (data->transport_start - data->ingress).length();
+    auto weighted = light_force * factor + path_force * (1.0 - factor);
+    saa()->steer_force2D().accum(weighted + polar_force);
   }
-  return fsm::construction_signal::ekHANDLED;
+
+  if (sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest")) {
+    /* ER_DEBUG("Entered nest,pos=%s/%s", */
+    /*          sensing()->rpos2D().to_str().c_str(), */
+    /*          sensing()->dpos2D().to_str().c_str()); */
+    /* internal_event(ekST_STRUCTURE_BUILD); */
+    /* event_data_hold(false); */
+    return fsm::construction_signal::ekHANDLED;
+  } else {
+    event_data_hold(true);
+    return fsm::construction_signal::ekHANDLED;
+  }
 }
 
 
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
   if (!m_block_place_fsm.task_running()) {
+    ER_DEBUG("Begin block placement FSM");
     m_block_place_fsm.task_reset();
     m_block_place_fsm.task_start(&m_lane);
   }
@@ -288,7 +322,14 @@ construction_transport_goal fcrw_bst_fsm::block_transport_goal(void) const {
  * Taskable Interface
  ******************************************************************************/
 void fcrw_bst_fsm::task_execute(void) {
-  inject_event(fsm::construction_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  if (event_data_hold()) {
+    auto event = event_data_release();
+    event->signal(fsm::construction_signal::ekRUN);
+    event->type(rpfsm::event_type::ekNORMAL);
+    inject_event(std::move(event));
+  } else {
+    inject_event(fsm::construction_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  }
 } /* task_execute() */
 
 /*******************************************************************************
@@ -308,16 +349,24 @@ bool fcrw_bst_fsm::block_detected(void) const {
 
 std::vector<rmath::vector2d> fcrw_bst_fsm::calc_transport_path(
     const repr::construction_lane& lane) const {
-  std::vector<rmath::vector2d> ret;
+  std::vector<rmath::vector2d> path;
+  auto pos = sensing()->rpos2D();
+
   if (rmath::radians::kZERO == lane.orientation()) {
-    ret.push_back({sensing()->rpos2D().x(), lane.ingress().y()});
+    if (pos.x() < m_lane.ingress().x()) {
+      path.push_back({m_lane.ingress().x() * 1.25, pos.y()});
+    }
+    path.push_back({sensing()->rpos2D().x(), lane.ingress().y()});
   } else if (rmath::radians::kPI_OVER_TWO == lane.orientation()) {
-    ret.push_back({lane.ingress().x(), sensing()->rpos2D().y()});
+    if (pos.y() < m_lane.ingress().y()) {
+      path.push_back({m_lane.ingress().x(), pos.y() * 1.25});
+    }
+    path.push_back({lane.ingress().x(), sensing()->rpos2D().y()});
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",
                       lane.orientation().to_str().c_str());
   }
-  return ret;
+  return path;
 } /* calc_transport_path() */
 
 boost::optional<block_placer::placement_info> fcrw_bst_fsm::block_placement_info(void) const {
@@ -327,5 +376,25 @@ boost::optional<block_placer::placement_info> fcrw_bst_fsm::block_placement_info
   }
   return boost::none;
 } /* block_placement_info() */
+
+rmath::vector2d fcrw_bst_fsm::calc_transport_polar_force(void) const {
+  bool need_polar = false;
+  /* We are on the wrong side of the structure */
+  if (rmath::radians::kZERO == m_lane.orientation()) {
+    need_polar = (sensing()->rpos2D().x() <= m_lane.ingress().x() ||
+                  std::fabs(sensing()->rpos2D().y() - m_lane.ingress().y()) > builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
+    need_polar = (sensing()->rpos2D().y() <= m_lane.ingress().y() ||
+                  std::fabs(sensing()->rpos2D().x() - m_lane.ingress().x()) > builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+  } else {
+    ER_FATAL_SENTINEL("Bad orientation: '%s'",
+                      m_lane.orientation().to_str().c_str());
+  }
+
+  if (need_polar) {
+    return saa()->steer_force2D().polar(m_lane.center().to_2D());
+  }
+  return {0.0, 0.0};
+} /* calc_transport_polar_force() */
 
 NS_END(fsm, silicon);

@@ -100,8 +100,9 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
   ER_ASSERT(lane_alignment_verify_pos(lane()->egress().to_2D(),
                                       lane()->orientation()),
             "Bad alignment (orientation) on structure egress");
-  bool in_ct_zone = perception()->structure_xrange().contains(saa()->sensing()->rpos2D().x()) &&
-                    perception()->structure_yrange().contains(saa()->sensing()->rpos2D().y()) &&
+  auto* ct = perception()->nearest_ct();
+  bool in_ct_zone = ct->xrange().contains(saa()->sensing()->rpos2D().x()) &&
+                    ct->yrange().contains(saa()->sensing()->rpos2D().y()) &&
                     saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest");
   /*
    * A robot in front of us is too close--wait for it to move before
@@ -184,13 +185,14 @@ void structure_egress_fsm::init(void) {
 std::vector<rmath::vector2d> structure_egress_fsm::calc_egress_path(void) {
   std::vector<rmath::vector2d> path;
   auto pos = saa()->sensing()->rpos2D();
+  auto* ct = perception()->nearest_ct();
 
   if (rmath::radians::kZERO == lane()->orientation()) {
-    double x = rng()->uniform(perception()->structure_xrange().ub(),
+    double x = rng()->uniform(ct->xrange().ub(),
                               perception()->arena_xrange().ub());
     path.push_back({x, pos.y()});
   } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    double y = rng()->uniform(perception()->structure_yrange().ub(),
+    double y = rng()->uniform(ct->yrange().ub(),
                               perception()->arena_yrange().ub());
     path.push_back({pos.x(), y});
   }
@@ -204,12 +206,12 @@ std::vector<rmath::vector2d> structure_egress_fsm::calc_path_to_egress(void) con
       !lane_alignment_verify_pos(lane()->egress().to_2D(),
                                  lane()->orientation())) {
     path.push_back(rmath::zvec2dvec({pos.x(), pos.y() + 1},
-                                    perception()->grid_resolution().v()));
+                                    perception()->arena_resolution().v()));
   } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation() &&
              !lane_alignment_verify_pos(lane()->egress().to_2D(),
                                         lane()->orientation())) {
     path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                    perception()->grid_resolution().v()));
+                                    perception()->arena_resolution().v()));
   }
   return path;
 } /* calc_path_to_egress() */

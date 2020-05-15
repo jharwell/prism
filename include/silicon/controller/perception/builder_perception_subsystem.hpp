@@ -24,18 +24,24 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/controller/perception/base_perception_subsystem.hpp"
+#include <boost/optional.hpp>
+#include <memory>
+
+#include "cosm/subsystem/perception/base_perception_subsystem.hpp"
 
 #include "silicon/repr/builder_los.hpp"
+#include "silicon/controller/perception/ct_skel_info.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
+namespace cosm::subsystem {
+class sensing_subsystemQ3D;
+} /* namespace cosm::subsystem::sensing_subsystemQ3D */
 
 NS_START(silicon, controller, perception);
+
+class perception_receptor;
 
 /*******************************************************************************
  * Class Definitions
@@ -48,21 +54,18 @@ NS_START(silicon, controller, perception);
  * is memory less; that is, it just stores the current LOS and allows the robot
  * to query it.
  */
-class builder_perception_subsystem : public ccperception::base_perception_subsystem<repr::builder_los> {
+class builder_perception_subsystem : public csperception::base_perception_subsystem<repr::builder_los> {
  public:
-   explicit builder_perception_subsystem(
-       const ccontconfig::perception::perception_config* const pconfig)
-      : base_perception_subsystem(pconfig),
-        mc_arena_xrange(0.0, pconfig->occupancy_grid.dims.x()),
-        mc_arena_yrange(0.0, pconfig->occupancy_grid.dims.y()) {}
+  builder_perception_subsystem(const cspconfig::perception_config* const pconfig,
+                               const csubsystem::sensing_subsystemQ3D* const sensing);
 
-  ~builder_perception_subsystem(void) override = default;
+  ~builder_perception_subsystem(void) override;
 
   /* not copy constructible or copy assignable by default */
   builder_perception_subsystem(const builder_perception_subsystem&) = delete;
   builder_perception_subsystem& operator=(const builder_perception_subsystem&) = delete;
 
-  cds::block3D_vectorno blocks(void) const { return los()->blocks(); }
+  void receptor(std::unique_ptr<perception_receptor> receptor);
 
   /**
    * \brief Update the internal data structure/repr of the environment/arena,
@@ -71,19 +74,36 @@ class builder_perception_subsystem : public ccperception::base_perception_subsys
    */
   virtual void update(void);
 
-  const rtypes::discretize_ratio& grid_resolution(void) const;
+  const rtypes::discretize_ratio& arena_resolution(void) const { return mc_arena_res; }
   const rmath::ranged& arena_xrange(void) const { return mc_arena_xrange; }
   const rmath::ranged& arena_yrange(void) const { return mc_arena_yrange; }
-  rmath::ranged structure_xrange(void) const;
-  rmath::ranged structure_yrange(void) const;
 
-  const structure::structure3D* target(void) const { return mc_target; }
+  /**
+   * \brief Return the X range of the nearest known construction target, or
+   * empty if there are no known targets.
+   */
+  boost::optional<rmath::ranged> ct_xrange(void) const;
+
+  /**
+   * \brief Return the Y range of the nearest known construction target, or
+   * empty if there are no known targets.
+   */
+  boost::optional<rmath::ranged> ct_yrange(void) const;
+
+  /**
+   * \brief Find the nearest known construction target to the specified
+   * position, or \p NULL if there are no known targets.
+   */
+  const ct_skel_info* nearest_ct(void) const;
 
  private:
   /* clang-format off */
-  const rmath::ranged           mc_arena_xrange;
-  const rmath::ranged           mc_arena_yrange;
-  const structure::structure3D* mc_target{nullptr};
+  const rtypes::discretize_ratio          mc_arena_res;
+  const rmath::ranged                     mc_arena_xrange;
+  const rmath::ranged                     mc_arena_yrange;
+  const csubsystem::sensing_subsystemQ3D* mc_sensing;
+
+  std::unique_ptr<perception_receptor>    m_receptor;
   /* clang-format on */
 };
 

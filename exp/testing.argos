@@ -16,8 +16,8 @@
   <!-- *************** -->
   <controllers>
 
-    <crw_controller id="ffc"
-                    library="libfordyca">
+    <fcrw_bst_controller id="ffc"
+                    library="libsilicon">
       <actuators>
         <differential_steering implementation="default" />
         <!-- <leds implementation="default" medium="leds" /> -->
@@ -43,9 +43,12 @@
         <block_sel_matrix
             nest="6, 3">
         </block_sel_matrix>
-        <exploration
-            block_strategy="CRW"/>
-        <sensing_subsystem2D>
+        <perception
+            los_dim="0.4">
+          <grid2D resolution="0.2"
+                  dims="12, 6"/>
+        </perception>
+        <sensing_subsystemQ3D>
           <!-- -5pi/6 : 5pi/6 -->
           <proximity_sensor fov="-2.61:2.61"
                             delta="0.1" />
@@ -58,7 +61,7 @@
             <block range="-0.05:0.05"
                    consensus="4"/>
           </ground_sensor>
-        </sensing_subsystem2D>
+        </sensing_subsystemQ3D>
         <actuation_subsystem2D>
           <force_calculator>
             <avoidance_force lookahead="0.5"
@@ -66,6 +69,8 @@
             <arrival_force slowing_radius="0.2"
                            slowing_speed_min="1.0"
                            max="8"/>
+            <path_following_force max="6"
+                                  radius="0.1"/>
             <wander_force circle_distance="4.0"
                           circle_radius="100.0"
                           max_angle_delta="5"
@@ -73,6 +78,7 @@
                           interval="1"
                           normal_dist="false"/>
             <phototaxis_force max="8"/>
+            <polar_force max="8"/>
           </force_calculator>
 
           <diff_drive soft_turn_max="45"
@@ -81,7 +87,7 @@
         <lane_alloc
             policy="lru"/>
       </params>
-    </crw_controller>
+    </fcrw_bst_controller>
 
   </controllers>
 
@@ -138,13 +144,13 @@
     </temporal_variance>
 
     <structure3D_builder
-        build_src="loop"
+        build_src="robots"
         static_build_interval="1"
         static_build_interval_count="1"/>
     <construct_targets>
       <ramp anchor="4.0,4.0,0.0" id="ramp0" orientation="0.0">
         <grid3D resolution="0.2"
-                size="1.6,1.6,0.8"/>
+                dims="1.6,1.6,0.8"/>
         >
         <ramp_blocks>
           <ramp_block cell="0,0,3" id="0" />
@@ -356,20 +362,23 @@
 
     <arena_map>
     <grid2D resolution="0.2"
-            size="12.0, 12.0"/>
+            dims="12.0, 12.0"/>
       <blocks>
         <distribution
             dist_type="dual_source">
           <manifest
-              n_cube="16"
-              n_ramp="16"
+              n_cube="32"
+              n_ramp="0"
               unit_dim="0.4"
               />
         </distribution>
       </blocks>
-      <nest size="4.0, 4.0" center="6, 6" />
+      <nests>
+        <nest dims="4.0, 4.0" center="6, 6" />
+      </nests>
     </arena_map>
-    <visualization robot_id="true"/>
+    <visualization robot_id="true"
+                   />
   </loop_functions>
 
   <!-- *********************** -->
@@ -396,7 +405,7 @@
     <distribute>
       <position method="uniform" min="1,1,0" max="10,10,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
-      <entity quantity="16" max_trials="1000">
+      <entity quantity="1" max_trials="1000">
         <foot-bot id="fb" omnidirectional_camera_aperture="89">
           <controller config="ffc" />
         </foot-bot>
@@ -446,7 +455,7 @@
                    up="0,1,0"
                    />
       </camera>
-      <!-- <user_functions label="depth0_qt_user_functions" /> -->
+      <user_functions label="construction_qt_user_functions" />
     </qt-opengl>
   </visualization>
 

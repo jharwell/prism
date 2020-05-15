@@ -69,14 +69,14 @@ void base_loop_functions::init(ticpp::Element& node) {
   auto* vconfig = config()->config_get<cvconfig::visualization_config>();
   arena_map_init<carena::base_arena_map>(aconfig, vconfig);
 
+  /* initialize temporal variance injection */
+  tv_init(config()->config_get<tv::config::tv_manager_config>());
+
   /* initialize construction */
   auto* tv = config()->config_get<tv::config::tv_manager_config>();
   construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
                     config()->config_get<ssconfig::construct_targets_config>(),
                     &tv->env_dynamics.block_manip_penalty);
-
-  /* initialize temporal variance injection */
-  tv_init(config()->config_get<tv::config::tv_manager_config>());
 } /* init() */
 
 void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {

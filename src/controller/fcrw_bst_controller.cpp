@@ -39,7 +39,7 @@ NS_START(silicon, controller);
  * Constructors/Destructor
  ******************************************************************************/
 fcrw_bst_controller::fcrw_bst_controller(void)
-    : ER_CLIENT_INIT("silicon.controller.depth0.fcrw_bst"), m_fsm() {}
+    : ER_CLIENT_INIT("silicon.controller.fcrw_bst"), m_fsm() {}
 
 fcrw_bst_controller::~fcrw_bst_controller(void) = default;
 

@@ -97,7 +97,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   }
   rmath::vector3d originr(void) const { return mc_config.anchor; }
   rmath::vector3z origind(void) const {
-    return rmath::dvec2zvec(originr(), 1.0);
+    return rmath::dvec2zvec(originr(), mc_arena_grid_res.v());
   }
   size_t volumetric_size(void) const { return xdsize() * ydsize() * zdsize(); }
   const rmath::radians& orientation(void) const {
@@ -108,8 +108,9 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
                              const rmath::radians& z_rotation);
 
   rtypes::type_uuid id(void) const { return mc_id; }
-  rmath::ranged xrange(void) const { return rmath::ranged(origind().x(), xrsize()); }
-  rmath::ranged yrange(void) const { return rmath::ranged(origind().y(), yrsize()); }
+  rmath::ranged xrange(void) const { return rmath::ranged(originr().x(), xrsize()); }
+  rmath::ranged yrange(void) const { return rmath::ranged(originr().y(), yrsize()); }
+  rmath::ranged zrange(void) const { return rmath::ranged(originr().z(), zrsize()); }
 
   /**
    * \brief Return \c TRUE if a block with the same ID as the \p query currently
@@ -128,7 +129,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * currently on to send it the correct LOS.
    */
 
-  bool contains(const rmath::vector2z& loc) const;
+  bool contains(const rmath::vector2d& loc) const;
   /**
    * \brief Add a block to the structure after verifying its placement is valid
    * via \ref block_addition_valid().

@@ -1,5 +1,5 @@
 /**
- * \file construct_target_vector.hpp
+ * \file ct_vector.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_
-#define INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_
+#ifndef INCLUDE_SILICON_DS_CT_VECTOR_HPP_
+#define INCLUDE_SILICON_DS_CT_VECTOR_HPP_
 
 /*******************************************************************************
  * Includes
@@ -41,15 +41,12 @@ NS_START(silicon, ds);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-using construct_target_vectoro =
-    std::vector<std::unique_ptr<structure::structure3D>>;
+using ct_vectoro = std::vector<std::unique_ptr<structure::structure3D>>;
 
-using construct_target_vectorno =
-    std::vector<structure::structure3D*>;
+using ct_vectorno = std::vector<structure::structure3D*>;
 
-using construct_target_vectorro =
-    std::vector<const structure::structure3D*>;
+using ct_vectorro = std::vector<const structure::structure3D*>;
 
 NS_END(ds, silicon);
 
-#endif /* INCLUDE_SILICON_DS_CONSTRUCT_TARGET_VECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_DS_CT_VECTOR_HPP_ */

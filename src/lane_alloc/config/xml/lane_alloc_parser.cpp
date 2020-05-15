@@ -32,9 +32,10 @@ NS_START(silicon, lane_alloc, config, xml);
  * Member Functions
  ******************************************************************************/
 void lane_alloc_parser::parse(const ticpp::Element& node) {
+  ticpp::Element lnode = node_get(node, kXMLRoot);
   m_config = std::make_unique<config_type>();
 
-  XML_PARSE_ATTR(node, m_config, policy);
+  XML_PARSE_ATTR(lnode, m_config, policy);
 } /* parse() */
 
 NS_END(xml, config, lane_alloc, silicon);

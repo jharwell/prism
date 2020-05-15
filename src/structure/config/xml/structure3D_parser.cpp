@@ -32,12 +32,13 @@ NS_START(silicon, structure, config, xml);
  * Member Functions
  ******************************************************************************/
 void structure3D_parser::parse(const ticpp::Element& node) {
+  /* We do not call get_node() before parsing--a rare exception */
   m_config = std::make_unique<config_type>();
 
   XML_PARSE_ATTR(node, m_config, anchor);
   XML_PARSE_ATTR(node, m_config, orientation);
 
-  m_grid.parse(node_get(node, cds::config::xml::grid3D_parser::kXMLRoot));
+  m_grid.parse(node);
 
   m_config->bounding_box = *m_grid.config_get<
     cds::config::xml::grid3D_parser::config_type>();

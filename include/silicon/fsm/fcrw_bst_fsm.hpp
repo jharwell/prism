@@ -113,6 +113,10 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   /* block placer overrides */
   boost::optional<block_placer::placement_info> block_placement_info(void) const override;
 
+  const lane_alloc::allocator* lane_allocator(void) const {
+    return &m_allocator;
+  }
+
   /**
    * \brief (Re)-initialize the FSM.
    */
@@ -173,6 +177,15 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
 
   std::vector<rmath::vector2d> calc_transport_path(
       const repr::construction_lane& lane) const;
+
+  /**
+   * \brief Calculate the polar force that needs to be applied to the robot's
+   * trajectory if it begins to transport to the nest from one of the 3 sides of
+   * the structure which are not the ingress/egress face to force the robot to
+   * follow a nice curved trajectory to get from its current position to the
+   * correct face.
+   */
+  rmath::vector2d calc_transport_polar_force(void) const;
 
   /* inherited states */
   HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);

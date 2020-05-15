@@ -45,24 +45,29 @@ allocator::allocator(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<allocator::lane_locs> allocator::lane_locs_calc(
-    const sstructure::structure3D* structure) const {
-  std::vector<lane_locs> ret;
-  if (rmath::radians::kZERO == structure->orientation()) {
-    for (size_t j = 0; j < structure->ydsize(); j+=2) {
-      auto& ingress_cell = structure->access(structure->origind() +
-                                             rmath::vector3z(0, j, 0));
-      auto& egress_cell = structure->access(structure->origind() +
-                                            rmath::vector3z(0, j + 1, 0));
-      ret.push_back({structure->cell_loc_abs(ingress_cell),
-              structure->cell_loc_abs(egress_cell)});
+std::vector<allocator::lane_geometry> allocator::lane_locs_calc(
+     const scperception::ct_skel_info* target) const {
+  std::vector<lane_geometry> ret;
+  if (rmath::radians::kZERO == target->orientation()) {
+    for (size_t j = 0; j < target->bbd().y(); j+=2) {
+      auto ingress = target->cell_loc_abs({target->bbd().x() - 1, j, 0});
+      auto egress = target->cell_loc_abs({target->bbd().x() - 1, j + 1, 0});
+      rmath::vector3d center(target->originr().x() +
+                             (ingress.x() - target->originr().x()) / 2.0,
+                             ingress.y(),
+                             0.0);
+
+      ret.push_back({ingress, egress, center});
     } /* for(j..) */
-  } else if (rmath::radians::kPI_OVER_TWO == structure->orientation()) {
-    for (size_t i = 0; i < structure->ydsize(); i+=2) {
-      auto& ingress_cell = structure->access(structure->origind() + rmath::vector3z(i, 0, 0));
-      auto& egress_cell = structure->access(structure->origind() + rmath::vector3z(i + 1, 0, 0));
-      ret.push_back({structure->cell_loc_abs(ingress_cell),
-              structure->cell_loc_abs(egress_cell)});
+  } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
+    for (size_t i = 0; i < target->bbd().x(); i+=2) {
+      auto ingress = target->cell_loc_abs({i, target->bbd().y() - 1, 0});
+      auto egress = target->cell_loc_abs({i + 1, target->bbd().y() - 1, 0});
+      rmath::vector3d center(ingress.x(),
+                             target->originr().y() -
+                             (ingress.y() - target->originr().y()) / 2.0,
+                             0.0);
+      ret.push_back({ingress, egress, center});
     } /* for(i..) */
   }
   return ret;
@@ -70,20 +75,20 @@ std::vector<allocator::lane_locs> allocator::lane_locs_calc(
 
 repr::construction_lane allocator::operator()(
     const rmath::vector3d& robot_loc,
-    const sstructure::structure3D* structure) {
-  auto locs = lane_locs_calc(structure);
+    const scperception::ct_skel_info* target) {
+  auto locs = lane_locs_calc(target);
 
   /*
    * If we have never allocated a lane from this structure before, then
-   * initialize a new allocation history for the structure
+   * initialize a new allocation history for the structure.
    */
-  auto hist_it = m_history.find(structure->id());
+  auto hist_it = m_history.find(target->id());
   if (m_history.end() == hist_it) {
     allocation_history h(locs.size(),
                          m_rng->uniform(0, locs.size() - 1));
-    m_history.insert({structure->id(), h});
+    m_history.insert({target->id(), h});
   }
-  auto& hist = m_history.find(structure->id())->second;
+  auto& hist = m_history.find(target->id())->second;
 
   size_t id = 0;
   if (kPolicyRandom == mc_config.policy) {
@@ -105,7 +110,16 @@ repr::construction_lane allocator::operator()(
   }
   ++hist.alloc_counts[id];
 
-  return {id, structure->orientation(), locs[id].ingress, locs[id].egress};
+  ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
+          id,
+          target->orientation().to_str().c_str(),
+          locs[id].ingress.to_str().c_str(),
+          locs[id].egress.to_str().c_str());
+  return repr::construction_lane(id,
+                                 locs[id].center,
+                                 target->orientation(),
+                                 locs[id].ingress,
+                                 locs[id].egress);
 } /* operator()() */
 
 /*******************************************************************************

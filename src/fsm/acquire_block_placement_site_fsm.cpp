@@ -45,7 +45,7 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(const scperce
                                  crfootbot::footbot_saa_subsystem* saa,
                                  rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
-      ER_CLIENT_INIT("silicon.fsm.builder"),
+      ER_CLIENT_INIT("silicon.fsm.acquire_block_placement_site"),
       HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(acquire_frontier_set, hfsm::top_state()),
@@ -68,6 +68,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(const scperce
                                      nullptr),
           HFSM_STATE_MAP_ENTRY_EX(&finished)) {}
 
+acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) = default;
+
 /*******************************************************************************
  * States
  ******************************************************************************/
@@ -75,42 +77,57 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, start) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm, entry_acquire_frontier_set) {
+HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
+                     entry_acquire_frontier_set) {
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
 }
 
-HFSM_STATE_DEFINE(acquire_block_placement_site_fsm,
-                 acquire_frontier_set,
-                 csteer2D::ds::path_state* state) {
+HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
+                     acquire_frontier_set) {
   ER_ASSERT(lane_alignment_verify_pos(lane()->ingress().to_2D(),
                                       -lane()->orientation()),
             "Bad alignment (position) during frontier set acqusition");
   ER_ASSERT(lane_alignment_verify_azimuth(-lane()->orientation()),
             "Bad alignment (orientation) during frontier set acquisition");
 
-  auto acq = frontier_set_acquisition();
-
   /*
-   * A robot in front of us is too close--wait for it to move before
+   * A robot in front of us is too close (either on structure or when we are in
+   * the nest moving towards the structure)--wait for it to move before
    * continuing.
    */
   if (robot_trajectory_proximity()) {
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
-  } else if (stygmergic_configuration::ekNONE == acq) {
-    /* no robots in front, but not there yet */
-    saa()->steer_force2D().accum(saa()->steer_force2D().path_following(state));
-  } else { /* arrived! */
-    auto path = calc_placement_path(acq);
-    internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC,
-                   std::make_unique<csteer2D::ds::path_state>(path));
+    return rpfsm::event_signal::ekHANDLED;
   }
-  return rpfsm::event_signal::ekHANDLED;
+  /* No robots in front, but not in nest yet */
+  else if (nullptr == perception()->los()) {
+    ER_TRACE("Robot=%s/%s: No robots detected, not in nest",
+             sensing()->rpos2D().to_str().c_str(),
+             sensing()->dpos2D().to_str().c_str());
+    saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
+    return rpfsm::event_signal::ekHANDLED;
+  } else {
+    /* somewhere in nest or on structure */
+    auto acq = frontier_set_acquisition();
+    ER_TRACE("Robot=%s/%s: On structure, acq=%d",
+             sensing()->rpos2D().to_str().c_str(),
+             sensing()->dpos2D().to_str().c_str(),
+             rcppsw::as_underlying(acq));
+
+    if (stygmergic_configuration::ekNONE == acq) {
+      /* no robots in front, but not there yet */
+      saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
+    } else { /* arrived! */
+      m_path = std::make_unique<csteer2D::ds::path_state>(calc_placement_path(acq));
+
+      internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
+    }
+    return rpfsm::event_signal::ekHANDLED;
+  }
 }
 
-HFSM_STATE_DEFINE(acquire_block_placement_site_fsm,
-                  acquire_placement_loc,
-                  csteer2D::ds::path_state* path) {
+HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
   /*
    * We don't check for trajectory proximity to other robots while acquiring the
    * placement location, because when we get to this part, we are guaranteed to
@@ -122,10 +139,11 @@ HFSM_STATE_DEFINE(acquire_block_placement_site_fsm,
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
   } else {
-    auto force = saa()->steer_force2D().path_following(path);
+    auto force = saa()->steer_force2D().path_following(m_path.get());
     if (force.is_pd()) {
       saa()->steer_force2D().accum(force);
     } else {
+      m_path.reset();
       internal_event(fsm_state::ekST_FINISHED);
     }
   }
@@ -160,9 +178,8 @@ void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg)
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
   lane(std::move(*a));
 
-  auto path = calc_frontier_set_path();
-  external_event(kTRANSITIONS[current_state()],
-                 std::make_unique<csteer2D::ds::path_state>(path));
+  m_path = std::make_unique<csteer2D::ds::path_state>(calc_frontier_set_path());
+  external_event(kTRANSITIONS[current_state()]);
 } /* task_start() */
 
 void acquire_block_placement_site_fsm::task_execute(void) {
@@ -227,30 +244,29 @@ std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_placement_pa
   if (rmath::radians::kZERO == lane()->orientation()) {
     if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y() + 1},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
     }
   } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
     if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x(), pos.y() - 1},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(rmath::zvec2dvec({pos.x(), pos.y() - 1},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
       path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->grid_resolution().v()));
+                                      perception()->arena_resolution().v()));
     }
   }
   return path;
 } /* calc_placement_path() */
 
-std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_frontier_set_path(void) const {
+std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_frontier_set_path(void) {
   std::vector<rmath::vector2d> path;
-
   /*
    * Simple path to go from the robots current position to the back of the
    * structure (end will never be reached). This is done so a reference to the
@@ -258,6 +274,7 @@ std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_frontier_set
    * stygmergic.
    */
   if (rmath::radians::kZERO == lane()->orientation()) {
+
     path.push_back({0.0, lane()->ingress().y()});
   } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
     /*

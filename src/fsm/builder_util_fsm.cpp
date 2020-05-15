@@ -78,17 +78,19 @@ void builder_util_fsm::init(void) {
 bool builder_util_fsm::lane_alignment_verify_pos(
     const rmath::vector2d& lane_point,
     const rmath::radians& orientation) const {
-  auto dist_diff = saa()->sensing()->rpos2D() - lane_point;
+  auto dist_diff = sensing()->rpos2D() - lane_point;
   if (rmath::radians::kZERO == orientation) {
     ER_CHECK(dist_diff.x() <= kLANE_VECTOR_DIST_TOL,
-             "Robot too far from ingress point %s for lane orientated@'%s': %f > %f",
+             "Robot@%s too far from ingress@%s for lane orientated@'%s': %f > %f",
+             sensing()->rpos2D().to_str().c_str(),
              lane_point.to_str().c_str(),
              orientation.to_str().c_str(),
              dist_diff.x(),
              kLANE_VECTOR_DIST_TOL);
   } else if (rmath::radians::kPI_OVER_TWO == orientation) {
     ER_CHECK(dist_diff.y() <= kLANE_VECTOR_DIST_TOL,
-             "Robot too far from ingress point %s for lane orientated@'%s': %f > %f",
+             "Robot@%s too far from ingress@%s for lane orientated@'%s': %f > %f",
+             sensing()->rpos2D().to_str().c_str(),
              lane_point.to_str().c_str(),
              orientation.to_str().c_str(),
              dist_diff.y(),
@@ -129,7 +131,7 @@ bool builder_util_fsm::robot_trajectory_proximity(void) const {
       continue;
     }
     auto other_dpos = rmath::dvec2zvec(r.vec,
-                                       mc_perception->grid_resolution().v());
+                                       mc_perception->arena_resolution().v());
     rmath::range<rmath::radians> pos_x(rmath::radians::kZERO + kROBOT_AZIMUTH_TOL,
                                        rmath::radians::kZERO - kROBOT_AZIMUTH_TOL);
     rmath::range<rmath::radians> neg_x(rmath::radians::kPI + kROBOT_AZIMUTH_TOL,
@@ -167,7 +169,7 @@ bool builder_util_fsm::robot_manhattan_proximity(void) const {
       continue;
     }
     auto other_dpos = rmath::dvec2zvec(r.vec,
-                                       mc_perception->grid_resolution().v());
+                                       mc_perception->arena_resolution().v());
     size_t dist = std::abs(static_cast<int>(robot_dpos.x() - other_dpos.x())) +
                   std::abs(static_cast<int>(robot_dpos.y() - other_dpos.y()));
     prox |= (dist <= 2);

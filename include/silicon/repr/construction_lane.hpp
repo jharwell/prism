@@ -49,10 +49,12 @@ class construction_lane : public cta::taskable_argument {
  public:
   construction_lane(void) = default;
   construction_lane(size_t id,
-                    const rmath::radians&  orientation,
+                    const rmath::vector3d& center,
+                    const rmath::radians& orientation,
                     const rmath::vector3d& ingress,
                     const rmath::vector3d& egress)
       : m_id(id),
+        m_center(center),
         m_orientation(orientation),
         m_ingress(ingress),
         m_egress(egress) {}
@@ -67,10 +69,12 @@ class construction_lane : public cta::taskable_argument {
   const rmath::radians& orientation(void) const { return m_orientation; }
   const rmath::vector3d& ingress(void) const { return m_ingress; }
   const rmath::vector3d& egress(void) const { return m_egress; }
+  const rmath::vector3d& center(void) const { return m_center; }
 
  private:
   /* clang-format off */
   size_t          m_id{0};
+  rmath::vector3d m_center{};
   rmath::radians  m_orientation{};
   rmath::vector3d m_ingress{};
   rmath::vector3d m_egress{};

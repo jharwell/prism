@@ -37,14 +37,11 @@
 #include "silicon/lane_alloc/config/lane_alloc_config.hpp"
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/controller/perception/ct_skel_info.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
-
 NS_START(silicon, lane_alloc);
 
 /*******************************************************************************
@@ -76,7 +73,7 @@ class allocator : public rer::client<allocator>,
   size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
 
   repr::construction_lane operator()(const rmath::vector3d& robot_loc,
-                                     const sstructure::structure3D* target);
+                                     const scperception::ct_skel_info* target);
 
  private:
   struct allocation_history {
@@ -87,27 +84,18 @@ class allocator : public rer::client<allocator>,
     size_t prev_lane{0};
   };
 
-  struct lane_locs {
+  struct lane_geometry {
     rmath::vector3d ingress{};
     rmath::vector3d egress{};
+    rmath::vector3d center{};
   };
 
   /**
    * \brief Compute the locations of the entry point for each of the
    * construction lanes in the structure.
-   *
-   * Uses a reference to the \ref structure3D to be built. Kind of cheating, but
-   * as long as robots don't use THIS reference to the structure to obtain
-   * oracular information about construction progress, and only use it to simply
-   * calculations regardless lane allocation, then I think it is OK.
-   *
-   * For example, not having this reference would make calculation of lane
-   * locations much more awkward, as additional parameters would have to be
-   * passed via XML or to the constructor to correctly calculate absolute
-   * locations.
    */
-  std::vector<lane_locs> lane_locs_calc(
-      const sstructure::structure3D* structure) const;
+  std::vector<lane_geometry> lane_locs_calc(
+      const scperception::ct_skel_info* target) const;
 
   /* clang-format off */
   const config::lane_alloc_config                 mc_config;

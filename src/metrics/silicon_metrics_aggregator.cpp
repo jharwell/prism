@@ -30,7 +30,7 @@
 #include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/metrics/collector_registerer.hpp"
 
-#include "silicon/controller/constructing_controller.hpp"
+#include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/metrics/blocks/manipulation_metrics_collector.hpp"
 #include "silicon/support/tv/metrics/env_dynamics_metrics.hpp"
 #include "silicon/support/tv/metrics/env_dynamics_metrics_collector.hpp"
@@ -41,6 +41,7 @@
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics_collector.hpp"
 #include "silicon/structure/ct_manager.hpp"
+#include "silicon/fsm/fcrw_bst_fsm.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -54,7 +55,7 @@ silicon_metrics_aggregator::silicon_metrics_aggregator(
     const cmconfig::metrics_config* const mconfig,
     const cdconfig::grid2D_config* const gconfig,
     const std::string& output_root,
-    const ds::construct_target_vectorno& targets)
+    const ds::ct_vectorno& targets)
     : ER_CLIENT_INIT("silicon.metrics.aggregator"),
       base_metrics_aggregator(mconfig, output_root) {
   /* register collectors from base class  */
@@ -101,7 +102,7 @@ void silicon_metrics_aggregator::collect_from_tv(
 
 void silicon_metrics_aggregator::collect_from_ct(
     const structure::ct_manager* manager) {
-  for (auto *target : manager->targets()) {
+  for (auto *target : manager->targetsro()) {
     collect("structure" + rcppsw::to_string(target->id()) + "::state",
             *target);
     collect("structure" + rcppsw::to_string(target->id()) + "::progress",
@@ -113,11 +114,13 @@ void silicon_metrics_aggregator::collect_from_ct(
   } /* for(*target..) */
 } /* collect_from_ct() */
 
+template<typename TController>
 void silicon_metrics_aggregator::collect_from_controller(
-    const controller::constructing_controller* c,
+    const TController* c,
     const rtypes::type_uuid& structure_id) {
   if (rtypes::constants::kNoUUID != structure_id) {
-    collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc", *c);
+    collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc",
+            *c->fsm()->lane_allocator());
   }
 } /* collect_from_controller() */
 
@@ -227,5 +230,11 @@ void silicon_metrics_aggregator::register_with_target_dims(
                                                              extra_args);
   boost::mpl::for_each<collector_typelist>(registerer);
 } /* register_with_target_dims() */
+
+/*******************************************************************************
+ * Template Instantiations
+ ******************************************************************************/
+template void silicon_metrics_aggregator::collect_from_controller(const controller::fcrw_bst_controller*,
+                                                                  const rtypes::type_uuid&);
 
 NS_END(metrics, silicon);

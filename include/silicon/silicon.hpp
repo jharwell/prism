@@ -30,6 +30,7 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace silicon {
+namespace ds {}
 
 namespace structure {
 namespace config {}
@@ -52,6 +53,8 @@ namespace config {}
 }/* namespace lane_alloc */
 
 } /* namespace silicon */
+
+namespace sds = silicon::ds;
 
 namespace sstructure = silicon::structure;
 namespace ssops = sstructure::operations;

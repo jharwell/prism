@@ -1,5 +1,5 @@
 /**
- * \file builder_perception_subsystem.cpp
+ * \file perception_receptor.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,11 +21,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-
-#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
-
 #include "silicon/controller/perception/perception_receptor.hpp"
+#include "silicon/structure/structure3D.hpp"
+
+#include <algorithm>
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -35,48 +34,19 @@ NS_START(silicon, controller, perception);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-builder_perception_subsystem::builder_perception_subsystem(
-    const cspconfig::perception_config* const pconfig,
-    const csubsystem::sensing_subsystemQ3D* const sensing)
-    : base_perception_subsystem(pconfig),
-      mc_arena_res(pconfig->occupancy_grid.resolution),
-      mc_arena_xrange(0.0, pconfig->occupancy_grid.dims.x()),
-      mc_arena_yrange(0.0, pconfig->occupancy_grid.dims.y()),
-      mc_sensing(sensing),
-      m_receptor(nullptr) {}
-
-builder_perception_subsystem::~builder_perception_subsystem(void) = default;
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void builder_perception_subsystem::update() {
-  /* Open to extension (I will probably need to put stuff here eventually...) */
-} /* update() */
-
-boost::optional<rmath::ranged> builder_perception_subsystem::ct_xrange(void) const {
-  auto* target = nearest_ct();
-  if (nullptr != target) {
-    return boost::make_optional(target->xrange());
+const scperception::ct_skel_info* perception_receptor::nearest_ct(const rmath::vector3d& pos) const {
+  auto pred = [&](const auto& target1, const auto& target2) {
+    return (target1.originr() - pos).length() < (target2.originr() - pos).length();
+  };
+  auto it = std::min_element(m_targets.begin(), m_targets.end(), pred);
+  if (m_targets.end() != it) {
+    return &(*it);
   }
-  return boost::none;
-} /* ct_xrange() */
-
-boost::optional<rmath::ranged> builder_perception_subsystem::ct_yrange(void) const {
-  auto* target = nearest_ct();
-  if (nullptr != target) {
-    return boost::make_optional(target->yrange());
-  }
-  return boost::none;
-} /* ct_yrange() */
-
-const scperception::ct_skel_info* builder_perception_subsystem::nearest_ct(void) const {
-  return m_receptor->nearest_ct(mc_sensing->rpos3D());
+  return nullptr;
 } /* nearest_ct() */
-
-void builder_perception_subsystem::receptor(
-    std::unique_ptr<perception_receptor> receptor) {
-  m_receptor = std::move(receptor);
-} /* receptor() */
 
 NS_END(perception, controller, silicon);

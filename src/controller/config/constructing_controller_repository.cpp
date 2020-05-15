@@ -28,6 +28,7 @@
 #include "cosm/metrics/config/xml/output_parser.hpp"
 #include "cosm/subsystem/config/xml/actuation_subsystem2D_parser.hpp"
 #include "cosm/subsystem/config/xml/sensing_subsystemQ3D_parser.hpp"
+#include "cosm/subsystem/perception/config/xml/perception_parser.hpp"
 
 #include "silicon/lane_alloc/config/xml/lane_alloc_parser.hpp"
 
@@ -55,6 +56,9 @@ constructing_controller_repository::constructing_controller_repository(void) {
   parser_register<slaconfig::xml::lane_alloc_parser,
                   slaconfig::lane_alloc_config>(
                       slaconfig::xml::lane_alloc_parser::kXMLRoot);
+  parser_register<cspconfig::xml::perception_parser,
+                  cspconfig::perception_config>(
+                      cspconfig::xml::perception_parser::kXMLRoot);
 
   parser_find<cscxml::sensing_subsystemQ3D_parser>(
       cscxml::sensing_subsystemQ3D_parser::kXMLRoot)

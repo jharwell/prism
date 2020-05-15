@@ -85,7 +85,7 @@ void constructing_controller::init(ticpp::Element& node) {
            repo.config_get<csubsystem::config::sensing_subsystemQ3D_config>());
 
   /* initialize perception */
-  perception_init(repo.config_get<ccontconfig::perception::perception_config>());
+  perception_init(repo.config_get<cspconfig::perception_config>());
 
   /* initialize supervisor */
   supervisor(std::make_unique<cfsm::supervisor_fsm>(saa()));
@@ -102,8 +102,10 @@ void constructing_controller::reset(void) {
 }
 
 void constructing_controller::perception_init(
-    const ccontconfig::perception::perception_config* perceptionp) {
-  m_perception = std::make_unique<perception::builder_perception_subsystem>(perceptionp);
+    const cspconfig::perception_config* perceptionp) {
+  m_perception = std::make_unique<perception::builder_perception_subsystem>(
+      perceptionp,
+      saa()->sensing());
 } /* perception_init() */
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {

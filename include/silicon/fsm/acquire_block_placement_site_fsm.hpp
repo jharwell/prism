@@ -33,6 +33,7 @@
 
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/fsm/block_placer.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -80,12 +81,13 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
 
   /**
    * \brief Once the robot has reached the end of the path from which it should
-   * be able to place its block, calculate the cell that the robot wants to
-   * place its block in.
+   * be able to place its block, calculate (1) the cell within the construction
+   * target that the robot wants to place its block in, and (2) the block's
+   * orientation within the chosen cell.
    *
    * Can only be called if the FSM is in the finished state.
    */
-  rmath::vector3z calc_placement_cell(void) const;
+  block_placer::placement_intent  placement_intent_calc(void) const;
 
  private:
   enum fsm_state {
@@ -138,26 +140,6 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
   }
 
   HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, fsm_state::ekST_MAX_STATES);
-
-  /**
-   * \brief Retur the stygmergic configuration the robot has encountered when it
-   * has reached the frontier set, and an empty configuration otherwise.
-   */
-  stygmergic_configuration frontier_set_acquisition(void) const;
-
-  /**
-   * \brief Calculate the path from the robot's current position to the frontier
-   * set.
-   */
-  std::vector<rmath::vector2d> calc_frontier_set_path(void);
-
-  /**
-   * \brief Calculate the path from the location at which the robot has reached
-   * the frontier set to an appropriate cell from which to place its block,
-   * given the current shape of the frontier set it encounters.
-   */
-  std::vector<rmath::vector2d> calc_placement_path(
-      const stygmergic_configuration& acq) const;
 
   /* clang-format off */
   std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};

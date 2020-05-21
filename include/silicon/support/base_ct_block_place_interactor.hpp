@@ -26,10 +26,13 @@
  ******************************************************************************/
 #include "cosm/arena/operations/free_block_drop.hpp"
 #include "cosm/tv/temporal_penalty.hpp"
+#include "cosm/repr/ramp_block3D.hpp"
+#include "cosm/repr/cube_block3D.hpp"
 
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/structure/ct_manager.hpp"
 #include "silicon/support/mpl/ct_block_place_spec.hpp"
+#include "silicon/structure/structure3D_builder.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -54,6 +57,8 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
                                                   TController>::type;
   using interactor_status_type = typename controller_spec::interactor_status_type;
   using robot_block_place_visitor_type = typename controller_spec::robot_block_place_visitor_type;
+  using penalty_handler_type = typename controller_spec::penalty_handler_type;
+
   base_ct_block_place_interactor(sstructure::ct_manager* const manager)
       : ER_CLIENT_INIT("silicon.support.base_ct_block_place_interactor"),
         m_ct_manager(manager) {}
@@ -82,6 +87,16 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
                                    const ctv::temporal_penalty&) const {}
 
   /**
+   * \brief If the robot is not currently serving a penalty, then this callback
+   * is used to attempt to initialized one. It is needed because the penalty
+   * handler type is unknown, and therefore so are the arguments needed for
+   * initializing the penalty, beyond the controller and the timestep.
+   */
+  virtual void robot_penalty_init(const TController& controller,
+                                  const rtypes::timestep& t,
+                                  penalty_handler_type* handler) = 0;
+
+  /**
    * \brief The actual handling function for interactions.
    *
    * \param controller The controller to handle interactions for.
@@ -89,19 +104,22 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
    */
   interactor_status_type operator()(TController& controller,
                                     const rtypes::timestep& t) {
-    auto* handler = m_ct_manager->placement_handler(controller.perception()->target());
-    /* robot not currently on a structure */
-    if (nullptr == handler) {
-      return;
-    }
-
-    if (handler->is_serving_penalty(controller)) {
-      if (handler->is_penalty_satisfied(controller, t)) {
-        process_block_place(controller);
-        return interactor_status::ekCT_BLOCK_PLACE;
-      }
+    /* Robot does not currently know of any construction targets */
+    auto* ct = controller.perception()->nearest_ct();
+    if (nullptr == ct) {
       return interactor_status::ekNO_EVENT;
     }
+
+    auto* handler = m_ct_manager->placement_handler(ct->id());
+    if (handler->is_serving_penalty(controller)) {
+      if (handler->is_penalty_satisfied(controller, t)) {
+        process_block_place(controller, handler);
+        return interactor_status::ekCT_BLOCK_PLACE;
+      }
+    } else {
+      robot_penalty_init(controller, t, handler);
+    }
+    return interactor_status::ekNO_EVENT;
   }
 
  private:
@@ -109,27 +127,28 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
    * \brief Once the robot has served its placement penalty, handle the actual
    * block placement interaction between the robot and the target structure.
    */
-  void process_block_place(TController& controller) {
-    auto* handler = m_ct_manager->placement_handler(controller.perception()->target());
+  void process_block_place(TController& controller,
+                           penalty_handler_type* handler) {
     const ctv::temporal_penalty& p = handler->penalty_next();
     ER_ASSERT(p.controller() == &controller,
               "Out of order block placement handling");
-    ER_ASSERT(robot_goal_acquire(controller),
+    ER_ASSERT(robot_goal_acquired(controller),
               "Controller not waiting for block placement");
-    auto site = controller.block_placement_site();
-    ER_ASSERT(site, "Controller not intending to place block");
+    auto intent = controller.block_placement_intent();
+    ER_ASSERT(intent, "Controller not intending to place block");
+    auto* ct = controller.perception()->nearest_ct();
+    auto builder = m_ct_manager->builder(ct->id());
+    auto target = m_ct_manager->target(ct->id());
 
-    auto builder = m_ct_manager->builder(controller.perception()->target());
-    auto target = m_ct_manager->target(controller.perception()->target());
-
-    auto coord = site - target->origind();
-    if (builder->block_placement_valid(controller.block_release(),
-                                       coord,
-                                       target->cell_spec_retrieve(coord))) {
-      execute_block_place(controller, p);
+    if (builder->block_placement_valid(to_variant(controller.block()),
+                                       intent->site,
+                                       intent->orientation)) {
+      execute_block_place(controller, p, *intent);
     } else {
-      ER_WARN("Controller block placement on target%s invalid",
-              rcppsw::to_string(target->id().c_str()));
+      ER_WARN("Block placement on target%s@%s, orientation=%s invalid",
+              rcppsw::to_string(target->id()).c_str(),
+              rcppsw::to_string(intent->site).c_str(),
+              rcppsw::to_string(intent->orientation).c_str());
     }
 
     handler->penalty_remove(p);
@@ -141,27 +160,39 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
    * \brief Perform the actual block placement.
    */
   void execute_block_place(TController& controller,
-                           const ctv::temporal_penalty& penalty) {
-    robot_block_place_visitor_type rplace_op(controller.id());
-    auto builder = m_ct_manager->builder(controller.perception()->target());
-    auto structure = m_ct_manager->target(controller.perception()->target());
-    auto site = controller.intended_placement();
-    auto coord = site - structure->origind();
+                           const ctv::temporal_penalty& penalty,
+                           const fsm::block_placer::placement_intent& intent) {
+    robot_block_place_visitor_type rplace_op(controller.entity_id(),
+                                             controller.block());
+    auto* ct = controller.perception()->nearest_ct();
+    auto builder = m_ct_manager->builder(ct->id());
+    auto structure = m_ct_manager->target(ct->id());
 
     /* update bookkeeping */
     robot_previsit_hook(controller, penalty);
 
     /* place the block! */
     ER_ASSERT(builder->place_block(controller.block_release(),
-                                   coord,
-                                   structure->cell_spec_retrieve(coord)),
-              "Failed to place block on structure%d@%s",
-              structure->id().v(),
-              coord.to_str().c_str());
+                                   intent.site,
+                                   intent.orientation),
+              "Failed to place block on target%s@%s, orientation=%s",
+              rcppsw::to_string(structure->id()).c_str(),
+              rcppsw::to_string(intent.site).c_str(),
+              rcppsw::to_string(intent.orientation).c_str());
 
     rplace_op.visit(controller);
   }
 
+  crepr::block3D_variant to_variant(crepr::base_block3D* block) const {
+    if (crepr::block_type::ekRAMP == block->md()->type()) {
+      return crepr::block3D_variant(static_cast<crepr::ramp_block3D*>(block));
+    } else if (crepr::block_type::ekCUBE == block->md()->type()) {
+      return crepr::block3D_variant(static_cast<crepr::cube_block3D*>(block));
+    } else {
+      ER_FATAL_SENTINEL("Bad block type %d",
+                        rcppsw::as_underlying(block->md()->type()));
+    }
+  }
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
   /* clang-format on */

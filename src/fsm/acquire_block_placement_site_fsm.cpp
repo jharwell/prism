@@ -32,6 +32,10 @@
 
 #include "silicon/fsm/construction_signal.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/fsm/fs_path_calculator.hpp"
+#include "silicon/fsm/fs_acq_checker.hpp"
+#include "silicon/fsm/placement_path_calculator.hpp"
+#include "silicon/fsm/placement_intent_calculator.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -41,9 +45,10 @@ NS_START(silicon, fsm);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(const scperception::builder_perception_subsystem* perception,
-                                 crfootbot::footbot_saa_subsystem* saa,
-                                 rmath::rng* rng)
+acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
+    const scperception::builder_perception_subsystem* perception,
+    crfootbot::footbot_saa_subsystem* saa,
+    rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
       ER_CLIENT_INIT("silicon.fsm.acquire_block_placement_site"),
       HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
@@ -85,9 +90,9 @@ HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
 HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
                      acquire_frontier_set) {
   ER_ASSERT(lane_alignment_verify_pos(lane()->ingress().to_2D(),
-                                      -lane()->orientation()),
+                                      lane()->orientation()),
             "Bad alignment (position) during frontier set acqusition");
-  ER_ASSERT(lane_alignment_verify_azimuth(-lane()->orientation()),
+  ER_ASSERT(lane_alignment_verify_azimuth(lane()->orientation()),
             "Bad alignment (orientation) during frontier set acquisition");
 
   /*
@@ -102,25 +107,27 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   }
   /* No robots in front, but not in nest yet */
   else if (nullptr == perception()->los()) {
-    ER_TRACE("Robot=%s/%s: No robots detected, not in nest",
-             sensing()->rpos2D().to_str().c_str(),
-             sensing()->dpos2D().to_str().c_str());
+    ER_TRACE("Robot=%s/%s: No robots detected, in nest",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(sensing()->dpos2D()).c_str());
     saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
     return rpfsm::event_signal::ekHANDLED;
   } else {
     /* somewhere in nest or on structure */
-    auto acq = frontier_set_acquisition();
+    auto acq = fs_acq_checker(sensing(),
+                              perception())(lane());
     ER_TRACE("Robot=%s/%s: On structure, acq=%d",
-             sensing()->rpos2D().to_str().c_str(),
-             sensing()->dpos2D().to_str().c_str(),
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(sensing()->dpos2D()).c_str(),
              rcppsw::as_underlying(acq));
 
     if (stygmergic_configuration::ekNONE == acq) {
       /* no robots in front, but not there yet */
       saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
     } else { /* arrived! */
-      m_path = std::make_unique<csteer2D::ds::path_state>(calc_placement_path(acq));
-
+      auto calculator = placement_path_calculator(sensing(), perception());
+      m_path = std::make_unique<csteer2D::ds::path_state>(calculator(lane(),
+                                                                     acq));
       internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
     }
     return rpfsm::event_signal::ekHANDLED;
@@ -139,8 +146,8 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
   } else {
-    auto force = saa()->steer_force2D().path_following(m_path.get());
-    if (force.is_pd()) {
+    if (!m_path->is_complete()) {
+      auto force = saa()->steer_force2D().path_following(m_path.get());
       saa()->steer_force2D().accum(force);
     } else {
       m_path.reset();
@@ -154,10 +161,6 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
   if (fsm_state::ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
-
-  auto* sensor = saa()->sensing()->sensor<chal::sensors::ground_sensor>();
-  ER_ASSERT(!sensor->detect("nest"),
-            "In finished state but still in construction zone");
   return rpfsm::event_signal::ekHANDLED;
 }
 
@@ -178,7 +181,8 @@ void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg)
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
   lane(std::move(*a));
 
-  m_path = std::make_unique<csteer2D::ds::path_state>(calc_frontier_set_path());
+  auto calculator = fs_path_calculator(sensing());
+  m_path = std::make_unique<csteer2D::ds::path_state>(calculator(lane()));
   external_event(kTRANSITIONS[current_state()]);
 } /* task_start() */
 
@@ -194,117 +198,11 @@ void acquire_block_placement_site_fsm::init(void) {
   util_hfsm::init();
 } /* init() */
 
-stygmergic_configuration acquire_block_placement_site_fsm::frontier_set_acquisition(void) const {
-  auto pos = saa()->sensing()->dpos3D();
-  rmath::vector3z ingress_abs;
-  rmath::vector3z egress_abs;
-
-  /*
-   * \todo Right now this assumes cube blocks, and is only correct for
-   * such. This will be fixed once the most basic construction has been
-   * validated.
-   */
-  if (rmath::radians::kZERO == lane()->orientation()) {
-    ingress_abs = pos - rmath::vector3z::X * 2;
-    egress_abs = pos - rmath::vector3z::X * 2 + rmath::vector3z::Y;
-  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    ingress_abs = pos - rmath::vector3z::Y * 2;
-    egress_abs = pos - rmath::vector3z::Y * 2 - rmath::vector3z::X;
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      lane()->orientation().to_str().c_str());
-  }
-  auto origin = perception()->los()->abs_ll();
-  bool ingress_has_block = perception()->los()->contains_loc(ingress_abs - origin) &&
-                           perception()->los()->access((ingress_abs - origin)).state_has_block();
-  bool egress_has_block = perception()->los()->contains_loc(egress_abs - origin) &&
-                          perception()->los()->access((egress_abs - origin)).state_has_block();
-
-  if (ingress_has_block && egress_has_block) {
-    return stygmergic_configuration::ekLANE_FILLED;
-  } else if (ingress_has_block && !egress_has_block) {
-    return stygmergic_configuration::ekLANE_GAP_EGRESS;
-  } else if (!ingress_has_block && egress_has_block) {
-    return stygmergic_configuration::ekLANE_GAP_INGRESS;
-  } else {
-    return stygmergic_configuration::ekNONE;
-  }
-} /* frontier_set_acquisition() */
-
-std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_placement_path(
-    const stygmergic_configuration& acq) const {
-  std::vector<rmath::vector2d> path;
-  auto pos = saa()->sensing()->dpos2D();
-
-  /*
-   * \todo Right now this assumes cube blocks, and is only correct for
-   * such. This will be fixed once the most basic construction has been
-   * validated.
-   */
-  if (rmath::radians::kZERO == lane()->orientation()) {
-    if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->arena_resolution().v()));
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->arena_resolution().v()));
-      path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y() + 1},
-                                      perception()->arena_resolution().v()));
-    }
-  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    if (stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(rmath::zvec2dvec({pos.x(), pos.y() - 1},
-                                      perception()->arena_resolution().v()));
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(rmath::zvec2dvec({pos.x(), pos.y() - 1},
-                                      perception()->arena_resolution().v()));
-      path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                      perception()->arena_resolution().v()));
-    }
-  }
-  return path;
-} /* calc_placement_path() */
-
-std::vector<rmath::vector2d> acquire_block_placement_site_fsm::calc_frontier_set_path(void) {
-  std::vector<rmath::vector2d> path;
-  /*
-   * Simple path to go from the robots current position to the back of the
-   * structure (end will never be reached). This is done so a reference to the
-   * structure being created is not needed and the robot can be more
-   * stygmergic.
-   */
-  if (rmath::radians::kZERO == lane()->orientation()) {
-
-    path.push_back({0.0, lane()->ingress().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    /*
-     * Simple path to go from the robots current position to the back of the
-     * structure (end will never be reached). This is done so a reference to the
-     * structure being created is not needed and the robot can be more
-     * stygmergic.
-     */
-    path.push_back({lane()->ingress().x(), 0.0});
-  }
-  return path;
-} /* calc_frontier_set_path() */
-
-rmath::vector3z acquire_block_placement_site_fsm::calc_placement_cell(void) const {
+block_placer::placement_intent acquire_block_placement_site_fsm::placement_intent_calc(void) const {
   ER_ASSERT(fsm_state::ekST_FINISHED == current_state(),
             "Placement cell can only be calculated once the FSM finishes");
-  auto pos = saa()->sensing()->dpos3D();
-  /*
-   * \todo Right now this assumes cube blocks, and is only correct for
-   * such. This will be fixed once the most basic construction has been
-   * validated.
-   */
-  if (rmath::radians::kZERO == lane()->orientation()) {
-    return {pos.x() - 1, pos.y(), pos.z()};
-  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    return {pos.x(), pos.y() - 1, pos.z()};
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      lane()->orientation().to_str().c_str());
-  }
-} /* calc_placement_cell() */
+  auto calculator = placement_intent_calculator(sensing(), perception());
+  return calculator(lane());
+} /* placement_intent_calc() */
 
 NS_END(fsm, silicon);

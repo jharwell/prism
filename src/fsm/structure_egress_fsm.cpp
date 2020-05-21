@@ -79,13 +79,15 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
     internal_event(ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
   } else {
-    auto force = saa()->steer_force2D().path_following(path);
-    if (force.is_pd()) {
-      saa()->steer_force2D().accum(force);
-    } else {
+    if (path->is_complete()) {
       auto egress_path = calc_egress_path();
+      event_data_hold(false);
       internal_event(ekST_STRUCTURE_EGRESS,
                      std::make_unique<csteer2D::ds::path_state>(egress_path));
+    } else {
+      event_data_hold(true);
+      auto force = saa()->steer_force2D().path_following(path);
+      saa()->steer_force2D().accum(force);
     }
   }
   return rpfsm::event_signal::ekHANDLED;
@@ -112,8 +114,11 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
     internal_event(ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
   } else { /* left construction zone */
-    auto force = saa()->steer_force2D().path_following(path);
-    if (force.is_pd()) {
+    if (path->is_complete()) {
+      internal_event(ekST_FINISHED);
+    } else {
+      event_data_hold(true);
+      auto force = saa()->steer_force2D().path_following(path);
       saa()->steer_force2D().accum(force);
 
       /* back in 2D arena, so go back to obstacle avoidance */
@@ -121,8 +126,6 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
       if (auto obs = prox->avg_prox_obj()) {
         saa()->steer_force2D().accum(saa()->steer_force2D().avoidance(*obs));
       }
-    } else {
-      internal_event(ekST_FINISHED);
     }
   }
   return rpfsm::event_signal::ekHANDLED;
@@ -171,7 +174,14 @@ void structure_egress_fsm::task_start(cta::taskable_argument* c_arg) {
 } /* task_start() */
 
 void structure_egress_fsm::task_execute(void) {
-  inject_event(rpfsm::event_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  if (event_data_hold()) {
+    auto event = event_data_release();
+    event->signal(fsm::construction_signal::ekRUN);
+    event->type(rpfsm::event_type::ekNORMAL);
+    inject_event(std::move(event));
+  } else {
+    inject_event(fsm::construction_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  }
 } /* task_execute() */
 
 /*******************************************************************************
@@ -183,35 +193,43 @@ void structure_egress_fsm::init(void) {
 } /* init() */
 
 std::vector<rmath::vector2d> structure_egress_fsm::calc_egress_path(void) {
-  std::vector<rmath::vector2d> path;
   auto pos = saa()->sensing()->rpos2D();
   auto* ct = perception()->nearest_ct();
+  std::vector<rmath::vector2d> path = {pos};
 
+  /*
+   * We add some padding to the x/y range of the construction target, because
+   * the nest extends a little beyond that range on the ingress/egress face, and
+   * we (ideally) want to be out of the nest when we finish structure egress.
+   */
   if (rmath::radians::kZERO == lane()->orientation()) {
-    double x = rng()->uniform(ct->xrange().ub(),
+    double x = rng()->uniform(ct->xrange().ub() + ct->block_unit_dim() * 2.0,
                               perception()->arena_xrange().ub());
-    path.push_back({x, pos.y()});
+    path.push_back({x, lane()->egress().y()});
   } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()) {
-    double y = rng()->uniform(ct->yrange().ub(),
+    double y = rng()->uniform(ct->yrange().ub() + ct->block_unit_dim() * 2.0,
                               perception()->arena_yrange().ub());
-    path.push_back({pos.x(), y});
+    path.push_back({lane()->egress().x(), y});
   }
   return path;
 } /* calc_egress_path() */
 
 std::vector<rmath::vector2d> structure_egress_fsm::calc_path_to_egress(void) const {
-  std::vector<rmath::vector2d> path;
-  auto pos = saa()->sensing()->dpos2D();
+  auto rpos = saa()->sensing()->rpos2D();
+  std::vector<rmath::vector2d> path = {rpos};
+
+  /*
+   * We only have a path to the ingress lane if we are not currently in it
+   * (i.e., placed our block at the back of the ingress lane).
+   */
   if (rmath::radians::kZERO == lane()->orientation() &&
       !lane_alignment_verify_pos(lane()->egress().to_2D(),
-                                 lane()->orientation())) {
-    path.push_back(rmath::zvec2dvec({pos.x(), pos.y() + 1},
-                                    perception()->arena_resolution().v()));
-  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation() &&
+                                        lane()->orientation())) {
+    path.push_back({rpos.x(), lane()->egress().y()});
+  } else if (rmath::radians::kPI_OVER_TWO == lane()->orientation()&&
              !lane_alignment_verify_pos(lane()->egress().to_2D(),
                                         lane()->orientation())) {
-    path.push_back(rmath::zvec2dvec({pos.x() - 1, pos.y()},
-                                    perception()->arena_resolution().v()));
+    path.push_back({rpos.x(), lane()->egress().y()});
   }
   return path;
 } /* calc_path_to_egress() */

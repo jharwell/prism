@@ -65,6 +65,8 @@ class robot_configurer : public boost::static_visitor<void> {
   void operator()(TController* const c) const {
     if (nullptr != mc_vis_config) {
       c->display_id(mc_vis_config->robot_id);
+      c->display_steer2D(mc_vis_config->robot_steer2D);
+      c->display_los(mc_vis_config->robot_los);
     }
     scperception::perception_receptor::ct_info_vector infos;
     for (auto *t : mc_targets) {

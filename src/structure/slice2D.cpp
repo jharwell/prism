@@ -44,7 +44,7 @@ slice2D::slice2D(const slice_coords& coords,
   ER_ASSERT(rmath::vector3z::X == mc_coords.axis || rmath::vector3z::Y == mc_coords.axis ||
             rmath::vector3z::Z == mc_coords.axis,
             "Bad slice axis %s",
-            mc_coords.axis.to_str().c_str());
+            rcppsw::to_string(mc_coords.axis).c_str());
 }
 
 /*******************************************************************************
@@ -246,7 +246,7 @@ bool slice2D::is_traversable(const rmath::radians& orientation) const {
     return is_traversable_d2();
   }
   ER_FATAL_SENTINEL("Bad orientation for traversability: %s",
-                    orientation.to_str().c_str());
+                    rcppsw::to_string(orientation).c_str());
   return false;
 } /* is_traversable() */
 
@@ -329,7 +329,8 @@ std::set<const cds::cell3D*> slice2D::simple_holes(void) const {
   for (size_t i = 0; i < d1(); ++i) {
     for (size_t j = 0; j < d2(); ++j) {
       if (cell_is_simple_hole(access(i, j))) {
-        ER_TRACE("Cell@%s is simple hole", access(i, j).loc().to_str().c_str());
+        ER_TRACE("Cell@%s is simple hole",
+                 rcppsw::to_string(access(i, j).loc()).c_str());
         ret.insert(&access(i, j));
       }
     } /* for(j..) */

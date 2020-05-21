@@ -31,10 +31,6 @@
 NS_START(silicon, controller, perception);
 
 /*******************************************************************************
- * Constructors/Destructors
- ******************************************************************************/
-
-/*******************************************************************************
  * Member Functions
  ******************************************************************************/
 rmath::vector3d ct_skel_info::originr(void) const {
@@ -44,6 +40,12 @@ rmath::vector3d ct_skel_info::originr(void) const {
 rmath::vector3z ct_skel_info::origind(void) const {
   return m_target->origind();
 } /* origind() */
+
+rmath::vector3d ct_skel_info::center(void) const {
+  return m_target->originr() + rmath::vector3d(m_target->xrsize() / 2.0,
+                                               m_target->yrsize() / 2.0,
+                                               m_target->zrsize() / 2.0);
+} /* center() */
 
 rmath::vector3d ct_skel_info::bbr(void) const {
   return {m_target->xrsize(), m_target->yrsize(), m_target->zrsize()};
@@ -72,5 +74,13 @@ rmath::ranged ct_skel_info::xrange(void) const {
 rmath::ranged ct_skel_info::yrange(void) const {
   return m_target->yrange();
 } /* yrange() */
+
+double ct_skel_info::block_unit_dim(void) const {
+  return m_target->block_unit_dim();
+} /* block_unit_dim() */
+
+size_t ct_skel_info::unit_dim_factor(void) const {
+  return m_target->unit_dim_factor();
+} /* unit_dim_factor() */
 
 NS_END(perception, controller, silicon);

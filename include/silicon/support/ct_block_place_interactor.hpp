@@ -43,9 +43,11 @@ NS_START(silicon, support);
  * target structure as needed.
  */
 template <typename TController, typename TControllerSpecMap>
-class ct_block_place_interactor : base_ct_block_place_interactor<TController,
-                                                                 TControllerSpecMap> {
+class ct_block_place_interactor : public base_ct_block_place_interactor<TController,
+                                                                        TControllerSpecMap> {
  public:
+  using penalty_handler_type = typename base_ct_block_place_interactor<TController,
+                                                                       TControllerSpecMap>::penalty_handler_type;
   explicit ct_block_place_interactor(sstructure::ct_manager* const manager)
       : base_ct_block_place_interactor<TController,
                                        TControllerSpecMap>(manager) {}
@@ -61,7 +63,7 @@ class ct_block_place_interactor : base_ct_block_place_interactor<TController,
 
   bool robot_goal_acquired(const TController& controller) const override {
     return controller.goal_acquired() &&
-        fsm::construction_acq_goal::ekBLOCK_PLACEMENT_SITE == controller.acquisition_goal();
+        fsm::construction_acq_goal::ekCT_BLOCK_PLACEMENT_SITE == controller.acquisition_goal();
   }
 
   void robot_previsit_hook(TController& controller,
@@ -69,6 +71,14 @@ class ct_block_place_interactor : base_ct_block_place_interactor<TController,
     controller.block_manip_recorder()->record(
         metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE,
         penalty.penalty());
+  }
+
+  void robot_penalty_init(const TController& controller,
+                          const rtypes::timestep& t,
+                          penalty_handler_type* handler) override {
+    handler->penalty_init(controller,
+                          t,
+                          tv::block_op_src::ekCT_BLOCK_MANIP);
   }
 };
 

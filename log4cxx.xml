@@ -49,18 +49,18 @@
   </category>
 
   <category name="silicon.fsm" >
-    <priority value ="trace" />
+    <priority value ="debug" />
   </category>
 
   <category name="cosm.robots.footbot.saa" >
-    <priority value ="debug" />
+    <priority value ="info" />
   </category>
   <category name="cosm.steer2D.force_calculator" >
-    <priority value ="debug" />
+    <priority value ="info" />
   </category>
 
   <category name="cosm.spatial.fsm" >
-    <priority value ="trace" />
+    <priority value ="info" />
   </category>
 
  </log4j:configuration>

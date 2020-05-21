@@ -48,26 +48,43 @@ allocator::allocator(
 std::vector<allocator::lane_geometry> allocator::lane_locs_calc(
      const scperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
+
+  /*
+   * Need to account for block width so we calculate the CENTER of the
+   * ingress/egress lanes.
+   */
+  rmath::vector3d correction(target->block_unit_dim() / 2.0,
+                             target->block_unit_dim() / 2.0,
+                             0.0);
+
   if (rmath::radians::kZERO == target->orientation()) {
     for (size_t j = 0; j < target->bbd().y(); j+=2) {
-      auto ingress = target->cell_loc_abs({target->bbd().x() - 1, j, 0});
-      auto egress = target->cell_loc_abs({target->bbd().x() - 1, j + 1, 0});
+      auto ingress = target->cell_loc_abs({target->bbd().x() - 1, j, 0}) +
+                     rmath::vector3d::X* target->block_unit_dim();
+      auto egress = target->cell_loc_abs({target->bbd().x() - 1, j + 1, 0}) +
+                    rmath::vector3d::X* target->block_unit_dim();
       rmath::vector3d center(target->originr().x() +
                              (ingress.x() - target->originr().x()) / 2.0,
                              ingress.y(),
                              0.0);
 
-      ret.push_back({ingress, egress, center});
+      ret.push_back({ingress + correction,
+              egress + correction,
+              center + correction});
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
     for (size_t i = 0; i < target->bbd().x(); i+=2) {
-      auto ingress = target->cell_loc_abs({i, target->bbd().y() - 1, 0});
-      auto egress = target->cell_loc_abs({i + 1, target->bbd().y() - 1, 0});
+      auto ingress = target->cell_loc_abs({i, target->bbd().y() - 1, 0}) -
+                     rmath::vector3d::Y* target->block_unit_dim();
+      auto egress = target->cell_loc_abs({i + 1, target->bbd().y() - 1, 0}) -
+                    rmath::vector3d::Y* target->block_unit_dim();
       rmath::vector3d center(ingress.x(),
                              target->originr().y() -
                              (ingress.y() - target->originr().y()) / 2.0,
                              0.0);
-      ret.push_back({ingress, egress, center});
+      ret.push_back({ingress + correction,
+              egress + correction,
+              center + correction});
     } /* for(i..) */
   }
   return ret;
@@ -112,11 +129,10 @@ repr::construction_lane allocator::operator()(
 
   ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
           id,
-          target->orientation().to_str().c_str(),
-          locs[id].ingress.to_str().c_str(),
-          locs[id].egress.to_str().c_str());
+          rcppsw::to_string(target->orientation()).c_str(),
+          rcppsw::to_string(locs[id].ingress).c_str(),
+          rcppsw::to_string(locs[id].egress).c_str());
   return repr::construction_lane(id,
-                                 locs[id].center,
                                  target->orientation(),
                                  locs[id].ingress,
                                  locs[id].egress);

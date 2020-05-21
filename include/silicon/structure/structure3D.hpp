@@ -88,7 +88,9 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   const structure3D& operator=(const structure3D&) = delete;
 
   /* structure state metrics */
-  cds::block3D_vectorro placed_blocks(void) const override;
+  std::vector<rmath::vector3z> occupied_cells(void) const override {
+    return m_occupied_cells;
+  }
 
   /* structure progress metrics */
   size_t n_placed_blocks(void) const override { return m_placed.size(); }
@@ -108,9 +110,18 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
                              const rmath::radians& z_rotation);
 
   rtypes::type_uuid id(void) const { return mc_id; }
-  rmath::ranged xrange(void) const { return rmath::ranged(originr().x(), xrsize()); }
-  rmath::ranged yrange(void) const { return rmath::ranged(originr().y(), yrsize()); }
-  rmath::ranged zrange(void) const { return rmath::ranged(originr().z(), zrsize()); }
+  rmath::ranged xrange(void) const {
+    return rmath::ranged(originr().x(), originr().x() + xrsize());
+  }
+  rmath::ranged yrange(void) const {
+    return rmath::ranged(originr().y(), originr().y() + yrsize());
+  }
+  rmath::ranged zrange(void) const {
+    return rmath::ranged(originr().z(), originr().z() + zrsize());
+  }
+
+  double block_unit_dim(void) const { return mc_block_unit_dim; }
+  size_t unit_dim_factor(void) const { return mc_unit_dim_factor; }
 
   /**
    * \brief Return \c TRUE if a block with the same ID as the \p query currently
@@ -125,11 +136,12 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * \brief Return \c TRUE if the specified 2D location is within the bounds of
    * the structure, and \c FALSE otherwise.
    *
-   * For use in determining which construction target out of a set a robot is
-   * currently on to send it the correct LOS.
+   * \param loc The location to check.
+   * \param include_virtual Should the ring of "virtual" cells which surround
+   *                        the structure be included in the search check?
    */
 
-  bool contains(const rmath::vector2d& loc) const;
+  bool contains(const rmath::vector2d& loc, bool include_virtual) const;
   /**
    * \brief Add a block to the structure after verifying its placement is valid
    * via \ref block_addition_valid().
@@ -210,12 +222,21 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
 
   /* clang-format off */
   const rtypes::type_uuid          mc_id;
+  const double                     mc_block_unit_dim;
   const size_t                     mc_unit_dim_factor;
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 
   size_t                           m_placement_id{0};
   cds::block3D_vectoro             m_placed{};
+
+  /*
+   * List of cells which have blocks in them. Better to keep a list at the cost
+   * of a little extra space, then to recompute a list which will be pretty much
+   * the same from timestep to timestep over and over, especially for larger
+   * structures.
+   */
+  std::vector<rmath::vector3z>     m_occupied_cells{};
   cell_spec_map_type               m_cell_spec_map;
   subtarget_vectoro                m_subtargetso;
   subtarget_vectorno               m_subtargetsno;

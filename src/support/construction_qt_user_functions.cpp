@@ -30,8 +30,12 @@ RCPPSW_WARNING_DISABLE_POP()
 #include <argos3/core/simulator/entity/controllable_entity.h>
 
 #include "cosm/vis/block_carry_visualizer.hpp"
+#include "cosm/vis/steer2D_visualizer.hpp"
+#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
+#include "cosm/vis/los_visualizer.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -50,16 +54,47 @@ construction_qt_user_functions::construction_qt_user_functions(void) {
  * Member Functions
  ******************************************************************************/
 void construction_qt_user_functions::Draw(argos::CFootBotEntity& c_entity) {
-  auto* base = dynamic_cast<const controller::constructing_controller*>(
+  auto* controller = dynamic_cast<const controller::constructing_controller*>(
       &c_entity.GetControllableEntity().GetController());
 
-  if (base->display_id()) {
+  if (controller->display_id()) {
     DrawText(argos::CVector3(0.0, 0.0, 0.5), c_entity.GetId());
   }
 
-  if (base->is_carrying_block()) {
+  if (controller->is_carrying_block()) {
     cvis::block_carry_visualizer(this, kBLOCK_VIS_OFFSET, kTEXT_VIS_OFFSET)
-        .draw(base->block(), base->GetId().size());
+        .draw(controller->block(), controller->GetId().size());
+  }
+  if (controller->display_steer2D()) {
+    auto steering = cvis::steer2D_visualizer(this, kTEXT_VIS_OFFSET);
+    steering(controller->rpos3D(),
+             c_entity.GetEmbodiedEntity().GetOriginAnchor().Orientation,
+             controller->saa()->steer_force2D().tracker());
+  }
+  if (controller->display_los() && nullptr != controller->perception()->los()) {
+    auto* los = controller->perception()->los();
+    auto* ct = controller->perception()->nearest_ct();
+
+    /*
+     * ARGos Qt user functions draw things relative to the robot's current
+     * position, and the LOS corners are absolute coordinates, so we need to
+     * transform. Also, the absolute cell location returned is the location of
+     * the lower left coordinate of the cell, which is fine for the minimum X/Y
+     * coordinates of the LOS corners, but off by the size of a cell for the
+     * maximum X/Y coordinates of the LOS corners, so we need to account for
+     * that too.
+     */
+    double correction = ct->block_unit_dim();
+    std::vector<rmath::vector2d> points = {
+      ct->cell_loc_abs(los->abs_ll()).to_2D() - controller->rpos2D(),
+      ct->cell_loc_abs(los->abs_ul()).to_2D() - controller->rpos2D() +
+      rmath::vector2d(0.0, correction),
+      ct->cell_loc_abs(los->abs_ur()).to_2D() - controller->rpos2D() +
+      rmath::vector2d(correction, correction),
+      ct->cell_loc_abs(los->abs_lr()).to_2D() - controller->rpos2D() +
+      rmath::vector2d(correction, 0.0)
+    };
+    cvis::los_visualizer(this)(points);
   }
 }
 

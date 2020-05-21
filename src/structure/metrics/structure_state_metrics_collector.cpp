@@ -38,10 +38,10 @@ NS_START(silicon, structure, metrics);
 void structure_state_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const structure_state_metrics&>(metrics);
-  inc_total_count(m.placed_blocks().size());
+  inc_total_count(m.occupied_cells().size());
 
-  for (auto* b : m.placed_blocks()) {
-    inc_cell_count(b->dpos3D());
+  for (auto& cell : m.occupied_cells()) {
+    inc_cell_count(cell);
   } /* for(*b..) */
 } /* collect() */
 

@@ -121,11 +121,11 @@ class block_op_filter : public rer::client<block_op_filter> {
    */
   template <typename TControllerType>
   op_filter_status structure_placement_filter(const TControllerType& controller) const {
-    if (!(controller.in_nest() && controller.goal_acquired() &&
-          fsm::construction_transport_goal::ekCT_BLOCK_PLACEMENT_SITE == controller.block_transport_goal())) {
-      return op_filter_status::ekROBOT_INTERNAL_UNREADY;
+    if (controller.in_nest() && controller.goal_acquired() &&
+        fsm::construction_acq_goal::ekCT_BLOCK_PLACEMENT_SITE == controller.acquisition_goal()) {
+      return op_filter_status::ekSATISFIED;
     }
-    return op_filter_status::ekSATISFIED;
+    return op_filter_status::ekROBOT_INTERNAL_UNREADY;
   }
 
   /* clang-format off */

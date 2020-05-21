@@ -74,6 +74,7 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
                   const scperception::builder_perception_subsystem* perception,
                   crfootbot::footbot_saa_subsystem* saa,
                   rmath::rng* rng);
+  ~fcrw_bst_fsm(void) override;
 
   fcrw_bst_fsm(const fcrw_bst_fsm&) = delete;
   fcrw_bst_fsm& operator=(const fcrw_bst_fsm&) = delete;
@@ -111,7 +112,7 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   void task_reset(void) override { init(); }
 
   /* block placer overrides */
-  boost::optional<block_placer::placement_info> block_placement_info(void) const override;
+  boost::optional<block_placer::placement_intent> block_placement_intent(void) const override;
 
   const lane_alloc::allocator* lane_allocator(void) const {
     return &m_allocator;
@@ -121,6 +122,7 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
    * \brief (Re)-initialize the FSM.
    */
   void init(void) override;
+
  private:
   enum fsm_states {
     ekST_START,
@@ -135,11 +137,18 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
      */
     ekST_WAIT_FOR_BLOCK_PICKUP,
 
+
+    /**
+     * The robot is moving from the block pickup location to the face of the
+     * construction target which has the ingress/egress lanes.
+     */
+    ekST_CT_APPROACH,
+
     /**
      * The block is being returned to the nest; gradual alignment with the
      * chosen construction lane as the robot nears the nest.
      */
-    ekST_TRANSPORT_TO_NEST,
+    ekST_CT_ENTRY,
 
     /**
      * A block has been placed on the structure, wait to get the placement
@@ -160,32 +169,22 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
     ekST_MAX_STATES
   };
 
-  struct nest_transport_data final: public rpfsm::event_data {
-    nest_transport_data(const csteer2D::ds::path_state& path_in,
-                        const rmath::vector3d& ingress_in,
-                        const rmath::vector3d& transport_start_in)
+  struct ct_ingress_data final: public rpfsm::event_data {
+    ct_ingress_data(const csteer2D::ds::path_state& path_in,
+                        const rmath::vector3d& ingress_in)
         : path(path_in),
-          ingress(ingress_in),
-          transport_start(transport_start_in) {}
+          ingress(ingress_in) {}
 
     csteer2D::ds::path_state path;
-    rmath::vector3d ingress{};
-    rmath::vector3d transport_start{};
+    rmath::vector3d ingress;
   };
+
+  static constexpr const double kCT_TRANSPORT_BC_DIST_MIN = 5.0;
+  static constexpr const double kCT_TRANSPORT_LANE_PROX_CRITICAL_DIST = 3.0;
 
   bool block_detected(void) const;
 
-  std::vector<rmath::vector2d> calc_transport_path(
-      const repr::construction_lane& lane) const;
-
-  /**
-   * \brief Calculate the polar force that needs to be applied to the robot's
-   * trajectory if it begins to transport to the nest from one of the 3 sides of
-   * the structure which are not the ingress/egress face to force the robot to
-   * follow a nice curved trajectory to get from its current position to the
-   * correct face.
-   */
-  rmath::vector2d calc_transport_polar_force(void) const;
+  double ct_bc_radius(void) const;
 
   /* inherited states */
   HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
@@ -195,9 +194,10 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, forage);
   HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data);
   HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_place, rpfsm::event_data);
-  HFSM_STATE_DECLARE(fcrw_bst_fsm, transport_to_nest, nest_transport_data);
-  HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_transport_to_nest);
-  HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_transport_to_nest);
+  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, ct_approach);
+  HFSM_STATE_DECLARE(fcrw_bst_fsm, ct_entry, ct_ingress_data);
+  HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_ct_approach);
+  HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_ct_entry);
   HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_build);
   HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_egress);
   HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, finished);

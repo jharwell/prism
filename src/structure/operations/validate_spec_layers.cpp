@@ -63,7 +63,7 @@ bool validate_spec_layers::layer_validate(const slice2D& layer,
   ER_CHECK(layer.is_traversable(orientation),
            "Layer%zu not traversible by robots in orientation '%s'",
            z,
-           orientation.to_str().c_str());
+           rcppsw::to_string(orientation).c_str());
 
   /* PROPERTY: Must have Euler characteristic of 2 (not a torus) */
 

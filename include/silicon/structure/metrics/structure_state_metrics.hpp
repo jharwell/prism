@@ -24,9 +24,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/metrics/base_metrics.hpp"
+#include <vector>
 
-#include "cosm/ds/block3D_vector.hpp"
+#include "rcppsw/metrics/base_metrics.hpp"
+#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -48,10 +49,9 @@ NS_START(silicon, structure, metrics);
 class structure_state_metrics : public virtual rmetrics::base_metrics {
  public:
   /**
-   * \brief Return the list of blocks that have been placed so far onto the
-   * structure.
+   * \brief Return the list of cells within the structure that contain blocks.
    */
-  virtual cds::block3D_vectorro placed_blocks(void) const = 0;
+  virtual std::vector<rmath::vector3z> occupied_cells(void) const = 0;
 };
 
 NS_END(metrics, structure, silicon);

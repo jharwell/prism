@@ -49,8 +49,8 @@ void place_block::operator()(crepr::ramp_block3D* block) const {
 void place_block::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
   ER_INFO("Cube block%d to structure cell@%s,z_rot=%s",
           block->id().v(),
-          mc_cell.to_str().c_str(),
-          mc_z_rot.to_str().c_str());
+          rcppsw::to_string(mc_cell).c_str(),
+          rcppsw::to_string(mc_z_rot).c_str());
 
   /* update host cell */
   cell3D_block_place_visitor op(mc_cell, block.get());
@@ -79,8 +79,8 @@ void place_block::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
 void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
   ER_INFO("Ramp block%d to structure cell@%s,z_rot=%s",
           block->id().v(),
-          mc_cell.to_str().c_str(),
-          mc_z_rot.to_str().c_str());
+          rcppsw::to_string(mc_cell).c_str(),
+          rcppsw::to_string(mc_z_rot).c_str());
   /* update host cell */
   cell3D_block_place_visitor host_op(mc_cell, block.get());
   host_op.visit(m_structure->access(mc_cell));
@@ -116,7 +116,7 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
     } /* for(y..) */
   } else {
     ER_FATAL_SENTINEL("Bad Z rotation %s for block%d specified",
-                      mc_z_rot.to_str().c_str(),
+                      rcppsw::to_string(mc_z_rot).c_str(),
                       block->id().v());
   }
 

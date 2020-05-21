@@ -61,6 +61,7 @@ node_modules
 output
 reports
 frames/*.png
+core
 
 # Tags
 .tag*

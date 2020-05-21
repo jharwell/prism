@@ -43,8 +43,8 @@ bool validate_placement::operator()(const crepr::cube_block3D* block) const {
 error:
   ER_ERR("Cube block%d placement at %s,z_rot=%s failed validation",
          block->id().v(),
-         mc_loc.to_str().c_str(),
-         mc_z_rot.to_str().c_str());
+         rcppsw::to_string(mc_loc).c_str(),
+         rcppsw::to_string(mc_z_rot).c_str());
   return false;
 } /* operator() */
 
@@ -54,7 +54,7 @@ bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
         mc_structure->access(mc_loc.x() + 1, mc_loc.y(), mc_loc.z());
     ER_CHECK(mc_structure->block_placement_cell_check(extent_cell),
              "Extent cell@%s failed validation for block placement",
-             extent_cell.loc().to_str().c_str());
+             rcppsw::to_string(extent_cell.loc()).c_str());
     /* @todo check if structure invariants are violated by adding this block */
     return true;
   } else {
@@ -62,15 +62,15 @@ bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
         mc_structure->access(mc_loc.x(), mc_loc.y() + 1, mc_loc.z());
     ER_CHECK(mc_structure->block_placement_cell_check(extent_cell),
              "Extent cell@%s failed validation for block placement",
-             extent_cell.loc().to_str().c_str());
+             rcppsw::to_string(extent_cell.loc()).c_str());
     /* @todo check if structure invariants are violated by adding this block */
     return true;
   }
 error:
   ER_ERR("Ramp block%d placement at %s,z_rot=%s failed validation",
          block->id().v(),
-         mc_loc.to_str().c_str(),
-         mc_z_rot.to_str().c_str());
+         rcppsw::to_string(mc_loc).c_str(),
+         rcppsw::to_string(mc_z_rot).c_str());
   return false;
 } /* operator() */
 

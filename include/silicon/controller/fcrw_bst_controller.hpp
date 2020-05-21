@@ -75,8 +75,8 @@ class fcrw_bst_controller : public constructing_controller,
                             const);
 
   /* block placement */
-  RCPPSW_WRAP_OVERRIDE_DECL(boost::optional<block_placer::placement_info>,
-                            block_placement_info,
+  RCPPSW_WRAP_OVERRIDE_DECL(boost::optional<block_placer::placement_intent>,
+                            block_placement_intent,
                             const);
 
 

@@ -32,6 +32,8 @@
 namespace silicon {
 namespace ds {}
 
+namespace repr {}
+
 namespace structure {
 namespace config {}
 namespace operations {}
@@ -55,6 +57,8 @@ namespace config {}
 } /* namespace silicon */
 
 namespace sds = silicon::ds;
+
+namespace srepr = silicon::repr;
 
 namespace sstructure = silicon::structure;
 namespace ssops = sstructure::operations;

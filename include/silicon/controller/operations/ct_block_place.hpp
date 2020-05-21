@@ -73,7 +73,7 @@ class ct_block_place : public cdops::cell3D_op {
 
  protected:
   ct_block_place(const rtypes::type_uuid& robot_id,
-                        crepr::base_block3D* block);
+                 crepr::base_block3D* block);
 
  private:
   /* clang-format on */

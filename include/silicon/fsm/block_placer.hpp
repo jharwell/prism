@@ -49,8 +49,12 @@ NS_START(silicon, fsm);
  */
 class block_placer {
  public:
-  struct placement_info {
-    rmath::vector3z site;
+  struct placement_intent {
+    /** relative location (cell) within target structure */
+    rmath::vector3z site{};
+
+    /** orientation in specified cell */
+    rmath::radians orientation{};
   };
   block_placer(void) = default;
   virtual ~block_placer(void) = default;
@@ -60,7 +64,7 @@ class block_placer {
    * nothing if the robot is not currently intending to place a block (e.g. it
    * has not yet reached its desired site).
    */
-  virtual boost::optional<placement_info> block_placement_info(void) const = 0;
+  virtual boost::optional<placement_intent> block_placement_intent(void) const = 0;
 };
 
 NS_END(fsm, silicon);

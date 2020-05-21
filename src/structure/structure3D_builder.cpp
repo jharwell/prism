@@ -110,14 +110,14 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
 
   rmath::vector3z c(i, j, k);
   ER_DEBUG("Static build for structure cell@%s, abs cell@%s",
-           c.to_str().c_str(),
-           (m_target->origind() + c).to_str().c_str());
+           rcppsw::to_string(c).c_str(),
+           rcppsw::to_string(m_target->origind() + c).c_str());
 
   bool ret = false;
   auto* spec = m_target->cell_spec_retrieve(c);
   if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
     ER_DEBUG("Build for block hosting cell%s (%zu/%zu for interval)",
-             c.to_str().c_str(),
+             rcppsw::to_string(c).c_str(),
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
@@ -125,7 +125,7 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
     ER_ASSERT(block,
               "Could not find a block of type %d for location %s",
               rcppsw::as_underlying(spec->block_type),
-              c.to_str().c_str());
+              rcppsw::to_string(c).c_str());
 
     /*
      * Clone block because the structure is taking ownership of the block, and
@@ -137,10 +137,10 @@ bool structure3D_builder::build_static_single(const cds::block3D_vectorno& block
     ER_ASSERT(ret,
               "Failed to build block of type %d for location %s",
               rcppsw::as_underlying(spec->block_type),
-              c.to_str().c_str());
+              rcppsw::to_string(c).c_str());
     ++m_static_state.n_built_interval;
   } else {
-    ER_TRACE("Cell%s contains no block", c.to_str().c_str());
+    ER_TRACE("Cell%s contains no block", rcppsw::to_string(c).c_str());
   }
   ++m_static_state.n_cells;
   return ret;
@@ -166,8 +166,8 @@ bool structure3D_builder::place_block(std::unique_ptr<crepr::base_block3D> block
   /* verify block addition to structure is OK */
   if (!m_target->block_placement_valid(variantno, cell, z_rotation)) {
     ER_WARN("Block placement at %s,z_rot=%s failed validation: abort placement",
-            cell.to_str().c_str(),
-            z_rotation.to_str().c_str());
+            rcppsw::to_string(cell).c_str(),
+            rcppsw::to_string(z_rotation).c_str());
     return false;
   }
   /*

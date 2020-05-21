@@ -121,10 +121,10 @@ class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
   block_manip_recorder_type* block_manip_recorder(void) {
     return &m_block_manip;
   }
+  const class crfootbot::footbot_saa_subsystem* saa(void) const RCSW_PURE;
 
  protected:
   class crfootbot::footbot_saa_subsystem* saa(void) RCSW_PURE;
-  const class crfootbot::footbot_saa_subsystem* saa(void) const RCSW_PURE;
 
  private:
   void saa_init(

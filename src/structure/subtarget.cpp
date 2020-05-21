@@ -64,7 +64,7 @@ rmath::vector3z subtarget::slice_axis_calc(
     return rmath::vector3z::X;
   } else {
     ER_FATAL_SENTINEL("Bad orientation for slice axis calculation: '%s",
-                      orientation.to_str().c_str());
+                      rcppsw::to_string(orientation).c_str());
   }
 } /* slice_axis_calc() */
 

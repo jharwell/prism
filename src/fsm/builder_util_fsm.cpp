@@ -80,23 +80,24 @@ bool builder_util_fsm::lane_alignment_verify_pos(
     const rmath::radians& orientation) const {
   auto dist_diff = sensing()->rpos2D() - lane_point;
   if (rmath::radians::kZERO == orientation) {
-    ER_CHECK(dist_diff.x() <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s for lane orientated@'%s': %f > %f",
-             sensing()->rpos2D().to_str().c_str(),
-             lane_point.to_str().c_str(),
-             orientation.to_str().c_str(),
-             dist_diff.x(),
+    ER_CHECK(std::fabs(dist_diff.y()) <= kLANE_VECTOR_DIST_TOL,
+             "Robot@%s too far from ingress@%s in Y for lane orientated@'%s': %f > %f",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(lane_point).c_str(),
+             rcppsw::to_string(orientation).c_str(),
+             std::fabs(dist_diff.y()),
              kLANE_VECTOR_DIST_TOL);
   } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    ER_CHECK(dist_diff.y() <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s for lane orientated@'%s': %f > %f",
-             sensing()->rpos2D().to_str().c_str(),
-             lane_point.to_str().c_str(),
-             orientation.to_str().c_str(),
-             dist_diff.y(),
+    ER_CHECK(std::fabs(dist_diff.x()) <= kLANE_VECTOR_DIST_TOL,
+             "Robot@%s too far from ingress@%s in X for lane orientated@'%s': %f > %f",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(lane_point).c_str(),
+             rcppsw::to_string(orientation).c_str(),
+             std::fabs(dist_diff.x()),
              kLANE_VECTOR_DIST_TOL);
   } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'", orientation.to_str().c_str());
+    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
+                      rcppsw::to_string(orientation).c_str());
   }
   return true;
 
@@ -106,12 +107,23 @@ error:
 
 bool builder_util_fsm::lane_alignment_verify_azimuth(
     const rmath::radians& orientation) const {
-  auto angle_diff = orientation - saa()->sensing()->azimuth();
+  rmath::radians angle_diff;
+  if (rmath::radians::kZERO == orientation) {
+    angle_diff = (rmath::radians::kPI -
+                  saa()->sensing()->azimuth()).signed_normalize();
+  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
+    angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO -
+                  saa()->sensing()->azimuth()).signed_normalize();
+  } else {
+    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
+                      rcppsw::to_string(orientation).c_str());
+  }
   ER_CHECK(angle_diff <= kROBOT_AZIMUTH_TOL,
-           "Robot orientation too far from lane orientated@'%s': '%s' > '%s",
-           kROBOT_AZIMUTH_TOL.to_str().c_str(),
-           angle_diff.to_str().c_str(),
-           kROBOT_AZIMUTH_TOL.to_str().c_str());
+           "Robot azimuth (%s) too far from lane orientation (%s): %s > %s",
+           rcppsw::to_string(saa()->sensing()->azimuth()).c_str(),
+           rcppsw::to_string(orientation).c_str(),
+           rcppsw::to_string(angle_diff).c_str(),
+           rcppsw::to_string(kROBOT_AZIMUTH_TOL).c_str());
   return true;
 
 error:

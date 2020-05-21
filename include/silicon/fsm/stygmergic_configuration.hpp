@@ -46,6 +46,12 @@ enum class stygmergic_configuration {
   ekNONE,
 
   /**
+   * A configuration in which the robot has made it close enough to the back of
+   * a construction lane to determine that it is in fact empty.
+   */
+  ekLANE_EMPTY,
+
+  /**
    * A configuration in which BOTH the ingress and egress lanes in the
    * construction lanes have blocks placed up to the same location in X or Y
    * (depending on structure orientation).

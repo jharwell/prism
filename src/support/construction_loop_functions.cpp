@@ -403,14 +403,21 @@ structure::structure3D* construction_loop_functions::robot_target(
 const controller::constructing_controller* c) const {
   /*
    * Figure out if the robot is current within the 2D bounds of any
-   * structure. If it is, then compute and send it a Q3D LOS from the structure,
-   * if it is not, then clear out the robot's old LOS so it does not refer to
-   * out of date info anymore, and we will get a segfault if it tries to.
+   * structure, OR if it is JUST outside the 2D bounds of any structure.
+   *
+   * If it is, then compute and send it a Q3D LOS from the structure, if it is
+   * not, then clear out the robot's old LOS so it does not refer to out of date
+   * info anymore, and we will get a segfault if it tries to.
+   *
+   * The second condition is necessary so that robots will get a LOS when in the
+   * "virtual" cell right outside of the ingress lane, and will correctly
+   * compute the placement paths for the last block in a lane on a given level.
    */
   auto target_it = std::find_if(ct_manager()->targetsno().begin(),
                                 ct_manager()->targetsno().end(),
                                 [&](auto *target) {
-                                  return target->contains(c->rpos2D());
+                                  return target->contains(c->rpos2D(), false) ||
+                                  target->contains(c->rpos2D(), true);
                                 });
 
   if (ct_manager()->targetsno().end() == target_it) {

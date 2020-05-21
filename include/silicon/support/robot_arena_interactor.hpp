@@ -84,7 +84,7 @@ class robot_arena_interactor final :
   interactor_status operator()(TControllerType& controller,
                                const rtypes::timestep& t) {
     if (controller.is_carrying_block()) {
-      return interactor_status::ekNO_EVENT;
+      return m_block_place(controller, t);
     } else { /* The foot-bot has no block item */
       return m_arena_pickup(controller, t);
     }

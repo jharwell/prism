@@ -83,6 +83,13 @@ void fcrw_bst_controller::control_step(void) {
             block()->md()->robot_id().v());
 
   /*
+   * Reset steering force tracking from the previous time step. Cannot be done
+   * on the same timestep because visualizations are drawn AFTER the control
+   * step runs.
+   */
+  saa()->steer_force2D().tracking_reset();
+
+  /*
    * Run the FSM and apply steering forces if normal operation, otherwise handle
    * abnormal operation state.
    */
@@ -90,7 +97,7 @@ void fcrw_bst_controller::control_step(void) {
   ndc_pop();
 } /* control_step() */
 
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, block_placement_info, *m_fsm, const);
+RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, block_placement_intent, *m_fsm, const);
 
 /*******************************************************************************
  * FSM Metrics

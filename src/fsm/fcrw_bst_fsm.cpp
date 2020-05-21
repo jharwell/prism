@@ -32,6 +32,8 @@
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/fsm/ct_approach_calculator.hpp"
+#include "silicon/fsm/ingress_path_calculator.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -51,7 +53,8 @@ fcrw_bst_fsm::fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
       HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(wait_for_block_pickup, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(wait_for_block_place, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(transport_to_nest, hfsm::top_state()),
+      HFSM_CONSTRUCT_STATE(ct_approach, hfsm::top_state()),
+      HFSM_CONSTRUCT_STATE(ct_entry, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(structure_build, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
@@ -62,10 +65,14 @@ fcrw_bst_fsm::fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
                                                         nullptr,
                                                         &entry_wait_for_signal,
                                                         nullptr),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&transport_to_nest,
+                            HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_approach,
                                                         nullptr,
-                                                        &entry_transport_to_nest,
-                                                        &exit_transport_to_nest),
+                                                        &entry_ct_approach,
+                                                        nullptr),
+                            HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_entry,
+                                                        nullptr,
+                                                        nullptr,
+                                                        &exit_ct_entry),
                             HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_place,
                                                         nullptr,
                                                         &entry_wait_for_signal,
@@ -81,6 +88,8 @@ fcrw_bst_fsm::fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
                    std::bind(&fcrw_bst_fsm::block_detected, this)),
       m_block_place_fsm(mc_perception, saa, rng),
       m_structure_egress_fsm(mc_perception, saa, rng) {}
+
+fcrw_bst_fsm::~fcrw_bst_fsm(void) = default;
 
 /*******************************************************************************
  * States
@@ -121,15 +130,26 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm,
 
     /* allocate construction lane */
     m_lane = m_allocator(sensing()->rpos3D(), mc_perception->nearest_ct());
-    auto path = calc_transport_path(m_lane);
-    ER_INFO("Calculated transport path to lane ingress with %zu waypoints",
-            path.size());
-    auto transport_data = std::make_unique<nest_transport_data>(
-        csteer2D::ds::path_state(path),
-        m_lane.ingress(),
-        sensing()->rpos3D());
-    event_data_hold(true);
-    internal_event(ekST_TRANSPORT_TO_NEST, std::move(transport_data));
+
+    auto calculator = ct_approach_calculator(sensing(),
+                                             builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+    auto approach = calculator(&m_lane);
+
+    if (!(approach.x_ok && approach.y_ok)) {
+      ER_INFO("Construction target approach required");
+      internal_event(ekST_CT_APPROACH);
+    } else {
+      auto path = ingress_path_calculator(sensing())(&m_lane);
+      ER_INFO("Calculated transport path to lane%zu ingress with %zu waypoints",
+              m_lane.id(),
+              path.size());
+      auto entry_data = std::make_unique<ct_ingress_data>(
+          csteer2D::ds::path_state(path),
+          m_lane.ingress());
+
+      internal_event(ekST_CT_ENTRY, std::move(entry_data));
+    }
+
   } else if (fsm::construction_signal::ekFORAGING_BLOCK_VANISHED == data->signal()) {
     ER_INFO("Block vanished signal received while foraging");
     internal_event(ekST_FORAGE);
@@ -137,59 +157,110 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm,
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(fcrw_bst_fsm,
-                  transport_to_nest,
-                  nest_transport_data* data) {
-  auto * light = sensing()->sensor<chal::sensors::light_sensor>();
-  auto light_force = saa()->steer_force2D().phototaxis(light->readings());
-  auto path_force = saa()->steer_force2D().path_following(&data->path);
-  auto polar_force = calc_transport_polar_force();
-
-  ER_TRACE("Distance from transport start/to ingress: %f/%f",
-           (data->transport_start - data->ingress).length(),
-           (sensing()->rpos3D() - data->ingress).length());
-  ER_TRACE("Lane alignment: %s",
-           (sensing()->azimuth() + m_lane.orientation()).to_str().c_str());
-
-  if (polar_force.is_pd()) {
-    saa()->steer_force2D().accum(path_force);
-  } else {
-    /*
-     * The closer the robot gets to the target structure, the more important it
-     * is that it is EXACTLY aligned with its chosen construction lane. So,
-     * apply a weighting factor to the two steering forces in order to achieve
-     * this.
-     */
-    double factor = (sensing()->rpos3D() - data->ingress).length() /
-                    (data->transport_start - data->ingress).length();
-    auto weighted = light_force * factor + path_force * (1.0 - factor);
-    saa()->steer_force2D().accum(weighted + polar_force);
+HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
+  if (fsm_states::ekST_CT_APPROACH != last_state()) {
+    ER_INFO("Beginning construction target approach");
   }
 
-  if (sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest")) {
-    /* ER_DEBUG("Entered nest,pos=%s/%s", */
-    /*          sensing()->rpos2D().to_str().c_str(), */
-    /*          sensing()->dpos2D().to_str().c_str()); */
-    /* internal_event(ekST_STRUCTURE_BUILD); */
-    /* event_data_hold(false); */
-    return fsm::construction_signal::ekHANDLED;
-  } else {
+  auto calculator = ct_approach_calculator(sensing(),
+                                           builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+  auto approach = calculator(&m_lane);
+
+  if (approach.x_ok && approach.y_ok) {
+    auto path = ingress_path_calculator(sensing())(&m_lane);
+    ER_INFO("Calculated transport path to lane%zu ingress with %zu waypoints",
+            m_lane.id(),
+            path.size());
+    auto data = std::make_unique<ct_ingress_data>(
+        csteer2D::ds::path_state(path),
+        m_lane.ingress());
+
+    internal_event(ekST_CT_ENTRY, std::move(data));
     event_data_hold(true);
     return fsm::construction_signal::ekHANDLED;
   }
+
+  auto * prox = saa()->sensing()->sensor<chal::sensors::proximity_sensor>();
+  if (auto obs = prox->avg_prox_obj()) {
+    saa()->steer_force2D().accum(saa()->steer_force2D().avoidance(*obs));
+  }
+
+  auto * light = sensing()->sensor<chal::sensors::light_sensor>();
+  auto light_force = saa()->steer_force2D().phototaxis(light->readings());
+
+  auto polar_force = saa()->steer_force2D().polar(m_lane.ingress().to_2D());
+  /*
+   * We need the sign of the orthogonal distance to the ingress lane so that we
+   * calculate polar force of the appropriate sign (i.e., not going all the way
+   * around in a circle to reach the ingress clockwise when a short
+   * counter-clockwise path is MUCH shorter).
+   */
+  if (approach.x_ok && !approach.y_ok) {
+    polar_force *= std::copysign(1.0, approach.orthogonal_dist);
+  }
+  auto *ct = mc_perception->nearest_ct();
+  ER_ASSERT(nullptr != ct,
+            "Cannot compute approach forces without construction target");
+  /*
+   * If the robot is on one of the wrong sides of the structure, we need it to
+   * go around the structure in a circular path via polar force, but making
+   * sure to stay out of the nest as much as possible, so we weight the polar
+   * force pushing the robot away from the nest with the light force
+   * attracting it to the nest in proportion to how close we get to the target
+   * center.
+   */
+  double dist_to_center = (sensing()->rpos3D() - m_lane.ingress()).length();
+  double light_factor = std::max(0.0,
+                                 (dist_to_center - ct_bc_radius() * 2.0) /
+                                 kCT_TRANSPORT_BC_DIST_MIN);
+  saa()->steer_force2D().accum(light_force * light_factor +
+                               polar_force * (1.0 - light_factor));
+  saa()->steer_force2D().accum(saa()->steer_force2D().wander(rng()));
+  return fsm::construction_signal::ekHANDLED;
+}
+
+HFSM_STATE_DEFINE(fcrw_bst_fsm, ct_entry, ct_ingress_data* data) {
+  if (fsm_states::ekST_CT_ENTRY != last_state()) {
+    ER_INFO("Beginning construction target entry");
+  }
+
+  ER_TRACE("Distance to lane%zu ingress@%s: x=%f,y=%f [%f]",
+           m_lane.id(),
+           rcppsw::to_string(data->ingress).c_str(),
+           (sensing()->rpos3D() - data->ingress).x(),
+           (sensing()->rpos3D() - data->ingress).y(),
+           (sensing()->rpos3D() - data->ingress).length());
+
+  ER_TRACE("Lane%zu alignment: %s",
+           m_lane.id(),
+           rcppsw::to_string(sensing()->azimuth() - m_lane.orientation()).c_str());
+
+  auto path_force = saa()->steer_force2D().path_following(&data->path);
+  saa()->steer_force2D().accum(path_force);
+
+  if (data->path.is_complete()) {
+      ER_DEBUG("Reached lane%zu ingress@%s",
+               m_lane.id(),
+               rcppsw::to_string(m_lane.ingress()).c_str());
+      event_data_hold(false);
+      internal_event(ekST_STRUCTURE_BUILD);
+  } else {
+    event_data_hold(true);
+  }
+  return fsm::construction_signal::ekHANDLED;
 }
 
 
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
-  if (!m_block_place_fsm.task_running()) {
-    ER_DEBUG("Begin block placement FSM");
-    m_block_place_fsm.task_reset();
-    m_block_place_fsm.task_start(&m_lane);
-  }
   if (m_block_place_fsm.task_finished()) {
-    internal_event(ekST_STRUCTURE_EGRESS);
+    internal_event(ekST_WAIT_FOR_BLOCK_PLACE);
   } else {
-    m_block_place_fsm.task_execute();
+    if (!m_block_place_fsm.task_running()) {
+      ER_DEBUG("Begin block placement FSM");
+      m_block_place_fsm.task_start(&m_lane);
+    } else {
+      m_block_place_fsm.task_execute();
+    }
   }
   return fsm::construction_signal::ekHANDLED;
 }
@@ -199,20 +270,26 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm,
                   rpfsm::event_data* data) {
   if (fsm::construction_signal::ekCT_BLOCK_PLACE == data->signal()) {
     ER_INFO("Block placement signal received while building");
+    /*
+     * Can't reset this FSM before getting here because the placement info can
+     * only be calculated when it is in the FINISHED state.
+     */
+    m_block_place_fsm.task_reset();
     internal_event(ekST_STRUCTURE_EGRESS);
   }
   return fsm::construction_signal::ekHANDLED;
 }
 
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_egress) {
-  if (!m_structure_egress_fsm.task_running()) {
-    m_structure_egress_fsm.task_reset();
-    m_structure_egress_fsm.task_start(&m_lane);
-  }
   if (m_structure_egress_fsm.task_finished()) {
+    m_structure_egress_fsm.task_reset();
     internal_event(ekST_FINISHED);
   } else {
-    m_structure_egress_fsm.task_execute();
+    if (!m_structure_egress_fsm.task_running()) {
+      m_structure_egress_fsm.task_start(&m_lane);
+    } else {
+      m_structure_egress_fsm.task_execute();
+    }
   }
   return fsm::construction_signal::ekHANDLED;
 }
@@ -221,15 +298,19 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, finished) {
   if (ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
+  /* repeat! */
+  internal_event(ekST_FORAGE);
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_ENTRY_DEFINE_ND(fcrw_bst_fsm, entry_transport_to_nest) {
+HFSM_ENTRY_DEFINE_ND(fcrw_bst_fsm, entry_ct_approach) {
+  /* turn on light sensor to move towards the nest */
   sensing()->sensor<chal::sensors::light_sensor>()->enable();
   actuation()->actuator<chal::actuators::led_actuator>()->set_color(-1,
                                                                     rutils::color::kGREEN);
 }
-HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_transport_to_nest) {
+HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_ct_entry) {
+  /* Once we are on the target, we don't need the light sensor anymore. */
   sensing()->sensor<chal::sensors::light_sensor>()->disable();
 }
 
@@ -267,7 +348,7 @@ csmetrics::goal_acq_metrics::goal_type fcrw_bst_fsm::acquisition_goal(void) cons
     return fsm::to_goal_type(construction_acq_goal::ekFORAGING_BLOCK);
   } else if (ekST_STRUCTURE_BUILD == current_state() ||
              ekST_WAIT_FOR_BLOCK_PLACE == current_state()) {
-    return fsm::to_goal_type(construction_acq_goal::ekBLOCK_PLACEMENT_SITE);
+    return fsm::to_goal_type(construction_acq_goal::ekCT_BLOCK_PLACEMENT_SITE);
   }
   return fsm::to_goal_type(construction_acq_goal::ekNONE);
 } /* block_transport_goal() */
@@ -310,7 +391,8 @@ rmath::vector3z fcrw_bst_fsm::avoidance_loc3D(void) const {
  * Block Transport Metrics
  ******************************************************************************/
 construction_transport_goal fcrw_bst_fsm::block_transport_goal(void) const {
-  if (ekST_TRANSPORT_TO_NEST == current_state()) {
+  if (ekST_CT_APPROACH == current_state() ||
+      ekST_CT_ENTRY == current_state()) {
     return construction_transport_goal::ekCONSTRUCTION_SITE;
   } else if (ekST_STRUCTURE_BUILD == current_state()) {
     return construction_transport_goal::ekCT_BLOCK_PLACEMENT_SITE;
@@ -347,54 +429,23 @@ bool fcrw_bst_fsm::block_detected(void) const {
       "block");
 } /* block_detected() */
 
-std::vector<rmath::vector2d> fcrw_bst_fsm::calc_transport_path(
-    const repr::construction_lane& lane) const {
-  std::vector<rmath::vector2d> path;
-  auto pos = sensing()->rpos2D();
-
-  if (rmath::radians::kZERO == lane.orientation()) {
-    if (pos.x() < m_lane.ingress().x()) {
-      path.push_back({m_lane.ingress().x() * 1.25, pos.y()});
-    }
-    path.push_back({sensing()->rpos2D().x(), lane.ingress().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == lane.orientation()) {
-    if (pos.y() < m_lane.ingress().y()) {
-      path.push_back({m_lane.ingress().x(), pos.y() * 1.25});
-    }
-    path.push_back({lane.ingress().x(), sensing()->rpos2D().y()});
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      lane.orientation().to_str().c_str());
-  }
-  return path;
-} /* calc_transport_path() */
-
-boost::optional<block_placer::placement_info> fcrw_bst_fsm::block_placement_info(void) const {
+boost::optional<block_placer::placement_intent> fcrw_bst_fsm::block_placement_intent(void) const {
   if (ekST_WAIT_FOR_BLOCK_PLACE == current_state()) {
-    auto info = block_placer::placement_info{m_block_place_fsm.calc_placement_cell()};
-    return boost::make_optional(info);
+    return boost::make_optional(m_block_place_fsm.placement_intent_calc());
   }
   return boost::none;
-} /* block_placement_info() */
+} /* block_placement_intent() */
 
-rmath::vector2d fcrw_bst_fsm::calc_transport_polar_force(void) const {
-  bool need_polar = false;
-  /* We are on the wrong side of the structure */
-  if (rmath::radians::kZERO == m_lane.orientation()) {
-    need_polar = (sensing()->rpos2D().x() <= m_lane.ingress().x() ||
-                  std::fabs(sensing()->rpos2D().y() - m_lane.ingress().y()) > builder_util_fsm::kLANE_VECTOR_DIST_TOL);
-  } else if (rmath::radians::kPI_OVER_TWO == m_lane.orientation()) {
-    need_polar = (sensing()->rpos2D().y() <= m_lane.ingress().y() ||
-                  std::fabs(sensing()->rpos2D().x() - m_lane.ingress().x()) > builder_util_fsm::kLANE_VECTOR_DIST_TOL);
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      m_lane.orientation().to_str().c_str());
-  }
+double fcrw_bst_fsm::ct_bc_radius(void) const {
+  /*
+   * Calculate the side of a square inscribed in the "bounding circle"
+   * containing the bounding box of the nearest construction target.
+   */
+  double side = std::max(mc_perception->nearest_ct()->bbr().x(),
+                         mc_perception->nearest_ct()->bbr().y());
 
-  if (need_polar) {
-    return saa()->steer_force2D().polar(m_lane.center().to_2D());
-  }
-  return {0.0, 0.0};
-} /* calc_transport_polar_force() */
+  /* Compute the radius of this circle from the square side length */
+  return std::sqrt(std::pow(side, 2) * 2) / 2.0;
+} /* ct_bc_radius() */
 
 NS_END(fsm, silicon);

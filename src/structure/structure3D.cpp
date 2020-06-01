@@ -144,6 +144,7 @@ void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
   RCSW_UNUSED rtypes::type_uuid id = block->id();
   m_occupied_cells.push_back((block->dpos3D() - origind()) / mc_unit_dim_factor);
   m_placed.push_back(std::move(block));
+  ++m_placed_since_reset;
   ER_INFO("Added block%d to structure (%zu total)",
           id.v(),
           m_placed.size());
@@ -336,6 +337,7 @@ const structure3D::cell_spec* structure3D::cell_spec_retrieve(
 void structure3D::reset(void) {
   m_placed.clear();
   m_placement_id = 0;
+  reset_metrics();
 
   for (uint i = 0; i < xdsize(); ++i) {
     for (uint j = 0; j < ydsize(); ++j) {
@@ -347,5 +349,12 @@ void structure3D::reset(void) {
     }   /* for(j..) */
   }     /* for(i..) */
 } /* reset() */
+
+void structure3D::reset_metrics(void) {
+  m_placed_since_reset = 0;
+  for (auto *t : subtargets()) {
+    t->reset_metrics();
+  } /* for(*t..) */
+} /* reset_metrics() */
 
 NS_END(structure, silicon);

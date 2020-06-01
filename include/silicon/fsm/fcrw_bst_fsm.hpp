@@ -30,7 +30,6 @@
 #include "cosm/spatial/fsm/util_hfsm.hpp"
 #include "cosm/spatial/fsm/explore_for_goal_fsm.hpp"
 #include "cosm/spatial/metrics/goal_acq_metrics.hpp"
-#include "cosm/spatial/metrics/collision_metrics.hpp"
 #include "cosm/fsm/block_transporter.hpp"
 
 #include "silicon/silicon.hpp"
@@ -79,23 +78,22 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   fcrw_bst_fsm(const fcrw_bst_fsm&) = delete;
   fcrw_bst_fsm& operator=(const fcrw_bst_fsm&) = delete;
 
-  /* foraging collision metrics */
-  bool in_collision_avoidance(void) const override RCSW_PURE;
-  bool entered_collision_avoidance(void) const override RCSW_PURE;
-  bool exited_collision_avoidance(void) const override RCSW_PURE;
-  rtypes::timestep collision_avoidance_duration(void) const override RCSW_PURE;
-  rmath::vector2z avoidance_loc2D(void) const override;
-  rmath::vector3z avoidance_loc3D(void) const override;
+  /* interference metrics */
+  bool exp_interference(void) const override RCSW_PURE;
+  bool entered_interference(void) const override RCSW_PURE;
+  bool exited_interference(void) const override RCSW_PURE;
+  rtypes::timestep interference_duration(void) const override RCSW_PURE;
+  rmath::vector3z interference_loc3D(void) const override;
 
   /* goal acquisition metrics */
   csmetrics::goal_acq_metrics::goal_type acquisition_goal(void) const override RCSW_PURE;
   exp_status is_exploring_for_goal(void) const override RCSW_PURE;
   bool is_vectoring_to_goal(void) const override { return false; }
   bool goal_acquired(void) const override RCSW_PURE;
-  rmath::vector2z acquisition_loc(void) const override;
+  rmath::vector3z acquisition_loc3D(void) const override;
   rtypes::type_uuid entity_acquired_id(void) const override RCSW_PURE;
-  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector2z, current_explore_loc, const);
-  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector2z, current_vector_loc, const);
+  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector3z, explore_loc3D, const);
+  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector3z, vector_loc3D, const);
 
   /* block transportation */
   construction_transport_goal block_transport_goal(void) const override RCSW_PURE;
@@ -115,6 +113,9 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   boost::optional<block_placer::placement_intent> block_placement_intent(void) const override;
 
   const lane_alloc::allocator* lane_allocator(void) const {
+    return &m_allocator;
+  }
+  lane_alloc::allocator* lane_allocator(void) {
     return &m_allocator;
   }
 

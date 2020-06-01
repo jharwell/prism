@@ -318,7 +318,10 @@ HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_ct_entry) {
  * Goal Metrics
  ******************************************************************************/
 fcrw_bst_fsm::exp_status fcrw_bst_fsm::is_exploring_for_goal(void) const {
-  return std::make_pair(m_forage_fsm.task_running(), true);
+  return exp_status{
+    m_forage_fsm.task_running(),
+        true
+        };
 } /* is_exploring_for_goal() */
 
 bool fcrw_bst_fsm::goal_acquired(void) const {
@@ -326,17 +329,17 @@ bool fcrw_bst_fsm::goal_acquired(void) const {
       (ekST_WAIT_FOR_BLOCK_PLACE == current_state());
 } /* goal_acquired() */
 
-rmath::vector2z fcrw_bst_fsm::acquisition_loc(void) const {
-  return sensing()->dpos2D();
-} /* acquisition_loc() */
+rmath::vector3z fcrw_bst_fsm::acquisition_loc3D(void) const {
+  return sensing()->dpos3D();
+} /* acquisition_loc3D() */
 
-rmath::vector2z fcrw_bst_fsm::current_explore_loc(void) const {
-  return sensing()->dpos2D();
-} /* current_explore_loc() */
+rmath::vector3z fcrw_bst_fsm::explore_loc3D(void) const {
+  return sensing()->dpos3D();
+} /* explore_loc3D() */
 
-rmath::vector2z fcrw_bst_fsm::current_vector_loc(void) const {
-  return sensing()->dpos2D();
-} /* current_vector_loc() */
+rmath::vector3z fcrw_bst_fsm::vector_loc3D(void) const {
+  return sensing()->dpos3D();
+} /* vector_loc3D() */
 
 rtypes::type_uuid fcrw_bst_fsm::entity_acquired_id(void) const {
   return rtypes::constants::kNoUUID;
@@ -356,36 +359,32 @@ csmetrics::goal_acq_metrics::goal_type fcrw_bst_fsm::acquisition_goal(void) cons
 /*******************************************************************************
  * Foraging Collision Metrics
  ******************************************************************************/
-bool fcrw_bst_fsm::in_collision_avoidance(void) const {
+bool fcrw_bst_fsm::exp_interference(void) const {
   return (m_forage_fsm.task_running() &&
-          m_forage_fsm.in_collision_avoidance());
-} /* in_collision_avoidance() */
+          m_forage_fsm.exp_interference());
+} /* exp_interference() */
 
-bool fcrw_bst_fsm::entered_collision_avoidance(void) const {
+bool fcrw_bst_fsm::entered_interference(void) const {
   return (m_forage_fsm.task_running() &&
-          m_forage_fsm.entered_collision_avoidance());
-} /* entered_collision_avoidance() */
+          m_forage_fsm.entered_interference());
+} /* entered_interference() */
 
-bool fcrw_bst_fsm::exited_collision_avoidance(void) const {
+bool fcrw_bst_fsm::exited_interference(void) const {
   return (m_forage_fsm.task_running() &&
-          m_forage_fsm.exited_collision_avoidance());
-} /* exited_collision_avoidance() */
+          m_forage_fsm.exited_interference());
+} /* exited_interference() */
 
-rtypes::timestep fcrw_bst_fsm::collision_avoidance_duration(void) const {
+rtypes::timestep fcrw_bst_fsm::interference_duration(void) const {
   if (m_forage_fsm.task_running()) {
-    return m_forage_fsm.collision_avoidance_duration();
+    return m_forage_fsm.interference_duration();
   } else {
     return rtypes::timestep(0);
   }
-} /* collision_avoidance_duration() */
+} /* interference_duration() */
 
-rmath::vector2z fcrw_bst_fsm::avoidance_loc2D(void) const {
-  return saa()->sensing()->dpos2D();
-} /* avoidance_loc2D() */
-
-rmath::vector3z fcrw_bst_fsm::avoidance_loc3D(void) const {
+rmath::vector3z fcrw_bst_fsm::interference_loc3D(void) const {
   return saa()->sensing()->dpos3D();
-} /* avoidance_loc3D() */
+} /* interference_loc3D() */
 
 /*******************************************************************************
  * Block Transport Metrics

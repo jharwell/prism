@@ -48,9 +48,12 @@ class ct_block_place_interactor : public base_ct_block_place_interactor<TControl
  public:
   using penalty_handler_type = typename base_ct_block_place_interactor<TController,
                                                                        TControllerSpecMap>::penalty_handler_type;
-  explicit ct_block_place_interactor(sstructure::ct_manager* const manager)
+  using metrics_agg_type = typename base_ct_block_place_interactor<TController,
+                                                                   TControllerSpecMap>::metrics_agg_type;
+  ct_block_place_interactor(sstructure::ct_manager* const manager,
+                            metrics_agg_type* metrics_agg)
       : base_ct_block_place_interactor<TController,
-                                       TControllerSpecMap>(manager) {}
+                                       TControllerSpecMap>(manager, metrics_agg) {}
 
   ct_block_place_interactor(ct_block_place_interactor&&) = default;
 

@@ -49,9 +49,8 @@ std::list<std::string> structure_progress_metrics_collector::csv_header_cols(
   auto cols = std::list<std::string>{
       /* clang-format off */
     "int_avg_placed_count",
-    "int_avg_total_count",
     "cum_avg_placed_count",
-    "cum_avg_total_count",
+    "size_in_blocks",
       /* clang-format on */
   };
 
@@ -70,11 +69,14 @@ boost::optional<std::string> structure_progress_metrics_collector::csv_line_buil
   }
   std::string line;
 
+  /* interval counts */
   line += csv_entry_intavg(m_interval.n_placed_count);
-  line += csv_entry_intavg(m_interval.n_total_count);
 
+  /* cumulative counts */
   line += csv_entry_tsavg(m_cum.n_placed_count);
-  line += csv_entry_tsavg(m_cum.n_total_count);
+
+  /* other stuff */
+  line += rcppsw::to_string(m_cum.n_total_count) + separator();
 
   return boost::make_optional(line);
 } /* csv_line_build() */
@@ -83,10 +85,10 @@ void structure_progress_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::structure_progress_metrics&>(metrics);
   m_interval.n_placed_count += m.n_placed_blocks();
-  m_interval.n_placed_count += m.n_total_blocks();
+  m_interval.n_total_count = m.n_total_blocks();
 
   m_cum.n_placed_count += m.n_placed_blocks();
-  m_cum.n_placed_count += m.n_total_blocks();
+  m_cum.n_total_count = m.n_total_blocks();
 
   /* gather from subtargets */
 } /* collect() */

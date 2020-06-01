@@ -52,12 +52,9 @@ std::list<std::string> lane_alloc_metrics_collector::csv_header_cols(
     void) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>();
+
   for (size_t i = 0; i < m_interval.size(); ++i) {
     cols.push_back("int_avg_lane" + std::to_string(i) + "_alloc_count");
-    cols.push_back("int_avg_lane" + std::to_string(i) + "_alloc_count");
-  } /* for(i..) */
-  for (size_t i = 0; i < m_cum.size(); ++i) {
-    cols.push_back("cum_avg_lane" + std::to_string(i) + "_alloc_count");
     cols.push_back("cum_avg_lane" + std::to_string(i) + "_alloc_count");
   } /* for(i..) */
 
@@ -78,10 +75,7 @@ boost::optional<std::string> lane_alloc_metrics_collector::csv_line_build(void) 
 
   for (size_t i = 0; i < m_interval.size(); ++i) {
     line += csv_entry_intavg(m_interval[i].alloc_count);
-  } /* for(i..) */
-
-  for (size_t i = 0; i < m_cum.size(); ++i) {
-    line += csv_entry_intavg(m_cum[i].alloc_count);
+    line += csv_entry_tsavg(m_cum[i].alloc_count);
   } /* for(i..) */
 
   return boost::make_optional(line);
@@ -92,9 +86,6 @@ void lane_alloc_metrics_collector::collect(
   auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].alloc_count += m.alloc_count(mc_target_id, i);
-  } /* for(i..) */
-
-  for (size_t i = 0; i < m_cum.size(); ++i) {
     m_cum[i].alloc_count += m.alloc_count(mc_target_id, i);
   } /* for(i..) */
 } /* collect() */

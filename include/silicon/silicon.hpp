@@ -54,11 +54,15 @@ namespace metrics {}
 namespace config {}
 }/* namespace lane_alloc */
 
+namespace metrics {}
+
 } /* namespace silicon */
 
 namespace sds = silicon::ds;
 
 namespace srepr = silicon::repr;
+
+namespace smetrics = silicon::metrics;
 
 namespace sstructure = silicon::structure;
 namespace ssops = sstructure::operations;

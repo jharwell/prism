@@ -45,7 +45,7 @@ structure_egress_fsm::structure_egress_fsm(const scperception::builder_perceptio
                          crfootbot::footbot_saa_subsystem* saa,
                          rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
-      ER_CLIENT_INIT("silicon.fsm.builder"),
+      ER_CLIENT_INIT("silicon.fsm.egress"),
       HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       HFSM_CONSTRUCT_STATE(acquire_egress_lane, hfsm::top_state()),

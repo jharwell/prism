@@ -150,4 +150,12 @@ size_t allocator::alloc_count(const rtypes::type_uuid& target,
   return 0;
 } /* alloc_count() */
 
+void allocator::reset_metrics(void) {
+  for (auto &pair : m_history) {
+    std::fill(pair.second.alloc_counts.begin(),
+              pair.second.alloc_counts.end(),
+              0);
+  } /* for(&pair..) */
+} /* reset_metrics() */
+
 NS_END(lane_alloc, silicon);

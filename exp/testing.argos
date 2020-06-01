@@ -106,16 +106,17 @@
             block_acq_counts="block-acq-counts"
             block_transport="block-transport"
             block_manipulation="block-manipulation"
-            tv_population="tv-population"
             tv_environment="tv-environment"
             structure0_progress="structure0-progress"
             structure0_subtargets="structure0-subtargets"
             structure0_lane_alloc="structure0-lane-alloc"
+            fsm_interference_counts="fsm-interference-counts"
             />
 
         <create output_interval="10"
-                block_acq_locs="block-acq-locs"
-                block_acq_explore_locs="block-acq-explore-locs"
+                block_acq_locs2D="block-acq-locs2D"
+                fsm_interference_locs2D="fsm-interference-locs2D"
+                block_acq_explore_locs2D="block-acq-explore-locs2D"
                 swarm_dist2D_pos="swarm-dist-pos2D"
                 structure0_state="structure0-state"/>
       </metrics>

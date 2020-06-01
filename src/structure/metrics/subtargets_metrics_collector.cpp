@@ -52,11 +52,8 @@ std::list<std::string> subtargets_metrics_collector::csv_header_cols(
   auto cols = std::list<std::string>();
   for (size_t i = 0; i < m_interval.size(); ++i) {
     cols.push_back("int_avg_subtarget" + std::to_string(i) + "_placed_count");
-    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_total_count");
-  } /* for(i..) */
-  for (size_t i = 0; i < m_cum.size(); ++i) {
     cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_placed_count");
-    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_total_count");
+    cols.push_back("subtarget" + std::to_string(i) + "_size_in_blocks");
   } /* for(i..) */
 
   merged.splice(merged.end(), cols);
@@ -76,12 +73,8 @@ boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) 
 
   for (size_t i = 0; i < m_interval.size(); ++i) {
     line += csv_entry_intavg(m_interval[i].n_placed_count);
-    line += csv_entry_intavg(m_interval[i].n_total_count);
-  } /* for(i..) */
-
-  for (size_t i = 0; i < m_cum.size(); ++i) {
-    line += csv_entry_intavg(m_cum[i].n_placed_count);
-    line += csv_entry_intavg(m_cum[i].n_total_count);
+    line += csv_entry_tsavg(m_cum[i].n_placed_count);
+    line += rcppsw::to_string(m_cum[i].n_total_count) + separator();
   } /* for(i..) */
 
   return boost::make_optional(line);
@@ -92,12 +85,8 @@ void subtargets_metrics_collector::collect(
   auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].n_placed_count += m.n_placed_blocks();
-    m_interval[i].n_total_count += m.n_total_blocks();
-  } /* for(i..) */
-
-  for (size_t i = 0; i < m_cum.size(); ++i) {
     m_cum[i].n_placed_count += m.n_placed_blocks();
-    m_cum[i].n_total_count += m.n_total_blocks();
+    m_cum[i].n_total_count = m.n_total_blocks();
   } /* for(i..) */
 } /* collect() */
 

@@ -71,6 +71,7 @@ class allocator : public rer::client<allocator>,
 
   /* lane allocation metrics */
   size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
+  void reset_metrics(void) override;
 
   repr::construction_lane operator()(const rmath::vector3d& robot_loc,
                                      const scperception::ct_skel_info* target);

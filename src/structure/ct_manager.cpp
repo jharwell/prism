@@ -90,6 +90,9 @@ void ct_manager::update(const rtypes::timestep& t) {
       builder->build_static(m_arena_map->blocks(), t);
     }
   } /* for(&builder..) */
+  for (auto *target : targetsno()) {
+    target->reset_metrics();
+  } /* for(*ct..) */
 } /* update() */
 
 void ct_manager::reset(void) {

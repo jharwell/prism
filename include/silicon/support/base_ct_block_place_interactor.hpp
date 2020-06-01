@@ -58,10 +58,13 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
   using interactor_status_type = typename controller_spec::interactor_status_type;
   using robot_block_place_visitor_type = typename controller_spec::robot_block_place_visitor_type;
   using penalty_handler_type = typename controller_spec::penalty_handler_type;
+  using metrics_agg_type = typename controller_spec::metrics_agg_type;
 
-  base_ct_block_place_interactor(sstructure::ct_manager* const manager)
+  base_ct_block_place_interactor(sstructure::ct_manager* const manager,
+                                 metrics_agg_type* const metrics_agg)
       : ER_CLIENT_INIT("silicon.support.base_ct_block_place_interactor"),
-        m_ct_manager(manager) {}
+        m_ct_manager(manager),
+        m_metrics_agg(metrics_agg) {}
 
   base_ct_block_place_interactor(
       base_ct_block_place_interactor&&) = default;
@@ -113,7 +116,7 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
     auto* handler = m_ct_manager->placement_handler(ct->id());
     if (handler->is_serving_penalty(controller)) {
       if (handler->is_penalty_satisfied(controller, t)) {
-        process_block_place(controller, handler);
+        process_block_place(controller, handler, t);
         return interactor_status::ekCT_BLOCK_PLACE;
       }
     } else {
@@ -128,7 +131,8 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
    * block placement interaction between the robot and the target structure.
    */
   void process_block_place(TController& controller,
-                           penalty_handler_type* handler) {
+                           penalty_handler_type* handler,
+                           const rtypes::timestep& t) {
     const ctv::temporal_penalty& p = handler->penalty_next();
     ER_ASSERT(p.controller() == &controller,
               "Out of order block placement handling");
@@ -143,7 +147,7 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
     if (builder->block_placement_valid(to_variant(controller.block()),
                                        intent->site,
                                        intent->orientation)) {
-      execute_block_place(controller, p, *intent);
+      execute_block_place(controller, p, *intent, t);
     } else {
       ER_WARN("Block placement on target%s@%s, orientation=%s invalid",
               rcppsw::to_string(target->id()).c_str(),
@@ -161,14 +165,22 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
    */
   void execute_block_place(TController& controller,
                            const ctv::temporal_penalty& penalty,
-                           const fsm::block_placer::placement_intent& intent) {
+                           const fsm::block_placer::placement_intent& intent,
+                           const rtypes::timestep& t) {
     robot_block_place_visitor_type rplace_op(controller.entity_id(),
                                              controller.block());
     auto* ct = controller.perception()->nearest_ct();
     auto builder = m_ct_manager->builder(ct->id());
     auto structure = m_ct_manager->target(ct->id());
 
-    /* update bookkeeping */
+    /*
+     * We have to do this asynchronous to the rest of metric collection, because
+     * the nest block drop event resets block metrics.
+     */
+    controller.block()->md()->dest_drop_time(t);
+    m_metrics_agg->collect_from_block(controller.block());
+
+    /* update controller bookkeeping */
     robot_previsit_hook(controller, penalty);
 
     /* place the block! */
@@ -195,6 +207,7 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
   }
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
+  metrics_agg_type * const     m_metrics_agg;
   /* clang-format on */
 };
 

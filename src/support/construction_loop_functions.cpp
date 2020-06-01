@@ -85,7 +85,8 @@ struct functor_maps_initializer {
             lf->arena_map(),
             lf->ct_manager(),
             lf->floor(),
-            lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>()));
+            lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>(),
+            lf->m_metrics_agg.get()));
     lf->m_metrics_map->emplace(
         typeid(controller),
         ccops::metrics_extract<T, metrics::silicon_metrics_aggregator>(
@@ -363,9 +364,13 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
   auto mapplicator = ccops::applicator<controller::constructing_controller,
                                        ccops::metrics_extract,
                                        metrics::silicon_metrics_aggregator>(controller);
-  auto target = robot_target(controller);
-  if (nullptr != target) {
-    auto visitor = [&](const auto& v) { mapplicator(v, target->id()); };
+  if (nullptr != controller->perception()->nearest_ct()) {
+    auto visitor = [&](const auto& v) {
+      mapplicator(v, controller->perception()->nearest_ct()->id());
+    };
+    boost::apply_visitor(visitor, m_metrics_map->at(controller->type_index()));
+  } else {
+    auto visitor = [&](const auto& v) { mapplicator(v, rtypes::constants::kNoUUID); };
     boost::apply_visitor(visitor, m_metrics_map->at(controller->type_index()));
   }
 

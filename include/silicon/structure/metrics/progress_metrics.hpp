@@ -46,8 +46,8 @@ NS_START(silicon, structure, metrics);
 class progress_metrics : public virtual rmetrics::base_metrics {
  public:
   /**
-   * \brief Return # of blocks (cumulative count of all types) that have
-   * currently been placed on the structure/subtarget.
+   * \brief Return # of blocks that have been placed on the structure/subtarget
+   * since the last time metrics reset reset.
    */
   virtual size_t n_placed_blocks(void) const = 0;
 

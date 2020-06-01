@@ -62,12 +62,13 @@ class robot_arena_interactor final :
   robot_arena_interactor(carena::base_arena_map* const map,
                          sstructure::ct_manager* manager,
                          argos::CFloorEntity* const floor,
-                         tv::env_dynamics* const envd)
+                         tv::env_dynamics* const envd,
+                         smetrics::silicon_metrics_aggregator* metrics_agg)
       : ER_CLIENT_INIT("silicon.support.robot_arena_interactor"),
         m_arena_pickup(map,
                        floor,
                        envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
-        m_block_place(manager) {}
+        m_block_place(manager, metrics_agg) {}
 
   robot_arena_interactor(robot_arena_interactor&&) = default;
 

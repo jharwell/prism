@@ -79,11 +79,11 @@ stygmergic_configuration fs_acq_checker::operator()(
 
   bool ingress_has_block = ingress_cell.state_has_block();
   bool egress_has_block = egress_cell.state_has_block();
-  ER_DEBUG("robot position: %s/%s LOS origin: %s",
+  ER_TRACE("robot position: %s/%s LOS origin: %s",
            rcppsw::to_string(mc_sensing->rpos3D()).c_str(),
            rcppsw::to_string(mc_sensing->dpos3D()).c_str(),
            rcppsw::to_string(los->abs_ll()).c_str());
-  ER_DEBUG("ingress_los_rel: %s egress_los_rel: %s",
+  ER_TRACE("ingress_los_rel: %s egress_los_rel: %s",
            rcppsw::to_string(ingress_los_rel).c_str(),
            rcppsw::to_string(egress_los_rel).c_str());
 

@@ -93,10 +93,20 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   }
 
   /* structure progress metrics */
-  size_t n_placed_blocks(void) const override { return m_placed.size(); }
+  size_t n_placed_blocks(void) const override { return m_placed_since_reset; }
   size_t n_total_blocks(void) const override {
     return mc_config.cube_blocks.size() + mc_config.ramp_blocks.size();
   }
+  /**
+   * \brief Reset metric collection state for the structure.
+   *
+   * - \ref metrics::structure_progress_metrics for the overall structure
+   * - \ref lane_alloc::metrics::lane_alloc_metrics for each construction lane
+   *   within the structure.
+   */
+
+  void reset_metrics(void) override;
+
   rmath::vector3d originr(void) const { return mc_config.anchor; }
   rmath::vector3z origind(void) const {
     return rmath::dvec2zvec(originr(), mc_arena_grid_res.v());
@@ -227,6 +237,10 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   const rtypes::discretize_ratio   mc_arena_grid_res;
   const config::structure3D_config mc_config;
 
+  /**
+   * How many blocks have been placed since last metric reset.
+   */
+  size_t                           m_placed_since_reset{0};
   size_t                           m_placement_id{0};
   cds::block3D_vectoro             m_placed{};
 

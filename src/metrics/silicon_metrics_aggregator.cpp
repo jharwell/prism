@@ -118,10 +118,18 @@ template<typename TController>
 void silicon_metrics_aggregator::collect_from_controller(
     const TController* c,
     const rtypes::type_uuid& structure_id) {
+  base_metrics_aggregator::collect_from_controller(c);
+
   if (rtypes::constants::kNoUUID != structure_id) {
     collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc",
             *c->fsm()->lane_allocator());
   }
+  collect("blocks::manipulation", *c->block_manip_recorder());
+  collect("blocks::acq_locs2D", *c);
+  collect("blocks::acq_explore_locs2D", *c);
+  collect("blocks::acq_vector_locs2D", *c);
+  collect("blocks::acq_counts", *c);
+  collect("fsm::interference_counts", *c->fsm());
 } /* collect_from_controller() */
 
 void silicon_metrics_aggregator::register_standard_non_target(

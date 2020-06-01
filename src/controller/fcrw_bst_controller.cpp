@@ -89,6 +89,9 @@ void fcrw_bst_controller::control_step(void) {
    */
   saa()->steer_force2D().tracking_reset();
 
+  /* Reset lane allocation metrics so we don't double count allocations */
+  m_fsm->lane_allocator()->reset_metrics();
+
   /*
    * Run the FSM and apply steering forces if normal operation, otherwise handle
    * abnormal operation state.
@@ -107,9 +110,9 @@ RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, entity_acquired_id, *m_fsm, const)
 RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, is_exploring_for_goal, *m_fsm, const);
 RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, acquisition_goal, *m_fsm, const);
 RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, block_transport_goal, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, acquisition_loc, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, current_vector_loc, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, current_explore_loc, *m_fsm, const);
+RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, acquisition_loc3D, *m_fsm, const);
+RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, vector_loc3D, *m_fsm, const);
+RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, explore_loc3D, *m_fsm, const);
 
 RCPPSW_WARNING_DISABLE_PUSH()
 RCPPSW_WARNING_DISABLE_MISSING_VAR_DECL()

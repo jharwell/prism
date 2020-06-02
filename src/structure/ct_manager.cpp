@@ -40,8 +40,8 @@ NS_START(silicon, structure);
  * Constructors/Destructors
  ******************************************************************************/
 ct_manager::ct_manager(carena::base_arena_map* const map,
-                                       cpal::argos_sm_adaptor* const sm,
-                                       sstv::env_dynamics* const envd)
+                       cpal::argos_sm_adaptor* const sm,
+                       sstv::env_dynamics* const envd)
     : ER_CLIENT_INIT("silicon.structure.ct_manager"),
       m_arena_map(map),
       m_sm(sm),
@@ -56,23 +56,21 @@ void ct_manager::init(
     const ssconfig::structure3D_builder_config* builder_config,
     const ssconfig::construct_targets_config* targets_config,
     const rct::config::waveform_config* const placement_penalty_config) {
-    ER_INFO("Initializing %zu construction targets",
+  ER_INFO("Initializing %zu construction targets",
           targets_config->targets.size());
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
     ER_INFO("Initializing construction target %zu", i);
-    auto target =
-        std::make_unique<sstructure::structure3D>(&targets_config->targets[i],
-                                                  m_arena_map,
-                                                  i);
+    auto target = std::make_unique<sstructure::structure3D>(
+        &targets_config->targets[i], m_arena_map, i);
     if (!construction_feasible(target.get())) {
       ER_WARN("Construction target%s infeasible: will not be built",
               rcppsw::to_string(target->id()).c_str());
       continue;
     }
-    auto name = "structure" + rcppsw::to_string(target->id()) + "placement_penalty";
-    auto handler = std::make_unique<sstv::block_op_penalty_handler>(m_arena_map,
-                                                                    placement_penalty_config,
-                                                                    name);
+    auto name =
+        "structure" + rcppsw::to_string(target->id()) + "placement_penalty";
+    auto handler = std::make_unique<sstv::block_op_penalty_handler>(
+        m_arena_map, placement_penalty_config, name);
     m_envd->ct_placement_handler_register(target->id(), std::move(handler));
 
     m_targetsno.push_back(target.get());
@@ -90,7 +88,7 @@ void ct_manager::update(const rtypes::timestep& t) {
       builder->build_static(m_arena_map->blocks(), t);
     }
   } /* for(&builder..) */
-  for (auto *target : targetsno()) {
+  for (auto* target : targetsno()) {
     target->reset_metrics();
   } /* for(*ct..) */
 } /* update() */
@@ -100,26 +98,24 @@ void ct_manager::reset(void) {
     builder->reset();
   } /* for(&builder..) */
 
-  for (auto &target : m_targetso) {
+  for (auto& target : m_targetso) {
     target->reset();
   } /* for(&target..) */
 } /* reset() */
 
 structure3D_builder* ct_manager::builder_lookup(
     const rtypes::type_uuid& target_id) const {
-  auto it = std::find_if(m_builderso.begin(),
-                         m_builderso.end(),
-                         [&](auto& builder) {
-                           return target_id == builder->target_id();
-                         });
+  auto it =
+      std::find_if(m_builderso.begin(), m_builderso.end(), [&](auto& builder) {
+        return target_id == builder->target_id();
+      });
   if (m_builderso.end() != it) {
     return it->get();
   }
   return nullptr;
 } /* builder_lookup() */
 
-structure3D* ct_manager::target_lookup(
-    const rtypes::type_uuid& id) const {
+structure3D* ct_manager::target_lookup(const rtypes::type_uuid& id) const {
   auto it = std::find_if(m_targetso.begin(),
                          m_targetso.end(),
                          [&](auto& target) { return id == target->id(); });
@@ -135,7 +131,7 @@ bool ct_manager::construction_feasible(const structure3D* target) const {
             rcppsw::to_string(target->id()).c_str());
     return false;
   }
-  for (auto &existing_t : m_targetso) {
+  for (auto& existing_t : m_targetso) {
     if (existing_t->xrange().overlaps_with(target->xrange()) &&
         existing_t->yrange().overlaps_with(target->yrange())) {
       ER_WARN("Construction target%s overlaps with target%s",

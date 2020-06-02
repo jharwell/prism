@@ -24,10 +24,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/repr/losQ3D.hpp"
-#include "cosm/ds/block3D_vector.hpp"
-
 #include "rcppsw/ds/grid3D_overlay.hpp"
+
+#include "cosm/ds/block3D_vector.hpp"
+#include "cosm/repr/losQ3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -54,8 +54,7 @@ NS_START(silicon, repr);
  * arena, but it also exposes non-const access to the blocks within that part of
  * the arena by necessity for event processing.
  */
-class builder_los final : public crepr::losQ3D,
-                          public rer::client<builder_los> {
+class builder_los final : public crepr::losQ3D, public rer::client<builder_los> {
  public:
   builder_los(const const_grid_view& c_view,
               const rds::grid3D_overlay<cds::cell3D>* target);

@@ -35,9 +35,7 @@ NS_START(silicon, lane_alloc);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-allocator::allocator(
-    const config::lane_alloc_config* config,
-    rmath::rng* rng)
+allocator::allocator(const config::lane_alloc_config* config, rmath::rng* rng)
     : ER_CLIENT_INIT("silicon.lane_alloc.allocator"),
       mc_config(*config),
       m_rng(rng) {}
@@ -45,8 +43,8 @@ allocator::allocator(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<allocator::lane_geometry> allocator::lane_locs_calc(
-     const scperception::ct_skel_info* target) const {
+std::vector<lane_geometry> allocator::lane_locs_calc(
+    const scperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
 
   /*
@@ -58,39 +56,69 @@ std::vector<allocator::lane_geometry> allocator::lane_locs_calc(
                              0.0);
 
   if (rmath::radians::kZERO == target->orientation()) {
-    for (size_t j = 0; j < target->bbd().y(); j+=2) {
-      auto ingress = target->cell_loc_abs({target->bbd().x() - 1, j, 0}) +
-                     rmath::vector3d::X* target->block_unit_dim();
-      auto egress = target->cell_loc_abs({target->bbd().x() - 1, j + 1, 0}) +
-                    rmath::vector3d::X* target->block_unit_dim();
+    for (size_t j = 0; j < target->bbd().y(); j += 2) {
+      /*
+       * Coordinates of the nearest cell within the bounding box for the target
+       * to the ingress/egress points (which are one cell outside the box).
+       */
+      rmath::vector3z ingress_nearest(target->bbd().x() - 1, j, 0);
+      rmath::vector3z egress_nearest(target->bbd().x() - 1, j + 1, 0);
+
+      /*
+       * The real coordinates of the ingress/egress lanes returned lie in the
+       * "virtual" cells which border the bounding box; this is to ensure
+       * algorithm correctness with all stygmergic configurations.
+       */
+      auto ingress = target->cell_loc_abs(ingress_nearest) +
+                     rmath::vector3d::X * target->block_unit_dim();
+      auto egress = target->cell_loc_abs(egress_nearest) +
+                    rmath::vector3d::X * target->block_unit_dim();
       rmath::vector3d center(target->originr().x() +
-                             (ingress.x() - target->originr().x()) / 2.0,
+                                 (ingress.x() - target->originr().x()) / 2.0,
                              ingress.y(),
                              0.0);
 
-      ret.push_back({ingress + correction,
-              egress + correction,
-              center + correction});
+      auto geometry = lane_geometry(ingress_nearest,
+                                    egress_nearest,
+                                    ingress + correction,
+                                    egress + correction,
+                                    center + correction);
+      ret.push_back(std::move(geometry));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
-    for (size_t i = 0; i < target->bbd().x(); i+=2) {
-      auto ingress = target->cell_loc_abs({i, target->bbd().y() - 1, 0}) -
-                     rmath::vector3d::Y* target->block_unit_dim();
-      auto egress = target->cell_loc_abs({i + 1, target->bbd().y() - 1, 0}) -
-                    rmath::vector3d::Y* target->block_unit_dim();
+    for (size_t i = 0; i < target->bbd().x(); i += 2) {
+      /*
+       * Coordinates of the nearest cell within the bounding box for the target
+       * to the ingress/egress points (which are one cell outside the box).
+       */
+      rmath::vector3z ingress_nearest(i, target->bbd().y() - 1, 0);
+      rmath::vector3z egress_nearest(i + 1, target->bbd().y() - 1, 0);
+
+      /*
+       * The real coordinates of the ingress/egress lanes returned lie in the
+       * "virtual" cells which border the bounding box; this is to ensure
+       * algorithm correctness with all stygmergic configurations.
+       */
+      auto ingress = target->cell_loc_abs(ingress_nearest) +
+                     rmath::vector3d::Y * target->block_unit_dim();
+      auto egress = target->cell_loc_abs(egress_nearest) +
+                    rmath::vector3d::Y * target->block_unit_dim();
       rmath::vector3d center(ingress.x(),
                              target->originr().y() -
-                             (ingress.y() - target->originr().y()) / 2.0,
+                                 (ingress.y() - target->originr().y()) / 2.0,
                              0.0);
-      ret.push_back({ingress + correction,
-              egress + correction,
-              center + correction});
+      auto geometry = lane_geometry(ingress_nearest,
+                                    egress_nearest,
+                                    ingress + correction,
+                                    egress + correction,
+                                    center + correction);
+      ret.push_back(std::move(geometry));
     } /* for(i..) */
   }
   return ret;
 } /* lane_locs_calc() */
 
-repr::construction_lane allocator::operator()(
+std::unique_ptr<repr::construction_lane> allocator::operator()(
     const rmath::vector3d& robot_loc,
     const scperception::ct_skel_info* target) {
   auto locs = lane_locs_calc(target);
@@ -101,8 +129,7 @@ repr::construction_lane allocator::operator()(
    */
   auto hist_it = m_history.find(target->id());
   if (m_history.end() == hist_it) {
-    allocation_history h(locs.size(),
-                         m_rng->uniform(0, locs.size() - 1));
+    allocation_history h(locs.size(), m_rng->uniform(0, locs.size() - 1));
     m_history.insert({target->id(), h});
   }
   auto& hist = m_history.find(target->id())->second;
@@ -115,11 +142,10 @@ repr::construction_lane allocator::operator()(
     hist.prev_lane = id;
   } else if (kPolicyClosest == mc_config.policy) {
     auto pred = [&](const auto& loc1, const auto& loc2) {
-      return (robot_loc - loc1.ingress).length() < (robot_loc - loc2.ingress).length();
+      return (robot_loc - loc1.ingress()).length() <
+             (robot_loc - loc2.ingress()).length();
     };
-    auto it = std::min_element(locs.begin(),
-                               locs.end(),
-                               pred);
+    auto it = std::min_element(locs.begin(), locs.end(), pred);
     id = std::distance(locs.begin(), it);
   } else {
     ER_FATAL_SENTINEL("Bad lane allocation policy '%s'",
@@ -130,19 +156,21 @@ repr::construction_lane allocator::operator()(
   ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
           id,
           rcppsw::to_string(target->orientation()).c_str(),
-          rcppsw::to_string(locs[id].ingress).c_str(),
-          rcppsw::to_string(locs[id].egress).c_str());
-  return repr::construction_lane(id,
-                                 target->orientation(),
-                                 locs[id].ingress,
-                                 locs[id].egress);
+          rcppsw::to_string(locs[id].ingress()).c_str(),
+          rcppsw::to_string(locs[id].egress()).c_str());
+  return std::make_unique<repr::construction_lane>(
+      id,
+      target->orientation(),
+      locs[id].ingress(),
+      locs[id].egress(),
+      locs[id].ingress_nearest_cell(),
+      locs[id].egress_nearest_cell());
 } /* operator()() */
 
 /*******************************************************************************
  * Metrics
  ******************************************************************************/
-size_t allocator::alloc_count(const rtypes::type_uuid& target,
-                              size_t id) const {
+size_t allocator::alloc_count(const rtypes::type_uuid& target, size_t id) const {
   auto it = m_history.find(target);
   if (m_history.end() != it) {
     return it->second.alloc_counts[id];
@@ -151,7 +179,7 @@ size_t allocator::alloc_count(const rtypes::type_uuid& target,
 } /* alloc_count() */
 
 void allocator::reset_metrics(void) {
-  for (auto &pair : m_history) {
+  for (auto& pair : m_history) {
     std::fill(pair.second.alloc_counts.begin(),
               pair.second.alloc_counts.end(),
               0);

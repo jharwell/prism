@@ -37,15 +37,14 @@
 #include "rcppsw/math/vector2.hpp"
 #include "rcppsw/utils/color.hpp"
 
-#include "cosm/pal/argos_sm_adaptor.hpp"
 #include "cosm/metrics/config/metrics_config.hpp"
+#include "cosm/pal/argos_sm_adaptor.hpp"
 
-#include "silicon/support/config/xml/loop_function_repository.hpp"
-#include "silicon/support/tv/tv_manager.hpp"
-#include "silicon/support/tv/config/tv_manager_config.hpp"
 #include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
-
+#include "silicon/support/config/xml/loop_function_repository.hpp"
+#include "silicon/support/tv/config/tv_manager_config.hpp"
+#include "silicon/support/tv/tv_manager.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -104,9 +103,7 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
     return m_ct_manager.get();
   }
 
-  structure::ct_manager* ct_manager(void) {
-    return m_ct_manager.get();
-  }
+  structure::ct_manager* ct_manager(void) { return m_ct_manager.get(); }
 
  private:
   /**

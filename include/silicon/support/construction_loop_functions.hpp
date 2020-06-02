@@ -102,16 +102,16 @@ class construction_loop_functions
       rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
                                               robot_arena_interactor>::type>;
 
-  using losQ3D_updater_map_type = rds::type_map<rmpl::typelist_wrap_apply<
-                                                  controller::typelist,
-                                                  ccops::robot_los_update,
-                                                  rds::grid3D_overlay<cds::cell3D>,
-                                                  repr::builder_los>::type>;
+  using losQ3D_updater_map_type =
+      rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
+                                              ccops::robot_los_update,
+                                              rds::grid3D_overlay<cds::cell3D>,
+                                              repr::builder_los>::type>;
 
-  using metric_extraction_map_type = rds::type_map<rmpl::typelist_wrap_apply<
-                                                     controller::typelist,
-                                                     ccops::metrics_extract,
-                                                     metrics::silicon_metrics_aggregator>::type>;
+  using metric_extraction_map_type = rds::type_map<
+      rmpl::typelist_wrap_apply<controller::typelist,
+                                ccops::metrics_extract,
+                                metrics::silicon_metrics_aggregator>::type>;
 
   using losQ3D_updater_vector = std::vector<losQ3D_updater_map_type>;
 
@@ -169,7 +169,8 @@ class construction_loop_functions
    */
   bool robot_losQ3D_update(controller::constructing_controller* c) const;
 
-  structure::structure3D* robot_target(const controller::constructing_controller* c) const;
+  structure::structure3D* robot_target(
+      const controller::constructing_controller* c) const;
 
   /* clang-format off */
   std::unique_ptr<metrics::silicon_metrics_aggregator> m_metrics_agg;

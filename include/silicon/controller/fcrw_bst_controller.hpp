@@ -31,7 +31,9 @@
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace silicon::fsm { class fcrw_bst_fsm; }
+namespace silicon::fsm {
+class fcrw_bst_fsm;
+}
 
 NS_START(silicon, controller);
 
@@ -78,7 +80,6 @@ class fcrw_bst_controller : public constructing_controller,
   RCPPSW_WRAP_OVERRIDE_DECL(boost::optional<block_placer::placement_intent>,
                             block_placement_intent,
                             const);
-
 
   const fsm::fcrw_bst_fsm* fsm(void) const { return m_fsm.get(); }
   fsm::fcrw_bst_fsm* fsm(void) { return m_fsm.get(); }

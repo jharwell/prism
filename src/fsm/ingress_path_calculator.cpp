@@ -47,27 +47,27 @@ ingress_path_calculator::ingress_path_calculator(
  ******************************************************************************/
 std::vector<rmath::vector2d> ingress_path_calculator::operator()(
     const srepr::construction_lane* lane) const {
-    auto pos = mc_sensing->rpos2D();
+  auto pos = mc_sensing->rpos2D();
 
-    /* 1st point: robot's current location */
-    std::vector<rmath::vector2d> path{pos};
+  /* 1st point: robot's current location */
+  std::vector<rmath::vector2d> path{pos};
 
-    if (rmath::radians::kZERO == lane->orientation()) {
-      /* 2nd point: get aligned with middle of ingress lane */
-      path.push_back({pos.x(), lane->ingress().y()});
-      /* 3rd point: ingress */
-      path.push_back(lane->ingress().to_2D());
+  if (rmath::radians::kZERO == lane->orientation()) {
+    /* 2nd point: get aligned with middle of ingress lane */
+    path.push_back({pos.x(), lane->ingress().y()});
+    /* 3rd point: ingress */
+    path.push_back(lane->ingress().to_2D());
 
-    } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-      /* 2nd point: get aligned with ingress lane */
-      path.push_back({lane->ingress().x(), pos.y()});
-      /* 3rd point: ingress */
-      path.push_back(lane->ingress().to_2D());
-    } else {
-      ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                        rcppsw::to_string(lane->orientation()).c_str());
-    }
-    return path;
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    /* 2nd point: get aligned with ingress lane */
+    path.push_back({lane->ingress().x(), pos.y()});
+    /* 3rd point: ingress */
+    path.push_back(lane->ingress().to_2D());
+  } else {
+    ER_FATAL_SENTINEL("Bad orientation: '%s'",
+                      rcppsw::to_string(lane->orientation()).c_str());
+  }
+  return path;
 } /* operator()() */
 
 NS_END(fsm, silicon);

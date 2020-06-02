@@ -51,6 +51,7 @@ struct ct_block_place_spec_value {
   using interactor_status_type = interactor_status;
   using robot_block_place_visitor_type = scops::ct_block_place_visitor;
   using metrics_agg_type = smetrics::silicon_metrics_aggregator;
+  using arena_map_type = carena::base_arena_map;
 };
 
 /*

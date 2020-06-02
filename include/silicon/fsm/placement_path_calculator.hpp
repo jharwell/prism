@@ -29,8 +29,8 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -74,7 +74,8 @@ class placement_path_calculator : public rer::client<placement_path_calculator> 
 
   /* Not move/copy constructable/assignable by default */
   placement_path_calculator(const placement_path_calculator&) = delete;
-  const placement_path_calculator& operator=(const placement_path_calculator&) = delete;
+  const placement_path_calculator& operator=(const placement_path_calculator&) =
+      delete;
   placement_path_calculator(placement_path_calculator&&) = delete;
   placement_path_calculator& operator=(placement_path_calculator&&) = delete;
 

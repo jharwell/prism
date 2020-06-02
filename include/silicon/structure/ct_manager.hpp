@@ -24,15 +24,15 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "rcppsw/types/timestep.hpp"
 #include "rcppsw/control/config/waveform_config.hpp"
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/types/timestep.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/ds/ct_vector.hpp"
+#include "silicon/silicon.hpp"
 #include "silicon/support/tv/env_dynamics.hpp"
 
 /*******************************************************************************
@@ -73,8 +73,8 @@ NS_START(silicon, structure);
 class ct_manager : public rer::client<ct_manager> {
  public:
   ct_manager(carena::base_arena_map* map,
-                     cpal::argos_sm_adaptor* sm,
-                     sstv::env_dynamics* envd);
+             cpal::argos_sm_adaptor* sm,
+             sstv::env_dynamics* envd);
 
   ~ct_manager(void) override;
 
@@ -101,22 +101,18 @@ class ct_manager : public rer::client<ct_manager> {
    * \brief The vector of all targets to be built in the arena.
    */
 
-  const ds::ct_vectorno& targetsno(void) const {
-    return m_targetsno;
-  }
-  const ds::ct_vectorro& targetsro(void) const {
-    return m_targetsro;
-  }
+  const ds::ct_vectorno& targetsno(void) const { return m_targetsno; }
+  const ds::ct_vectorro& targetsro(void) const { return m_targetsro; }
 
   const support::tv::block_op_penalty_handler* placement_handler(
       const rtypes::type_uuid& target_id) const {
     return m_envd->ct_penalty_handler(sstv::block_op_src::ekCT_BLOCK_MANIP,
-                                       target_id);
+                                      target_id);
   }
   support::tv::block_op_penalty_handler* placement_handler(
       const rtypes::type_uuid& target_id) {
     return m_envd->ct_penalty_handler(sstv::block_op_src::ekCT_BLOCK_MANIP,
-                                       target_id);
+                                      target_id);
   }
 
   const structure3D_builder* builder(const rtypes::type_uuid& target_id) const {

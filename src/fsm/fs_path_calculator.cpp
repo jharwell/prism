@@ -39,8 +39,7 @@ NS_START(silicon, fsm);
  ******************************************************************************/
 fs_path_calculator::fs_path_calculator(
     const csubsystem::sensing_subsystemQ3D* sensing)
-    : ER_CLIENT_INIT("silicon.fsm.fs_path_calculator"),
-      mc_sensing(sensing) {}
+    : ER_CLIENT_INIT("silicon.fsm.fs_path_calculator"), mc_sensing(sensing) {}
 
 /*******************************************************************************
  * Member Functions

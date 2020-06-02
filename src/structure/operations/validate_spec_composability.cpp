@@ -33,14 +33,12 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_spec_composability::operator()() const {
   for (size_t z = 0; z < mc_structure->zdsize() - 1; ++z) {
-    auto lower = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
-                                              mc_structure,
-                                              z),
-                         mc_structure);
-    auto upper = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
-                                              mc_structure,
-                                              z+1),
-                         mc_structure);
+    auto lower =
+        slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z),
+                mc_structure);
+    auto upper =
+        slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z + 1),
+                mc_structure);
     ER_CHECK(is_composable(lower, upper),
              "Layer%zu->layer%zu not composable",
              z,
@@ -94,7 +92,8 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
          * the layers, regardless of block type/orientation in the upper layer).
          */
         for (size_t m = 1; m < specl->extent; ++m) {
-          auto spec_extent = mc_structure->cell_spec_retrieve(upper.access(i, j).loc());
+          auto spec_extent =
+              mc_structure->cell_spec_retrieve(upper.access(i, j).loc());
           if (cfsm::cell3D_state::ekST_EMPTY != spec_extent->state) {
             return false;
           }

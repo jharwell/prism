@@ -26,8 +26,8 @@
 #include "cosm/repr/base_block3D.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
-#include "silicon/fsm/fcrw_bst_fsm.hpp"
 #include "silicon/fsm/construction_signal.hpp"
+#include "silicon/fsm/fcrw_bst_fsm.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -38,15 +38,13 @@ NS_START(silicon, controller, operations, detail);
  * Constructors/Destructor
  ******************************************************************************/
 ct_block_place::ct_block_place(const rtypes::type_uuid& robot_id,
-                                             crepr::base_block3D* const block)
-    : cell3D_op(block->dpos3D()),
-      mc_robot_id(robot_id) {}
+                               const rmath::vector3z& pos)
+    : cell3D_op(pos), mc_robot_id(robot_id) {}
 
 /*******************************************************************************
  * Single Target Construction
  ******************************************************************************/
-void ct_block_place::visit(
-    controller::fcrw_bst_controller& controller) {
+void ct_block_place::visit(controller::fcrw_bst_controller& controller) {
   controller.ndc_pusht();
 
   visit(*controller.fsm());

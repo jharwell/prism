@@ -25,17 +25,18 @@
 
 #include "rcppsw/patterns/fsm/event.hpp"
 
+#include "cosm/ds/cell3D.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/robots/footbot/footbot_sensing_subsystem.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
-#include "cosm/ds/cell3D.hpp"
 
-#include "silicon/fsm/construction_signal.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/fs_path_calculator.hpp"
+#include "silicon/fsm/construction_signal.hpp"
 #include "silicon/fsm/fs_acq_checker.hpp"
-#include "silicon/fsm/placement_path_calculator.hpp"
+#include "silicon/fsm/fs_path_calculator.hpp"
 #include "silicon/fsm/placement_intent_calculator.hpp"
+#include "silicon/fsm/placement_path_calculator.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -60,20 +61,18 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
           mc_state_map,
           HFSM_STATE_MAP_ENTRY_EX(&start),
           HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_frontier_set,
-                                     nullptr,
-                                     &entry_acquire_frontier_set,
-                                     nullptr),
-          HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot,
-                                     nullptr,
-                                     nullptr,
-                                     nullptr),
+                                      nullptr,
+                                      &entry_acquire_frontier_set,
+                                      nullptr),
+          HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot, nullptr, nullptr, nullptr),
           HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_placement_loc,
-                                     nullptr,
-                                     nullptr,
-                                     nullptr),
+                                      nullptr,
+                                      nullptr,
+                                      nullptr),
           HFSM_STATE_MAP_ENTRY_EX(&finished)) {}
 
-acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) = default;
+acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
+    default;
 
 /*******************************************************************************
  * States
@@ -87,12 +86,11 @@ HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
 }
 
-HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
-                     acquire_frontier_set) {
-  ER_ASSERT(lane_alignment_verify_pos(lane()->ingress().to_2D(),
-                                      lane()->orientation()),
+HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
+  ER_ASSERT(lane_alignment_verify_pos(allocated_lane()->ingress().to_2D(),
+                                      allocated_lane()->orientation()),
             "Bad alignment (position) during frontier set acqusition");
-  ER_ASSERT(lane_alignment_verify_azimuth(lane()->orientation()),
+  ER_ASSERT(lane_alignment_verify_azimuth(allocated_lane()->orientation()),
             "Bad alignment (orientation) during frontier set acquisition");
 
   /*
@@ -102,7 +100,8 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
    */
   if (robot_trajectory_proximity()) {
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
+                   std::make_unique<robot_wait_data>(
+                       robot_proximity_type::ekTRAJECTORY));
     return rpfsm::event_signal::ekHANDLED;
   }
   /* No robots in front, but not in nest yet */
@@ -110,12 +109,12 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
     ER_TRACE("Robot=%s/%s: No robots detected, in nest",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str());
-    saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
+    saa()->steer_force2D().accum(
+        saa()->steer_force2D().path_following(m_path.get()));
     return rpfsm::event_signal::ekHANDLED;
   } else {
     /* somewhere in nest or on structure */
-    auto acq = fs_acq_checker(sensing(),
-                              perception())(lane());
+    auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
     ER_TRACE("Robot=%s/%s: On structure, acq=%d",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
@@ -123,11 +122,12 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
 
     if (stygmergic_configuration::ekNONE == acq) {
       /* no robots in front, but not there yet */
-      saa()->steer_force2D().accum(saa()->steer_force2D().path_following(m_path.get()));
+      saa()->steer_force2D().accum(
+          saa()->steer_force2D().path_following(m_path.get()));
     } else { /* arrived! */
       auto calculator = placement_path_calculator(sensing(), perception());
-      m_path = std::make_unique<csteer2D::ds::path_state>(calculator(lane(),
-                                                                     acq));
+      m_path = std::make_unique<csteer2D::ds::path_state>(
+          calculator(allocated_lane(), acq));
       internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
     }
     return rpfsm::event_signal::ekHANDLED;
@@ -144,7 +144,8 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
    */
   if (robot_manhattan_proximity()) {
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
+                   std::make_unique<robot_wait_data>(
+                       robot_proximity_type::ekMANHATTAN));
   } else {
     if (!m_path->is_complete()) {
       auto force = saa()->steer_force2D().path_following(m_path.get());
@@ -169,20 +170,21 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
  ******************************************************************************/
 void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg) {
   static const uint8_t kTRANSITIONS[] = {
-    fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* start */
-    rpfsm::event_signal::ekFATAL, /* acquire_frontier_set */
-    rpfsm::event_signal::ekFATAL, /* wait_for_robot */
-    rpfsm::event_signal::ekFATAL, /* acquire placement loc */
-    fsm_state::ekST_ACQUIRE_FRONTIER_SET,  /* finished */
+      fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* start */
+      rpfsm::event_signal::ekFATAL,         /* acquire_frontier_set */
+      rpfsm::event_signal::ekFATAL,         /* wait_for_robot */
+      rpfsm::event_signal::ekFATAL,         /* acquire placement loc */
+      fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* finished */
   };
   FSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, fsm_state::ekST_MAX_STATES);
 
   auto* const a = dynamic_cast<repr::construction_lane*>(c_arg);
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
-  lane(std::move(*a));
+  allocated_lane(a);
 
   auto calculator = fs_path_calculator(sensing());
-  m_path = std::make_unique<csteer2D::ds::path_state>(calculator(lane()));
+  m_path =
+      std::make_unique<csteer2D::ds::path_state>(calculator(allocated_lane()));
   external_event(kTRANSITIONS[current_state()]);
 } /* task_start() */
 
@@ -198,11 +200,12 @@ void acquire_block_placement_site_fsm::init(void) {
   util_hfsm::init();
 } /* init() */
 
-block_placer::placement_intent acquire_block_placement_site_fsm::placement_intent_calc(void) const {
+block_placer::placement_intent acquire_block_placement_site_fsm::
+    placement_intent_calc(void) const {
   ER_ASSERT(fsm_state::ekST_FINISHED == current_state(),
             "Placement cell can only be calculated once the FSM finishes");
   auto calculator = placement_intent_calculator(sensing(), perception());
-  return calculator(lane());
+  return calculator(allocated_lane());
 } /* placement_intent_calc() */
 
 NS_END(fsm, silicon);

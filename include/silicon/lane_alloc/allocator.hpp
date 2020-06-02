@@ -24,20 +24,22 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
 #include <map>
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "rcppsw/er/client.hpp"
-#include "rcppsw/math/vector3.hpp"
 #include "rcppsw/math/rng.hpp"
+#include "rcppsw/math/vector3.hpp"
 #include "rcppsw/types/type_uuid.hpp"
 
-#include "silicon/silicon.hpp"
+#include "silicon/controller/perception/ct_skel_info.hpp"
 #include "silicon/lane_alloc/config/lane_alloc_config.hpp"
+#include "silicon/lane_alloc/lane_geometry.hpp"
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics.hpp"
 #include "silicon/repr/construction_lane.hpp"
-#include "silicon/controller/perception/ct_skel_info.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -62,8 +64,7 @@ class allocator : public rer::client<allocator>,
   static constexpr const char kPolicyLRU[] = "lru";
   static constexpr const char kPolicyClosest[] = "closest";
 
-  allocator(const config::lane_alloc_config* config,
-            rmath::rng* rng);
+  allocator(const config::lane_alloc_config* config, rmath::rng* rng);
 
   /* Not copy constructable/assignable by default */
   allocator(const allocator&) = delete;
@@ -73,22 +74,17 @@ class allocator : public rer::client<allocator>,
   size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
   void reset_metrics(void) override;
 
-  repr::construction_lane operator()(const rmath::vector3d& robot_loc,
-                                     const scperception::ct_skel_info* target);
+  std::unique_ptr<repr::construction_lane> operator()(
+      const rmath::vector3d& robot_loc,
+      const scperception::ct_skel_info* target);
 
  private:
   struct allocation_history {
-    allocation_history(size_t n_lanes, size_t prev) :
-        alloc_counts(n_lanes), prev_lane(prev) {}
+    allocation_history(size_t n_lanes, size_t prev)
+        : alloc_counts(n_lanes), prev_lane(prev) {}
 
     std::vector<size_t> alloc_counts{};
     size_t prev_lane{0};
-  };
-
-  struct lane_geometry {
-    rmath::vector3d ingress{};
-    rmath::vector3d egress{};
-    rmath::vector3d center{};
   };
 
   /**

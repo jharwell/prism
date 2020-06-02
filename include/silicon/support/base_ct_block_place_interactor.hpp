@@ -24,15 +24,18 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <utility>
+
 #include "cosm/arena/operations/free_block_drop.hpp"
-#include "cosm/tv/temporal_penalty.hpp"
-#include "cosm/repr/ramp_block3D.hpp"
 #include "cosm/repr/cube_block3D.hpp"
+#include "cosm/repr/ramp_block3D.hpp"
+#include "cosm/tv/temporal_penalty.hpp"
+#include "cosm/arena/operations/nest_block_process.hpp"
 
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/structure/ct_manager.hpp"
-#include "silicon/support/mpl/ct_block_place_spec.hpp"
 #include "silicon/structure/structure3D_builder.hpp"
+#include "silicon/support/mpl/ct_block_place_spec.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -51,27 +54,32 @@ NS_START(silicon, support);
  * target structure as needed.
  */
 template <typename TController, typename TControllerSpecMap>
-class base_ct_block_place_interactor : public rer::client<base_ct_block_place_interactor<TController, TControllerSpecMap>> {
+class base_ct_block_place_interactor
+    : public rer::client<
+          base_ct_block_place_interactor<TController, TControllerSpecMap>> {
  public:
-  using controller_spec = typename boost::mpl::at<TControllerSpecMap,
-                                                  TController>::type;
-  using interactor_status_type = typename controller_spec::interactor_status_type;
-  using robot_block_place_visitor_type = typename controller_spec::robot_block_place_visitor_type;
+  using controller_spec =
+      typename boost::mpl::at<TControllerSpecMap, TController>::type;
+  using interactor_status_type =
+      typename controller_spec::interactor_status_type;
+  using robot_block_place_visitor_type =
+      typename controller_spec::robot_block_place_visitor_type;
   using penalty_handler_type = typename controller_spec::penalty_handler_type;
   using metrics_agg_type = typename controller_spec::metrics_agg_type;
+  using arena_map_type = typename controller_spec::arena_map_type;
 
   base_ct_block_place_interactor(sstructure::ct_manager* const manager,
+                                 arena_map_type* const arena_map,
                                  metrics_agg_type* const metrics_agg)
       : ER_CLIENT_INIT("silicon.support.base_ct_block_place_interactor"),
         m_ct_manager(manager),
+        m_arena_map(arena_map),
         m_metrics_agg(metrics_agg) {}
 
-  base_ct_block_place_interactor(
-      base_ct_block_place_interactor&&) = default;
+  base_ct_block_place_interactor(base_ct_block_place_interactor&&) = default;
 
   /* Not copy-constructible/assignable by default. */
-  base_ct_block_place_interactor(
-      const base_ct_block_place_interactor&) = delete;
+  base_ct_block_place_interactor(const base_ct_block_place_interactor&) = delete;
   base_ct_block_place_interactor& operator=(
       const base_ct_block_place_interactor&) = delete;
 
@@ -157,7 +165,7 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
 
     handler->penalty_remove(p);
     ER_ASSERT(!handler->is_serving_penalty(controller),
-                "Multiple instances of same controller serving cache penalty");
+              "Multiple instances of same controller serving cache penalty");
   }
 
   /**
@@ -168,7 +176,10 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
                            const fsm::block_placer::placement_intent& intent,
                            const rtypes::timestep& t) {
     robot_block_place_visitor_type rplace_op(controller.entity_id(),
-                                             controller.block());
+                                             controller.block()->dpos3D());
+    caops::nest_block_process_visitor aproc_op(controller.block()->id(),
+                                               t);
+
     auto* ct = controller.perception()->nearest_ct();
     auto builder = m_ct_manager->builder(ct->id());
     auto structure = m_ct_manager->target(ct->id());
@@ -184,14 +195,21 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
     robot_previsit_hook(controller, penalty);
 
     /* place the block! */
-    ER_ASSERT(builder->place_block(controller.block_release(),
+    auto block = controller.block_release();
+    ER_ASSERT(builder->place_block(std::move(block),
                                    intent.site,
                                    intent.orientation),
               "Failed to place block on target%s@%s, orientation=%s",
               rcppsw::to_string(structure->id()).c_str(),
               rcppsw::to_string(intent.site).c_str(),
               rcppsw::to_string(intent.orientation).c_str());
+    /*
+     * Distribute the block so that the # blocks available to robots in the
+     * arena stays the same after the build process "consumes" one.
+     */
+    aproc_op.visit(*m_arena_map);
 
+    /* update controller with block placement */
     rplace_op.visit(controller);
   }
 
@@ -207,6 +225,7 @@ class base_ct_block_place_interactor : public rer::client<base_ct_block_place_in
   }
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
+  arena_map_type* const        m_arena_map;
   metrics_agg_type * const     m_metrics_agg;
   /* clang-format on */
 };

@@ -63,7 +63,8 @@ void structure_progress_metrics_collector::reset(void) {
   reset_after_interval();
 } /* reset() */
 
-boost::optional<std::string> structure_progress_metrics_collector::csv_line_build(void) {
+boost::optional<std::string> structure_progress_metrics_collector::csv_line_build(
+    void) {
   if (!(timestep() % interval() == 0)) {
     return boost::none;
   }

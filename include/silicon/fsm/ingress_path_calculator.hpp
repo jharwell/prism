@@ -65,7 +65,8 @@ class ingress_path_calculator : public rer::client<ingress_path_calculator> {
 
   /* Not move/copy constructable/assignable by default */
   ingress_path_calculator(const ingress_path_calculator&) = delete;
-  const ingress_path_calculator& operator=(const ingress_path_calculator&) = delete;
+  const ingress_path_calculator& operator=(const ingress_path_calculator&) =
+      delete;
   ingress_path_calculator(ingress_path_calculator&&) = delete;
   ingress_path_calculator& operator=(ingress_path_calculator&&) = delete;
 

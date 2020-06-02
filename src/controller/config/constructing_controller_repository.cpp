@@ -53,12 +53,10 @@ constructing_controller_repository::constructing_controller_repository(void) {
       cscxml::sensing_subsystemQ3D_parser::kXMLRoot);
   parser_register<rmath::config::xml::rng_parser, rmath::config::rng_config>(
       rmath::config::xml::rng_parser::kXMLRoot);
-  parser_register<slaconfig::xml::lane_alloc_parser,
-                  slaconfig::lane_alloc_config>(
-                      slaconfig::xml::lane_alloc_parser::kXMLRoot);
-  parser_register<cspconfig::xml::perception_parser,
-                  cspconfig::perception_config>(
-                      cspconfig::xml::perception_parser::kXMLRoot);
+  parser_register<slaconfig::xml::lane_alloc_parser, slaconfig::lane_alloc_config>(
+      slaconfig::xml::lane_alloc_parser::kXMLRoot);
+  parser_register<cspconfig::xml::perception_parser, cspconfig::perception_config>(
+      cspconfig::xml::perception_parser::kXMLRoot);
 
   parser_find<cscxml::sensing_subsystemQ3D_parser>(
       cscxml::sensing_subsystemQ3D_parser::kXMLRoot)

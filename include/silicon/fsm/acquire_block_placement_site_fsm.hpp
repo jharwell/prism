@@ -24,16 +24,15 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-#include <memory>
-
 #include <boost/optional.hpp>
+#include <memory>
+#include <vector>
 
 #include "cosm/steer2D/ds/path_state.hpp"
 
+#include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
-#include "silicon/fsm/block_placer.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -52,23 +51,28 @@ NS_START(silicon, fsm);
  * appropriate place on the structure. After this has been done, the FSM signals
  * that it has completed its task.
  */
-class acquire_block_placement_site_fsm : public builder_util_fsm,
-                                         public rer::client<acquire_block_placement_site_fsm> {
+class acquire_block_placement_site_fsm
+    : public builder_util_fsm,
+      public rer::client<acquire_block_placement_site_fsm> {
  public:
-  acquire_block_placement_site_fsm(const scperception::builder_perception_subsystem* perception,
-              crfootbot::footbot_saa_subsystem* saa,
-              rmath::rng* rng);
+  acquire_block_placement_site_fsm(
+      const scperception::builder_perception_subsystem* perception,
+      crfootbot::footbot_saa_subsystem* saa,
+      rmath::rng* rng);
 
   ~acquire_block_placement_site_fsm(void) override;
 
   /* not copy constructible or copy assignable by default */
-  acquire_block_placement_site_fsm(const acquire_block_placement_site_fsm&) = delete;
-  acquire_block_placement_site_fsm& operator=(const acquire_block_placement_site_fsm&) = delete;
+  acquire_block_placement_site_fsm(const acquire_block_placement_site_fsm&) =
+      delete;
+  acquire_block_placement_site_fsm& operator=(
+      const acquire_block_placement_site_fsm&) = delete;
 
   /* taskable overrides */
   void task_reset(void) override { init(); }
   bool task_running(void) const override {
-    return current_state() != fsm_state::ekST_START && current_state() != fsm_state::ekST_FINISHED;
+    return current_state() != fsm_state::ekST_START &&
+           current_state() != fsm_state::ekST_FINISHED;
   }
   void task_execute(void) override;
   void task_start(cta::taskable_argument* c_arg) override;
@@ -87,7 +91,7 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
    *
    * Can only be called if the FSM is in the finished state.
    */
-  block_placer::placement_intent  placement_intent_calc(void) const;
+  block_placer::placement_intent placement_intent_calc(void) const;
 
  private:
   enum fsm_state {
@@ -119,19 +123,16 @@ class acquire_block_placement_site_fsm : public builder_util_fsm,
     ekST_MAX_STATES
   };
 
-
   /* inherited states */
   HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, const robot_wait_data);
 
   /* FSM states */
   HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
-                        acquire_frontier_set);
+  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, acquire_frontier_set);
 
   HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
                         entry_acquire_frontier_set);
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
-                        acquire_placement_loc);
+  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, acquire_placement_loc);
 
   HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
 

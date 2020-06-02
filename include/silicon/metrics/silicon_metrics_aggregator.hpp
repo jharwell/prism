@@ -28,13 +28,13 @@
 
 #include "rcppsw/types/type_uuid.hpp"
 
+#include "cosm/ds/config/grid2D_config.hpp"
 #include "cosm/metrics/base_metrics_aggregator.hpp"
 #include "cosm/metrics/config/metrics_config.hpp"
-#include "cosm/ds/config/grid2D_config.hpp"
 
-#include "silicon/silicon.hpp"
-#include "silicon/ds/ct_vector.hpp"
 #include "silicon/controller/controller_fwd.hpp"
+#include "silicon/ds/ct_vector.hpp"
+#include "silicon/silicon.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
 
 /*******************************************************************************
@@ -69,7 +69,7 @@ class silicon_metrics_aggregator
   void collect_from_tv(const support::tv::tv_manager* tvm);
   void collect_from_ct(const structure::ct_manager* manager);
 
-  template<typename TController>
+  template <typename TController>
   void collect_from_controller(const TController* c,
                                const rtypes::type_uuid& structure_id);
 
@@ -98,8 +98,9 @@ class silicon_metrics_aggregator
    * \brief Register collectors that need extra arguments that pertain to
    * construction targets (# construction lanes and structure ID).
    */
-  void register_with_target_lanes_and_id(const cmconfig::metrics_config* mconfig,
-                                         const sstructure::structure3D* structure);
+  void register_with_target_lanes_and_id(
+      const cmconfig::metrics_config* mconfig,
+      const sstructure::structure3D* structure);
 
   /**
    * \brief Register collectors that need extra arguments that pertain to

@@ -54,7 +54,8 @@ void builder_perception_subsystem::update() {
   /* Open to extension (I will probably need to put stuff here eventually...) */
 } /* update() */
 
-boost::optional<rmath::ranged> builder_perception_subsystem::ct_xrange(void) const {
+boost::optional<rmath::ranged> builder_perception_subsystem::ct_xrange(
+    void) const {
   auto* target = nearest_ct();
   if (nullptr != target) {
     return boost::make_optional(target->xrange());
@@ -62,7 +63,8 @@ boost::optional<rmath::ranged> builder_perception_subsystem::ct_xrange(void) con
   return boost::none;
 } /* ct_xrange() */
 
-boost::optional<rmath::ranged> builder_perception_subsystem::ct_yrange(void) const {
+boost::optional<rmath::ranged> builder_perception_subsystem::ct_yrange(
+    void) const {
   auto* target = nearest_ct();
   if (nullptr != target) {
     return boost::make_optional(target->yrange());
@@ -70,7 +72,8 @@ boost::optional<rmath::ranged> builder_perception_subsystem::ct_yrange(void) con
   return boost::none;
 } /* ct_yrange() */
 
-const scperception::ct_skel_info* builder_perception_subsystem::nearest_ct(void) const {
+const scperception::ct_skel_info* builder_perception_subsystem::nearest_ct(
+    void) const {
   return m_receptor->nearest_ct(mc_sensing->rpos3D());
 } /* nearest_ct() */
 

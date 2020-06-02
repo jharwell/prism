@@ -29,10 +29,10 @@ RCPPSW_WARNING_DISABLE_POP()
 
 #include <argos3/core/simulator/entity/controllable_entity.h>
 
-#include "cosm/vis/block_carry_visualizer.hpp"
-#include "cosm/vis/steer2D_visualizer.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
+#include "cosm/vis/block_carry_visualizer.hpp"
 #include "cosm/vis/los_visualizer.hpp"
+#include "cosm/vis/steer2D_visualizer.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
@@ -86,14 +86,13 @@ void construction_qt_user_functions::Draw(argos::CFootBotEntity& c_entity) {
      */
     double correction = ct->block_unit_dim();
     std::vector<rmath::vector2d> points = {
-      ct->cell_loc_abs(los->abs_ll()).to_2D() - controller->rpos2D(),
-      ct->cell_loc_abs(los->abs_ul()).to_2D() - controller->rpos2D() +
-      rmath::vector2d(0.0, correction),
-      ct->cell_loc_abs(los->abs_ur()).to_2D() - controller->rpos2D() +
-      rmath::vector2d(correction, correction),
-      ct->cell_loc_abs(los->abs_lr()).to_2D() - controller->rpos2D() +
-      rmath::vector2d(correction, 0.0)
-    };
+        ct->cell_loc_abs(los->abs_ll()).to_2D() - controller->rpos2D(),
+        ct->cell_loc_abs(los->abs_ul()).to_2D() - controller->rpos2D() +
+            rmath::vector2d(0.0, correction),
+        ct->cell_loc_abs(los->abs_ur()).to_2D() - controller->rpos2D() +
+            rmath::vector2d(correction, correction),
+        ct->cell_loc_abs(los->abs_lr()).to_2D() - controller->rpos2D() +
+            rmath::vector2d(correction, 0.0)};
     cvis::los_visualizer(this)(points);
   }
 }

@@ -24,26 +24,26 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <boost/optional.hpp>
 #include <memory>
 #include <string>
 #include <typeindex>
-#include <boost/optional.hpp>
 
 #include "cosm/controller/block_carrying_controller.hpp"
 #include "cosm/controller/irv_recipient_controller.hpp"
 #include "cosm/controller/manip_event_recorder.hpp"
+#include "cosm/fsm/block_transporter.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
 #include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
 #include "cosm/subsystem/perception/config/perception_config.hpp"
-#include "cosm/fsm/block_transporter.hpp"
 
+#include "silicon/fsm/block_placer.hpp"
+#include "silicon/fsm/construction_transport_goal.hpp"
 #include "silicon/metrics/blocks/block_manip_events.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/fsm/construction_transport_goal.hpp"
-#include "silicon/fsm/block_placer.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -71,13 +71,14 @@ NS_START(silicon, controller);
  * allows this class to be used as the robot controller handle when rendering QT
  * graphics overlays.
  */
-class constructing_controller : public cpal::argos_controllerQ3D_adaptor,
-                                public ccontroller::irv_recipient_controller,
-                                public ccontroller::block_carrying_controller,
-                                public fsm::block_placer,
-                                public cfsm::block_transporter<fsm::construction_transport_goal>,
+class constructing_controller
+    : public cpal::argos_controllerQ3D_adaptor,
+      public ccontroller::irv_recipient_controller,
+      public ccontroller::block_carrying_controller,
+      public fsm::block_placer,
+      public cfsm::block_transporter<fsm::construction_transport_goal>,
 
-                                public rer::client<constructing_controller> {
+      public rer::client<constructing_controller> {
  public:
   using block_manip_recorder_type = ccontroller::manip_event_recorder<
       metrics::blocks::block_manip_events::ekMAX_EVENTS>;

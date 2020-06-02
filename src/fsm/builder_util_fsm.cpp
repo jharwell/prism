@@ -42,14 +42,17 @@ const rmath::radians builder_util_fsm::kROBOT_AZIMUTH_TOL = rmath::radians(0.10)
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-builder_util_fsm::builder_util_fsm(const scperception::builder_perception_subsystem* perception,
-                         crfootbot::footbot_saa_subsystem* saa,
-                                   rmath::rng* rng,
-                                   uint8_t max_states)
+builder_util_fsm::builder_util_fsm(
+    const scperception::builder_perception_subsystem* perception,
+    crfootbot::footbot_saa_subsystem* saa,
+    rmath::rng* rng,
+    uint8_t max_states)
     : util_hfsm(saa, rng, max_states),
       ER_CLIENT_INIT("silicon.fsm.builder_util"),
       HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       mc_perception(perception) {}
+
+builder_util_fsm::~builder_util_fsm(void) = default;
 
 /*******************************************************************************
  * States
@@ -81,7 +84,8 @@ bool builder_util_fsm::lane_alignment_verify_pos(
   auto dist_diff = sensing()->rpos2D() - lane_point;
   if (rmath::radians::kZERO == orientation) {
     ER_CHECK(std::fabs(dist_diff.y()) <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s in Y for lane orientated@'%s': %f > %f",
+             "Robot@%s too far from ingress@%s in Y for lane orientated@'%s': "
+             "%f > %f",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(lane_point).c_str(),
              rcppsw::to_string(orientation).c_str(),
@@ -89,7 +93,8 @@ bool builder_util_fsm::lane_alignment_verify_pos(
              kLANE_VECTOR_DIST_TOL);
   } else if (rmath::radians::kPI_OVER_TWO == orientation) {
     ER_CHECK(std::fabs(dist_diff.x()) <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s in X for lane orientated@'%s': %f > %f",
+             "Robot@%s too far from ingress@%s in X for lane orientated@'%s': "
+             "%f > %f",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(lane_point).c_str(),
              rcppsw::to_string(orientation).c_str(),
@@ -109,11 +114,12 @@ bool builder_util_fsm::lane_alignment_verify_azimuth(
     const rmath::radians& orientation) const {
   rmath::radians angle_diff;
   if (rmath::radians::kZERO == orientation) {
-    angle_diff = (rmath::radians::kPI -
-                  saa()->sensing()->azimuth()).signed_normalize();
+    angle_diff =
+        (rmath::radians::kPI - saa()->sensing()->azimuth()).signed_normalize();
   } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO -
-                  saa()->sensing()->azimuth()).signed_normalize();
+    angle_diff =
+        (rmath::radians::kTHREE_PI_OVER_TWO - saa()->sensing()->azimuth())
+            .signed_normalize();
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(orientation).c_str());
@@ -137,25 +143,24 @@ bool builder_util_fsm::robot_trajectory_proximity(void) const {
   auto robot_azimuth = saa()->sensing()->azimuth();
 
   bool prox = false;
-  for (auto &r : readings) {
+  for (auto& r : readings) {
     /* something other than a robot */
     if (rutils::color::kBLUE != r.color) {
       continue;
     }
-    auto other_dpos = rmath::dvec2zvec(r.vec,
-                                       mc_perception->arena_resolution().v());
-    rmath::range<rmath::radians> pos_x(rmath::radians::kZERO + kROBOT_AZIMUTH_TOL,
-                                       rmath::radians::kZERO - kROBOT_AZIMUTH_TOL);
+    auto other_dpos =
+        rmath::dvec2zvec(r.vec, mc_perception->arena_resolution().v());
+    rmath::range<rmath::radians> pos_x(
+        rmath::radians::kZERO + kROBOT_AZIMUTH_TOL,
+        rmath::radians::kZERO - kROBOT_AZIMUTH_TOL);
     rmath::range<rmath::radians> neg_x(rmath::radians::kPI + kROBOT_AZIMUTH_TOL,
                                        rmath::radians::kPI - kROBOT_AZIMUTH_TOL);
-    rmath::range<rmath::radians> pos_y(rmath::radians::kPI_OVER_TWO +
-                                       kROBOT_AZIMUTH_TOL,
-                                       rmath::radians::kPI_OVER_TWO -
-                                       kROBOT_AZIMUTH_TOL);
-    rmath::range<rmath::radians> neg_y(rmath::radians::kTHREE_PI_OVER_TWO +
-                                       kROBOT_AZIMUTH_TOL,
-                                       rmath::radians::kTHREE_PI_OVER_TWO -
-                                       kROBOT_AZIMUTH_TOL);
+    rmath::range<rmath::radians> pos_y(
+        rmath::radians::kPI_OVER_TWO + kROBOT_AZIMUTH_TOL,
+        rmath::radians::kPI_OVER_TWO - kROBOT_AZIMUTH_TOL);
+    rmath::range<rmath::radians> neg_y(
+        rmath::radians::kTHREE_PI_OVER_TWO + kROBOT_AZIMUTH_TOL,
+        rmath::radians::kTHREE_PI_OVER_TWO - kROBOT_AZIMUTH_TOL);
     if (pos_x.contains(robot_azimuth)) {
       prox |= (other_dpos.x() - robot_dpos.x()) <= 2;
     } else if (neg_x.contains(robot_azimuth)) {
@@ -175,13 +180,13 @@ bool builder_util_fsm::robot_manhattan_proximity(void) const {
   auto robot_dpos = saa()->sensing()->dpos2D();
 
   bool prox = false;
-  for (auto &r : readings) {
+  for (auto& r : readings) {
     /* something other than a robot */
     if (rutils::color::kBLUE != r.color) {
       continue;
     }
-    auto other_dpos = rmath::dvec2zvec(r.vec,
-                                       mc_perception->arena_resolution().v());
+    auto other_dpos =
+        rmath::dvec2zvec(r.vec, mc_perception->arena_resolution().v());
     size_t dist = std::abs(static_cast<int>(robot_dpos.x() - other_dpos.x())) +
                   std::abs(static_cast<int>(robot_dpos.y() - other_dpos.y()));
     prox |= (dist <= 2);

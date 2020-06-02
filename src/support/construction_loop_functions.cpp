@@ -37,19 +37,19 @@
 #include "cosm/controller/operations/applicator.hpp"
 #include "cosm/controller/operations/metrics_extract.hpp"
 #include "cosm/convergence/convergence_calculator.hpp"
-#include "cosm/metrics/blocks/transport_metrics_collector.hpp"
 #include "cosm/interactors/applicator.hpp"
+#include "cosm/metrics/blocks/transport_metrics_collector.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
 
+#include "silicon/controller/fcrw_bst_controller.hpp"
+#include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/structure/ct_manager.hpp"
+#include "silicon/structure/structure3D.hpp"
 #include "silicon/support/interactor_status.hpp"
 #include "silicon/support/robot_arena_interactor.hpp"
 #include "silicon/support/robot_configurer.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
-#include "silicon/structure/structure3D.hpp"
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/controller/fcrw_bst_controller.hpp"
-#include "silicon/structure/ct_manager.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -104,8 +104,9 @@ struct functor_maps_initializer {
       auto& updater = lf->m_losQ3D_updaters[i];
       updater.emplace(typeid(controller),
                       ccops::robot_los_update<T,
-                      rds::grid3D_overlay<cds::cell3D>,
-                      repr::builder_los>(lf->ct_manager()->targetsno()[i]));
+                                              rds::grid3D_overlay<cds::cell3D>,
+                                              repr::builder_los>(
+                          lf->ct_manager()->targetsno()[i]));
     } /* for(i..) */
   }
 
@@ -153,8 +154,8 @@ void construction_loop_functions::private_init(void) {
    * arena map. The arena map pads the size obtained from the XML file after
    * initialization, so we just need to grab it.
    */
-  auto padded_size = rmath::vector2d(arena_map()->xrsize(),
-                                     arena_map()->yrsize());
+  auto padded_size =
+      rmath::vector2d(arena_map()->xrsize(), arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
   auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.dims = padded_size;
@@ -190,10 +191,10 @@ void construction_loop_functions::private_init(void) {
               "Controller '%s' type '%s' not in construction configuration map",
               controller->GetId().c_str(),
               controller->type_index().name());
-    auto applicator = ccops::applicator<controller::constructing_controller,
-    robot_configurer>(controller);
-    boost::apply_visitor(applicator,
-                         config_map.at(controller->type_index()));
+    auto applicator =
+        ccops::applicator<controller::constructing_controller, robot_configurer>(
+            controller);
+    boost::apply_visitor(applicator, config_map.at(controller->type_index()));
   };
 
   /*
@@ -281,7 +282,7 @@ argos::CColor construction_loop_functions::GetFloorColor(
   rmath::vector2d tmp(plane_pos.GetX(), plane_pos.GetY());
 
   /* check if the point is inside any of the nests */
-  for (auto *nest : arena_map()->nests()) {
+  for (auto* nest : arena_map()->nests()) {
     if (nest->contains_point(tmp)) {
       return argos::CColor(nest->color().red(),
                            nest->color().green(),
@@ -348,11 +349,9 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
   auto iapplicator =
       cinteractors::applicator<controller::constructing_controller,
                                robot_arena_interactor>(
-                                   controller,
-                                   rtypes::timestep(GetSpace().GetSimulationClock()));
-  auto status =
-      boost::apply_visitor(iapplicator,
-                           m_interactor_map->at(controller->type_index()));
+          controller, rtypes::timestep(GetSpace().GetSimulationClock()));
+  boost::apply_visitor(iapplicator,
+                       m_interactor_map->at(controller->type_index()));
 
   /* Collect metrics from robot, now that it has finished interacting with the */
   /* environment and no more changes to its state will occur this timestep. */
@@ -361,19 +360,21 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
             "Controller '%s' type '%s' not in construction metrics map",
             controller->GetId().c_str(),
             controller->type_index().name());
-  auto mapplicator = ccops::applicator<controller::constructing_controller,
-                                       ccops::metrics_extract,
-                                       metrics::silicon_metrics_aggregator>(controller);
+  auto mapplicator =
+      ccops::applicator<controller::constructing_controller,
+                        ccops::metrics_extract,
+                        metrics::silicon_metrics_aggregator>(controller);
   if (nullptr != controller->perception()->nearest_ct()) {
     auto visitor = [&](const auto& v) {
       mapplicator(v, controller->perception()->nearest_ct()->id());
     };
     boost::apply_visitor(visitor, m_metrics_map->at(controller->type_index()));
   } else {
-    auto visitor = [&](const auto& v) { mapplicator(v, rtypes::constants::kNoUUID); };
+    auto visitor = [&](const auto& v) {
+      mapplicator(v, rtypes::constants::kNoUUID);
+    };
     boost::apply_visitor(visitor, m_metrics_map->at(controller->type_index()));
   }
-
 
   controller->block_manip_recorder()->reset();
 } /* robot_post_step() */
@@ -399,13 +400,13 @@ bool construction_loop_functions::robot_losQ3D_update(
                                       ccops::robot_los_update,
                                       rds::grid3D_overlay<cds::cell3D>,
                                       repr::builder_los>(c);
-    boost::apply_visitor(applicator,
-                         m_losQ3D_updaters[index].find(c->type_index())->second);
+  boost::apply_visitor(applicator,
+                       m_losQ3D_updaters[index].find(c->type_index())->second);
   return true;
 } /* robot_losQ3D_update() */
 
 structure::structure3D* construction_loop_functions::robot_target(
-const controller::constructing_controller* c) const {
+    const controller::constructing_controller* c) const {
   /*
    * Figure out if the robot is current within the 2D bounds of any
    * structure, OR if it is JUST outside the 2D bounds of any structure.
@@ -420,9 +421,9 @@ const controller::constructing_controller* c) const {
    */
   auto target_it = std::find_if(ct_manager()->targetsno().begin(),
                                 ct_manager()->targetsno().end(),
-                                [&](auto *target) {
+                                [&](auto* target) {
                                   return target->contains(c->rpos2D(), false) ||
-                                  target->contains(c->rpos2D(), true);
+                                         target->contains(c->rpos2D(), true);
                                 });
 
   if (ct_manager()->targetsno().end() == target_it) {

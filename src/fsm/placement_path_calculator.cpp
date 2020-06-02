@@ -27,8 +27,8 @@
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -51,7 +51,7 @@ placement_path_calculator::placement_path_calculator(
 std::vector<rmath::vector2d> placement_path_calculator::operator()(
     const srepr::construction_lane* lane,
     const stygmergic_configuration& acq) const {
-    auto dpos = mc_sensing->dpos2D();
+  auto dpos = mc_sensing->dpos2D();
   auto rpos = mc_sensing->rpos2D();
   auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = {rpos};
@@ -64,36 +64,36 @@ std::vector<rmath::vector2d> placement_path_calculator::operator()(
   if (rmath::radians::kZERO == lane->orientation()) {
     if (stygmergic_configuration::ekLANE_EMPTY == acq ||
         stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      rmath::vector2z forward1(dpos.x() - 1 *ct->unit_dim_factor(), dpos.y());
-      path.push_back(rmath::zvec2dvec(forward1,
-                                      mc_perception->arena_resolution().v()));
+      rmath::vector2z forward1(dpos.x() - 1 * ct->unit_dim_factor(), dpos.y());
+      path.push_back(
+          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
     } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      rmath::vector2z forward1(dpos.x() - 1 *ct->unit_dim_factor(), dpos.y());
-      rmath::vector2z right1(dpos.x() - 1 *ct->unit_dim_factor(),
-                             dpos.y() + 1 *ct->unit_dim_factor());
-      path.push_back(rmath::zvec2dvec(forward1,
-                                      mc_perception->arena_resolution().v()));
-      path.push_back(rmath::zvec2dvec(right1,
-                                      mc_perception->arena_resolution().v()));
+      rmath::vector2z forward1(dpos.x() - 1 * ct->unit_dim_factor(), dpos.y());
+      rmath::vector2z right1(dpos.x() - 1 * ct->unit_dim_factor(),
+                             dpos.y() + 1 * ct->unit_dim_factor());
+      path.push_back(
+          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
+      path.push_back(
+          rmath::zvec2dvec(right1, mc_perception->arena_resolution().v()));
     }
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     if (stygmergic_configuration::ekLANE_EMPTY == acq ||
         stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 *ct->unit_dim_factor());
-      path.push_back(rmath::zvec2dvec(forward1,
-                                      mc_perception->arena_resolution().v()));
+      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 * ct->unit_dim_factor());
+      path.push_back(
+          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
     } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 *ct->unit_dim_factor());
-      rmath::vector2z right1(dpos.x() - 1 *ct->unit_dim_factor(),
+      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 * ct->unit_dim_factor());
+      rmath::vector2z right1(dpos.x() - 1 * ct->unit_dim_factor(),
                              dpos.y() - 1 * ct->unit_dim_factor());
-      path.push_back(rmath::zvec2dvec(forward1,
-                                      mc_perception->arena_resolution().v()));
-      path.push_back(rmath::zvec2dvec(right1,
-                                      mc_perception->arena_resolution().v()));
+      path.push_back(
+          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
+      path.push_back(
+          rmath::zvec2dvec(right1, mc_perception->arena_resolution().v()));
     }
   }
   return path;

@@ -26,8 +26,8 @@
  ******************************************************************************/
 #include "rcppsw/er/client.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -62,8 +62,7 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
   fs_acq_checker(const csubsystem::sensing_subsystemQ3D* sensing,
                  const scperception::builder_perception_subsystem* perception);
 
-  stygmergic_configuration operator()(
-      const srepr::construction_lane* lane) const;
+  stygmergic_configuration operator()(const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
   fs_acq_checker(const fs_acq_checker&) = delete;

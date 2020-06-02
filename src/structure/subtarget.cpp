@@ -76,7 +76,7 @@ size_t subtarget::total_block_count_calc(const slice2D& slice,
       auto* spec = structure->cell_spec_retrieve(slice.access(i, j).loc());
       count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
     } /* for(j..) */
-  } /* for(i..) */
+  }   /* for(i..) */
   return count;
 } /* total_block_count_calc() */
 

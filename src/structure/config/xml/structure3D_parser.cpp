@@ -40,8 +40,8 @@ void structure3D_parser::parse(const ticpp::Element& node) {
 
   m_grid.parse(node);
 
-  m_config->bounding_box = *m_grid.config_get<
-    cds::config::xml::grid3D_parser::config_type>();
+  m_config->bounding_box =
+      *m_grid.config_get<cds::config::xml::grid3D_parser::config_type>();
 
   if (nullptr != node.FirstChild("cube_blocks", false)) {
     auto cube_blocks = node_get(node, "cube_blocks");

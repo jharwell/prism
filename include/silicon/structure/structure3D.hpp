@@ -24,24 +24,24 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <string>
-#include <vector>
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "rcppsw/ds/grid3D_overlay.hpp"
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector3.hpp"
 
+#include "cosm/ds/block3D_vector.hpp"
 #include "cosm/ds/cell3D.hpp"
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
-#include "cosm/ds/block3D_vector.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/metrics/structure_state_metrics.hpp"
 #include "silicon/structure/metrics/structure_progress_metrics.hpp"
+#include "silicon/structure/metrics/structure_state_metrics.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

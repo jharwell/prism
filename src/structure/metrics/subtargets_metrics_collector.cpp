@@ -46,8 +46,7 @@ subtargets_metrics_collector::subtargets_metrics_collector(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> subtargets_metrics_collector::csv_header_cols(
-    void) const {
+std::list<std::string> subtargets_metrics_collector::csv_header_cols(void) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>();
   for (size_t i = 0; i < m_interval.size(); ++i) {
@@ -80,8 +79,7 @@ boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) 
   return boost::make_optional(line);
 } /* csv_line_build() */
 
-void subtargets_metrics_collector::collect(
-    const rmetrics::base_metrics& metrics) {
+void subtargets_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].n_placed_count += m.n_placed_blocks();

@@ -35,14 +35,14 @@ NS_START(silicon, structure);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-slice2D::slice2D(const slice_coords& coords,
-                 const structure3D* structure)
+slice2D::slice2D(const slice_coords& coords, const structure3D* structure)
     : ER_CLIENT_INIT("silicon.structure.slice2D"),
       mc_coords(coords),
       mc_view(structure->subgrid(mc_coords.ll, mc_coords.ur)),
       mc_structure(structure) {
-  ER_ASSERT(rmath::vector3z::X == mc_coords.axis || rmath::vector3z::Y == mc_coords.axis ||
-            rmath::vector3z::Z == mc_coords.axis,
+  ER_ASSERT(rmath::vector3z::X == mc_coords.axis ||
+                rmath::vector3z::Y == mc_coords.axis ||
+                rmath::vector3z::Z == mc_coords.axis,
             "Bad slice axis %s",
             rcppsw::to_string(mc_coords.axis).c_str());
 }
@@ -102,7 +102,8 @@ bool slice2D::is_traversable_d1(void) const {
         if (i + spec->extent >= d1()) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
 
         /*
          * Ramp blocks, if they are oriented along the X axis (in either
@@ -138,7 +139,8 @@ bool slice2D::is_traversable_d1(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kZERO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -182,7 +184,8 @@ bool slice2D::is_traversable_d2(void) const {
         if (j + spec->extent >= d2()) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
 
         /*
          * Ramp blocks, if they are oriented along the Y axis (in either
@@ -218,7 +221,8 @@ bool slice2D::is_traversable_d2(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kPI_OVER_TWO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -261,7 +265,8 @@ bool slice2D::is_feasible(void) const {
       if (crepr::block_type::ekRAMP == spec->block_type &&
           rmath::radians::kZERO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(access(i + m, j).loc());
+          auto* extent_spec =
+              mc_structure->cell_spec_retrieve(access(i + m, j).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -269,7 +274,8 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(access(i, j + m).loc());
+          auto* extent_spec =
+              mc_structure->cell_spec_retrieve(access(i, j + m).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -277,7 +283,8 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kPI == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(access(i - m, j).loc());
+          auto* extent_spec =
+              mc_structure->cell_spec_retrieve(access(i - m, j).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -285,7 +292,8 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(access(i, j - m).loc());
+          auto* extent_spec =
+              mc_structure->cell_spec_retrieve(access(i, j - m).loc());
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -303,7 +311,8 @@ bool slice2D::cell_is_exterior(const cds::cell3D& cell) const {
 } /* cell_is_hole() */
 
 bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
-  auto* ijkminus1 = mc_structure->cell_spec_retrieve(cell.loc() - rmath::vector3z::Z);
+  auto* ijkminus1 =
+      mc_structure->cell_spec_retrieve(cell.loc() - rmath::vector3z::Z);
 
   size_t face_count = 0;
   /*
@@ -423,14 +432,11 @@ const cds::cell3D& slice2D::access(size_t d1, size_t d2) const {
 
 bool slice2D::contains(const rmath::vector3z& coord) const {
   if (rmath::vector3z::X == mc_coords.axis) {
-    return coord.x() == mc_coords.offset &&
-        coord.y() < d1() && coord.z() < d2();
+    return coord.x() == mc_coords.offset && coord.y() < d1() && coord.z() < d2();
   } else if (rmath::vector3z::Y == mc_coords.axis) {
-    return coord.y() == mc_coords.offset &&
-        coord.x() < d1() && coord.z() < d2();
+    return coord.y() == mc_coords.offset && coord.x() < d1() && coord.z() < d2();
   } else {
-    return coord.z() == mc_coords.offset &&
-        coord.x() < d1() && coord.y() < d2();
+    return coord.z() == mc_coords.offset && coord.x() < d1() && coord.y() < d2();
   }
 } /* contains() */
 
@@ -441,26 +447,20 @@ slice2D::slice_coords slice2D::coords_calc(const rmath::vector3z& axis,
                                            const structure3D* structure,
                                            size_t offset) {
   if (rmath::vector3z::X == axis) {
-    return {
-      axis,
-          offset,
-      {offset, 0, 0},
-      {offset + 1, structure->ydsize(), structure->zdsize()}
-    };
+    return {axis,
+            offset,
+            {offset, 0, 0},
+            {offset + 1, structure->ydsize(), structure->zdsize()}};
   } else if (rmath::vector3z::Y == axis) {
-    return {
-      axis,
-          offset,
-          {0, offset, 0},
-          {structure->xdsize(), offset + 1, structure->zdsize()}
-    };
+    return {axis,
+            offset,
+            {0, offset, 0},
+            {structure->xdsize(), offset + 1, structure->zdsize()}};
   } else {
-    return {
-      axis,
-          offset,
-      {0, 0, offset},
-      {structure->xdsize(), structure->ydsize(), offset + 1}
-    };
+    return {axis,
+            offset,
+            {0, 0, offset},
+            {structure->xdsize(), structure->ydsize(), offset + 1}};
   }
 }
 

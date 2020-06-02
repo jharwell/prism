@@ -24,11 +24,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/tv/temporal_penalty.hpp"
 #include "cosm/interactors/base_arena_block_pickup.hpp"
+#include "cosm/tv/temporal_penalty.hpp"
 
-#include "silicon/metrics/blocks/block_manip_events.hpp"
 #include "silicon/fsm/construction_acq_goal.hpp"
+#include "silicon/metrics/blocks/block_manip_events.hpp"
 #include "silicon/support/tv/block_op_src.hpp"
 
 /*******************************************************************************
@@ -47,38 +47,41 @@ NS_START(silicon, support);
  * timestep.
  */
 template <typename TController, typename TControllerSpecMap>
-class arena_block_pickup_interactor final : public cinteractors::base_arena_block_pickup<TController,
-                                                                                       TControllerSpecMap> {
+class arena_block_pickup_interactor final
+    : public cinteractors::base_arena_block_pickup<TController,
+                                                   TControllerSpecMap> {
  public:
-  using typename cinteractors::base_arena_block_pickup<TController,
-                                                      TControllerSpecMap>::arena_map_type;
-  using typename cinteractors::base_arena_block_pickup<TController,
-                                                      TControllerSpecMap>::penalty_handler_type;
+  using typename cinteractors::
+      base_arena_block_pickup<TController, TControllerSpecMap>::arena_map_type;
+  using typename cinteractors::base_arena_block_pickup<
+      TController,
+      TControllerSpecMap>::penalty_handler_type;
 
-arena_block_pickup_interactor(arena_map_type* const map,
-                             argos::CFloorEntity* const floor,
-                             penalty_handler_type* const handler)
-      : cinteractors::base_arena_block_pickup<TController, TControllerSpecMap>(map,
-                                                                              floor,
-                                                                              handler) {}
+  arena_block_pickup_interactor(arena_map_type* const map,
+                                argos::CFloorEntity* const floor,
+                                penalty_handler_type* const handler)
+      : cinteractors::base_arena_block_pickup<TController, TControllerSpecMap>(
+            map,
+            floor,
+            handler) {}
 
   arena_block_pickup_interactor(arena_block_pickup_interactor&&) = default;
 
   /* Not copy-constructible/assignable by default. */
   arena_block_pickup_interactor(const arena_block_pickup_interactor&) = delete;
-  arena_block_pickup_interactor& operator=(const arena_block_pickup_interactor&) = delete;
+  arena_block_pickup_interactor& operator=(
+      const arena_block_pickup_interactor&) = delete;
 
   void robot_penalty_init(const TController& controller,
                           const rtypes::timestep& t,
                           penalty_handler_type* handler) override {
-    handler->penalty_init(controller,
-                          t,
-                          tv::block_op_src::ekARENA_PICKUP);
+    handler->penalty_init(controller, t, tv::block_op_src::ekARENA_PICKUP);
   }
 
   bool robot_goal_acquired(const TController& controller) const override {
     return controller.goal_acquired() &&
-        fsm::construction_acq_goal::ekFORAGING_BLOCK == controller.acquisition_goal();
+           fsm::construction_acq_goal::ekFORAGING_BLOCK ==
+               controller.acquisition_goal();
   }
 
   void robot_previsit_hook(TController& controller,

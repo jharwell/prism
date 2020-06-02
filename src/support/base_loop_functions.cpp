@@ -29,9 +29,9 @@
 #include "cosm/pal/argos_swarm_iterator.hpp"
 #include "cosm/vis/config/visualization_config.hpp"
 
+#include "silicon/structure/ct_manager.hpp"
 #include "silicon/support/tv/config/tv_manager_config.hpp"
 #include "silicon/support/tv/silicon_pd_adaptor.hpp"
-#include "silicon/structure/ct_manager.hpp"
 
 /*******************************************************************************
  * Namespaces

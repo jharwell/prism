@@ -23,8 +23,8 @@
  ******************************************************************************/
 #include "silicon/structure/structure3D_builder.hpp"
 
-#include <typeindex>
 #include <boost/ref.hpp>
+#include <typeindex>
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/pal/argos_sm_adaptor.hpp"
@@ -157,6 +157,7 @@ bool structure3D_builder::place_block(std::unique_ptr<crepr::base_block3D> block
    * entities.
    */
   block->id(m_target->placement_id());
+
   /*
    * This variant is non-owning, because ownership is not needed until we
    * actually call the place_block operation.
@@ -188,9 +189,8 @@ bool structure3D_builder::place_block(std::unique_ptr<crepr::base_block3D> block
    * placed on the structure so that the embodiment is placed at its updated
    * location.
    */
-  crepr::embodied_block_variant embodiment = m_sm->make_embodied(variantno,
-                                                                 z_rotation,
-                                                                 m_target->id());
+  crepr::embodied_block_variant embodiment =
+      m_sm->make_embodied(variantno, z_rotation, m_target->id());
   boost::apply_visitor(std::bind(operations::set_block_embodiment(),
                                  std::placeholders::_1,
                                  embodiment),
@@ -213,8 +213,7 @@ crepr::base_block3D* structure3D_builder::build_block_find(
      *
      * are available for selection.
      */
-    if (!m_target->contains(blocks[eff_i]) &&
-        !blocks[eff_i]->is_out_of_sight()) {
+    if (!m_target->contains(blocks[eff_i]) && !blocks[eff_i]->is_out_of_sight()) {
       if (crepr::block_type::ekCUBE == type &&
           crepr::block_type::ekCUBE == blocks[eff_i]->md()->type()) {
         ER_TRACE("Found cube build block%d", blocks[eff_i]->id().v());
@@ -238,15 +237,15 @@ bool structure3D_builder::block_placement_valid(
 
 crepr::block3D_variant structure3D_builder::create_variant(
     crepr::base_block3D* block) const {
-      if (crepr::block_type::ekCUBE == block->md()->type()) {
-        return {static_cast<crepr::cube_block3D*>(block)};
-      } else if (crepr::block_type::ekRAMP == block->md()->type()) {
-        return {static_cast<crepr::ramp_block3D*>(block)};
-      } else {
-        ER_FATAL_SENTINEL("Bad 3D block type %d",
-                          rcppsw::as_underlying(block->md()->type()));
-        return {};
-      }
+  if (crepr::block_type::ekCUBE == block->md()->type()) {
+    return {static_cast<crepr::cube_block3D*>(block)};
+  } else if (crepr::block_type::ekRAMP == block->md()->type()) {
+    return {static_cast<crepr::ramp_block3D*>(block)};
+  } else {
+    ER_FATAL_SENTINEL("Bad 3D block type %d",
+                      rcppsw::as_underlying(block->md()->type()));
+    return {};
+  }
 } /* create_variant() */
 
 void structure3D_builder::reset(void) {

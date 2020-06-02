@@ -100,7 +100,7 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
   /* update cells for block extent */
   if (rmath::radians::kZERO == mc_z_rot) {
     auto ub = static_cast<size_t>(mc_cell.x() +
-                                    block->dims3D().x() / block->dims3D().y());
+                                  block->dims3D().x() / block->dims3D().y());
     for (size_t x = mc_cell.x() + 1; x < ub; ++x) {
       rmath::vector3z extent_loc(x, mc_cell.y(), mc_cell.z());
       cell3D_block_extent_visitor op(extent_loc, block.get());
@@ -108,7 +108,7 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
     } /* for(x..) */
   } else if (rmath::radians::kPI_OVER_TWO == mc_z_rot) {
     auto ub = static_cast<size_t>(mc_cell.y() +
-                                    block->dims3D().x() / block->dims3D().y());
+                                  block->dims3D().x() / block->dims3D().y());
     for (size_t y = mc_cell.y() + 1; y < ub; ++y) {
       rmath::vector3z extent_loc(mc_cell.x(), y, mc_cell.z());
       cell3D_block_extent_visitor op(extent_loc, block.get());

@@ -151,7 +151,7 @@
     <construct_targets>
       <ramp anchor="4.0,4.0,0.0" id="ramp0" orientation="0.0">
         <grid3D resolution="0.4"
-                dims="3.2,0.8,1.6"/>
+                dims="3.2,1.6,1.6"/>
         >
         <ramp_blocks>
           <ramp_block cell="0,0,3" id="0" />

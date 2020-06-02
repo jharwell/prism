@@ -35,10 +35,6 @@
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace cosm::repr {
-class base_block3D;
-} /* namespace cosm::repr */
-
 NS_START(silicon, controller, operations, detail);
 
 /*******************************************************************************
@@ -73,7 +69,7 @@ class ct_block_place : public cdops::cell3D_op {
 
  protected:
   ct_block_place(const rtypes::type_uuid& robot_id,
-                 crepr::base_block3D* block);
+                 const rmath::vector3z& pos);
 
  private:
   /* clang-format on */
@@ -83,7 +79,7 @@ class ct_block_place : public cdops::cell3D_op {
 
 NS_END(detail);
 
-using ct_block_place_visitor = rpvisitor::generic_precise_visitor<detail::ct_block_place>;
+using ct_block_place_visitor = rpvisitor::filtered_visitor<detail::ct_block_place>;
 
 NS_END(operations, controller, silicon);
 

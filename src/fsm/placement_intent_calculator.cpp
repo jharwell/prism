@@ -27,8 +27,8 @@
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,7 +50,6 @@ placement_intent_calculator::placement_intent_calculator(
  ******************************************************************************/
 block_placer::placement_intent placement_intent_calculator::operator()(
     const srepr::construction_lane* lane) const {
-
   auto pos = mc_sensing->dpos3D();
   auto* ct = mc_perception->nearest_ct();
   block_placer::placement_intent ret;

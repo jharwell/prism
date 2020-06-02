@@ -31,8 +31,8 @@
 #include "cosm/vis/config/visualization_config.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
-#include "silicon/ds/ct_vector.hpp"
 #include "silicon/controller/perception/perception_receptor.hpp"
+#include "silicon/ds/ct_vector.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -53,8 +53,7 @@ class robot_configurer : public boost::static_visitor<void> {
  public:
   robot_configurer(const cvconfig::visualization_config* const vis_config,
                    const sds::ct_vectorro& targets)
-      : mc_vis_config(vis_config),
-        mc_targets(targets) {}
+      : mc_vis_config(vis_config), mc_targets(targets) {}
 
   robot_configurer(robot_configurer&&) = default;
 
@@ -69,7 +68,7 @@ class robot_configurer : public boost::static_visitor<void> {
       c->display_los(mc_vis_config->robot_los);
     }
     scperception::perception_receptor::ct_info_vector infos;
-    for (auto *t : mc_targets) {
+    for (auto* t : mc_targets) {
       infos.push_back(scperception::ct_skel_info(t));
     } /* for(&t..) */
 

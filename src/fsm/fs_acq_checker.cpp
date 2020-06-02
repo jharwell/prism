@@ -25,11 +25,11 @@
 
 #include "rcppsw/math/radians.hpp"
 
-#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 #include "cosm/ds/cell3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -67,8 +67,13 @@ stygmergic_configuration fs_acq_checker::operator()(
    * validated.
    */
   if (rmath::radians::kZERO == lane->orientation()) {
-    ingress_los_rel = rmath::vector3z(0, 0, 0);
-    egress_los_rel = rmath::vector3z::Y;
+    /*
+     * The LOS LL corner might not line up perfectly with our construction lane,
+     * so we correct for that.
+     */
+    auto offset = lane->ingress_nearest_cell().y() - los->abs_ll().y();
+    ingress_los_rel = rmath::vector3z(0, offset, 0);
+    egress_los_rel = rmath::vector3z(0, 1 + offset, 0);
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());

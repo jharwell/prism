@@ -62,8 +62,7 @@ NS_START(silicon, fsm);
  */
 class fs_path_calculator : public rer::client<fs_path_calculator> {
  public:
-  explicit fs_path_calculator(
-      const csubsystem::sensing_subsystemQ3D* sensing);
+  explicit fs_path_calculator(const csubsystem::sensing_subsystemQ3D* sensing);
 
   std::vector<rmath::vector2d> operator()(
       const srepr::construction_lane* lane) const;

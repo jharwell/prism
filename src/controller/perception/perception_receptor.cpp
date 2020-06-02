@@ -22,9 +22,10 @@
  * Includes
  ******************************************************************************/
 #include "silicon/controller/perception/perception_receptor.hpp"
-#include "silicon/structure/structure3D.hpp"
 
 #include <algorithm>
+
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -38,9 +39,11 @@ NS_START(silicon, controller, perception);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-const scperception::ct_skel_info* perception_receptor::nearest_ct(const rmath::vector3d& pos) const {
+const scperception::ct_skel_info* perception_receptor::nearest_ct(
+    const rmath::vector3d& pos) const {
   auto pred = [&](const auto& target1, const auto& target2) {
-    return (target1.originr() - pos).length() < (target2.originr() - pos).length();
+    return (target1.originr() - pos).length() <
+           (target2.originr() - pos).length();
   };
   auto it = std::min_element(m_targets.begin(), m_targets.end(), pred);
   if (m_targets.end() != it) {

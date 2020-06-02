@@ -48,9 +48,10 @@ NS_START(silicon, fsm);
 class structure_egress_fsm : public builder_util_fsm,
                              public rer::client<structure_egress_fsm> {
  public:
-  structure_egress_fsm(const scperception::builder_perception_subsystem* perception,
-              crfootbot::footbot_saa_subsystem* saa,
-              rmath::rng* rng);
+  structure_egress_fsm(
+      const scperception::builder_perception_subsystem* perception,
+      crfootbot::footbot_saa_subsystem* saa,
+      rmath::rng* rng);
 
   ~structure_egress_fsm(void) override = default;
 

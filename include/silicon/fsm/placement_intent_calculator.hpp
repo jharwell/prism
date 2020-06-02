@@ -29,8 +29,8 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/fsm/block_placer.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -62,7 +62,8 @@ NS_START(silicon, fsm);
  * position on the structure, so the calculation is pulled out into its own
  * class.
  */
-class placement_intent_calculator : public rer::client<placement_intent_calculator> {
+class placement_intent_calculator
+    : public rer::client<placement_intent_calculator> {
  public:
   placement_intent_calculator(
       const csubsystem::sensing_subsystemQ3D* sensing,
@@ -73,7 +74,8 @@ class placement_intent_calculator : public rer::client<placement_intent_calculat
 
   /* Not move/copy constructable/assignable by default */
   placement_intent_calculator(const placement_intent_calculator&) = delete;
-  const placement_intent_calculator& operator=(const placement_intent_calculator&) = delete;
+  const placement_intent_calculator& operator=(
+      const placement_intent_calculator&) = delete;
   placement_intent_calculator(placement_intent_calculator&&) = delete;
   placement_intent_calculator& operator=(placement_intent_calculator&&) = delete;
 

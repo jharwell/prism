@@ -68,8 +68,7 @@ class slice2D : public rer::client<slice2D> {
                                   const structure3D* structure,
                                   size_t offset);
 
-  slice2D(const slice_coords& coords,
-          const structure3D* structure);
+  slice2D(const slice_coords& coords, const structure3D* structure);
 
   /* Not copy constructable/assignable by default */
   slice2D(const slice2D&) = delete;

@@ -27,15 +27,15 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/types/timestep.hpp"
 
+#include "silicon/metrics/silicon_metrics_aggregator.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/support/arena_block_pickup_interactor.hpp"
+#include "silicon/support/ct_block_place_interactor.hpp"
 #include "silicon/support/interactor_status.hpp"
-#include "silicon/support/tv/env_dynamics.hpp"
 #include "silicon/support/mpl/arena_block_pickup_spec.hpp"
 #include "silicon/support/mpl/ct_block_place_spec.hpp"
-#include "silicon/support/arena_block_pickup_interactor.hpp"
 #include "silicon/support/tv/block_op_src.hpp"
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
-#include "silicon/support/ct_block_place_interactor.hpp"
+#include "silicon/support/tv/env_dynamics.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -56,8 +56,8 @@ NS_START(silicon, support);
  *
  */
 template <typename TControllerType>
-class robot_arena_interactor final :
-    public rer::client<robot_arena_interactor<TControllerType>> {
+class robot_arena_interactor final
+    : public rer::client<robot_arena_interactor<TControllerType>> {
  public:
   robot_arena_interactor(carena::base_arena_map* const map,
                          sstructure::ct_manager* manager,
@@ -68,7 +68,7 @@ class robot_arena_interactor final :
         m_arena_pickup(map,
                        floor,
                        envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
-        m_block_place(manager, metrics_agg) {}
+        m_block_place(manager, map, metrics_agg) {}
 
   robot_arena_interactor(robot_arena_interactor&&) = default;
 
@@ -92,8 +92,10 @@ class robot_arena_interactor final :
   }
 
  private:
-  using arena_pickup_spec = typename mpl::arena_block_pickup_spec<controller::typelist>;
-  using block_place_spec = typename mpl::ct_block_place_spec<controller::typelist>;
+  using arena_pickup_spec =
+      typename mpl::arena_block_pickup_spec<controller::typelist>;
+  using block_place_spec =
+      typename mpl::ct_block_place_spec<controller::typelist>;
 
   /* clang-format off */
   arena_block_pickup_interactor<TControllerType, arena_pickup_spec> m_arena_pickup;

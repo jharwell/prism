@@ -24,8 +24,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/slice2D.hpp"
 #include "silicon/structure/metrics/subtarget_metrics.hpp"
+#include "silicon/structure/slice2D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

@@ -27,21 +27,25 @@
 #include <memory>
 #include <vector>
 
-#include "cosm/spatial/fsm/util_hfsm.hpp"
-#include "cosm/spatial/fsm/explore_for_goal_fsm.hpp"
-#include "cosm/spatial/metrics/goal_acq_metrics.hpp"
 #include "cosm/fsm/block_transporter.hpp"
+#include "cosm/spatial/fsm/explore_for_goal_fsm.hpp"
+#include "cosm/spatial/fsm/util_hfsm.hpp"
+#include "cosm/spatial/metrics/goal_acq_metrics.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/fsm/acquire_block_placement_site_fsm.hpp"
-#include "silicon/fsm/structure_egress_fsm.hpp"
-#include "silicon/fsm/construction_transport_goal.hpp"
-#include "silicon/lane_alloc/allocator.hpp"
 #include "silicon/fsm/block_placer.hpp"
+#include "silicon/fsm/construction_transport_goal.hpp"
+#include "silicon/fsm/structure_egress_fsm.hpp"
+#include "silicon/lane_alloc/allocator.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
+namespace silicon::repr {
+class construction_lane;
+} /* namespace silicon::repr */
+
 NS_START(silicon, fsm);
 
 /*******************************************************************************
@@ -62,17 +66,18 @@ NS_START(silicon, fsm);
  *
  * After these steps have been done, it signals it has completed its task.
  */
-class fcrw_bst_fsm final : public csfsm::util_hfsm,
-                           public rer::client<fcrw_bst_fsm>,
-                           public csmetrics::goal_acq_metrics,
-                           public cfsm::block_transporter<construction_transport_goal>,
-                           public cta::taskable,
-                           public block_placer {
+class fcrw_bst_fsm final
+    : public csfsm::util_hfsm,
+      public rer::client<fcrw_bst_fsm>,
+      public csmetrics::goal_acq_metrics,
+      public cfsm::block_transporter<construction_transport_goal>,
+      public cta::taskable,
+      public block_placer {
  public:
   fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
-                  const scperception::builder_perception_subsystem* perception,
-                  crfootbot::footbot_saa_subsystem* saa,
-                  rmath::rng* rng);
+               const scperception::builder_perception_subsystem* perception,
+               crfootbot::footbot_saa_subsystem* saa,
+               rmath::rng* rng);
   ~fcrw_bst_fsm(void) override;
 
   fcrw_bst_fsm(const fcrw_bst_fsm&) = delete;
@@ -86,7 +91,8 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   rmath::vector3z interference_loc3D(void) const override;
 
   /* goal acquisition metrics */
-  csmetrics::goal_acq_metrics::goal_type acquisition_goal(void) const override RCSW_PURE;
+  csmetrics::goal_acq_metrics::goal_type acquisition_goal(
+      void) const override RCSW_PURE;
   exp_status is_exploring_for_goal(void) const override RCSW_PURE;
   bool is_vectoring_to_goal(void) const override { return false; }
   bool goal_acquired(void) const override RCSW_PURE;
@@ -106,18 +112,17 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   }
   bool task_running(void) const override {
     return ekST_FINISHED == current_state();
-    }
+  }
   void task_reset(void) override { init(); }
 
   /* block placer overrides */
-  boost::optional<block_placer::placement_intent> block_placement_intent(void) const override;
+  boost::optional<block_placer::placement_intent> block_placement_intent(
+      void) const override;
 
   const lane_alloc::allocator* lane_allocator(void) const {
     return &m_allocator;
   }
-  lane_alloc::allocator* lane_allocator(void) {
-    return &m_allocator;
-  }
+  lane_alloc::allocator* lane_allocator(void) { return &m_allocator; }
 
   /**
    * \brief (Re)-initialize the FSM.
@@ -137,7 +142,6 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
      * A block has been acquired, wait to get the block pickup signal.
      */
     ekST_WAIT_FOR_BLOCK_PICKUP,
-
 
     /**
      * The robot is moving from the block pickup location to the face of the
@@ -170,18 +174,22 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
     ekST_MAX_STATES
   };
 
-  struct ct_ingress_data final: public rpfsm::event_data {
+  struct ct_ingress_data final : public rpfsm::event_data {
     ct_ingress_data(const csteer2D::ds::path_state& path_in,
-                        const rmath::vector3d& ingress_in)
-        : path(path_in),
-          ingress(ingress_in) {}
+                    const rmath::vector3d& ingress_in)
+        : path(path_in), ingress(ingress_in) {}
 
     csteer2D::ds::path_state path;
     rmath::vector3d ingress;
   };
 
+  /**
+   * When transporting a block to the construction site via polar forces, this
+   * is the minimum distance the robot must maintain from the center of the
+   * structure.
+   */
+
   static constexpr const double kCT_TRANSPORT_BC_DIST_MIN = 5.0;
-  static constexpr const double kCT_TRANSPORT_LANE_PROX_CRITICAL_DIST = 3.0;
 
   bool block_detected(void) const;
 
@@ -210,7 +218,7 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
    * states in \enum fsm_states, or things will not work correctly.
    */
   HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
-  return (&mc_state_map[index]);
+    return (&mc_state_map[index]);
   }
 
   HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
@@ -219,7 +227,7 @@ class fcrw_bst_fsm final : public csfsm::util_hfsm,
   const scperception::builder_perception_subsystem* mc_perception;
 
   lane_alloc::allocator                             m_allocator;
-  repr::construction_lane                           m_lane{};
+  std::unique_ptr<srepr::construction_lane>         m_allocated_lane;
   csfsm::explore_for_goal_fsm                       m_forage_fsm;
   acquire_block_placement_site_fsm                  m_block_place_fsm;
   structure_egress_fsm                              m_structure_egress_fsm;

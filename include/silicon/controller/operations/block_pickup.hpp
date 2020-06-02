@@ -79,7 +79,7 @@ class block_pickup : public ccops::block_pickup {
 
 NS_END(detail);
 
-using block_pickup_visitor = rpvisitor::generic_precise_visitor<detail::block_pickup>;
+using block_pickup_visitor = rpvisitor::filtered_visitor<detail::block_pickup>;
 
 NS_END(operations, controller, silicon);
 

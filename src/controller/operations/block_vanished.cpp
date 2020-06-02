@@ -24,8 +24,8 @@
 #include "silicon/controller/operations/block_vanished.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
-#include "silicon/fsm/fcrw_bst_fsm.hpp"
 #include "silicon/fsm/construction_signal.hpp"
+#include "silicon/fsm/fcrw_bst_fsm.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -36,7 +36,8 @@ NS_START(silicon, controller, operations, detail);
  * Constructors/Destructor
  ******************************************************************************/
 block_vanished::block_vanished(const rtypes::type_uuid& block_id)
-    : ER_CLIENT_INIT("silicon.operations.block_vanished"), mc_block_id(block_id) {}
+    : ER_CLIENT_INIT("silicon.operations.block_vanished"),
+      mc_block_id(block_id) {}
 
 /*******************************************************************************
  * Single Target Construction

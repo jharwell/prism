@@ -51,11 +51,15 @@ class construction_lane : public cta::taskable_argument {
   construction_lane(size_t id,
                     const rmath::radians& orientation,
                     const rmath::vector3d& ingress,
-                    const rmath::vector3d& egress)
+                    const rmath::vector3d& egress,
+                    const rmath::vector3z& ingress_nearest_cell,
+                    const rmath::vector3z& egress_nearest_cell)
       : m_id(id),
         m_orientation(orientation),
         m_ingress(ingress),
-        m_egress(egress) {}
+        m_egress(egress),
+        m_ingress_nearest_cell(ingress_nearest_cell),
+        m_egress_nearest_cell(egress_nearest_cell) {}
 
   construction_lane& operator=(construction_lane&&) = default;
 
@@ -68,13 +72,21 @@ class construction_lane : public cta::taskable_argument {
   const rmath::radians& orientation(void) const { return m_orientation; }
   const rmath::vector3d& ingress(void) const { return m_ingress; }
   const rmath::vector3d& egress(void) const { return m_egress; }
+  const rmath::vector3z& ingress_nearest_cell(void) const {
+    return m_ingress_nearest_cell;
+  }
+  const rmath::vector3z& egress_nearest_cell(void) const {
+    return m_egress_nearest_cell;
+  }
 
  private:
   /* clang-format off */
-  size_t          m_id{0};
-  rmath::radians  m_orientation{};
-  rmath::vector3d m_ingress{};
-  rmath::vector3d m_egress{};
+  size_t          m_id;
+  rmath::radians  m_orientation;
+  rmath::vector3d m_ingress;
+  rmath::vector3d m_egress;
+  rmath::vector3z m_ingress_nearest_cell;
+  rmath::vector3z m_egress_nearest_cell;
   /* clang-format on */
 };
 

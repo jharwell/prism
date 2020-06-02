@@ -33,10 +33,9 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_spec_layers::operator()(void) const {
   for (size_t z = 0; z < mc_structure->zdsize(); ++z) {
-    auto slice = slice2D(slice2D::coords_calc(rmath::vector3z::Z,
-                                              mc_structure,
-                                              z),
-                         mc_structure);
+    auto slice =
+        slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z),
+                mc_structure);
     ER_CHECK(layer_validate(slice, mc_structure->orientation(), z),
              "Layer%zu failed validation",
              z);
@@ -53,10 +52,10 @@ bool validate_spec_layers::layer_validate(const slice2D& layer,
   /* PROPERTY: Hamiltonian AND even # rows along orientation direction */
   ER_CHECK(layer.is_hamiltonian(), "Layer%zu not Hamiltonian", z);
   if (rmath::radians::kZERO == mc_structure->orientation()) {
-    ER_CHECK(RCSW_IS_EVEN(layer.d1()),
+    ER_CHECK(RCSW_IS_EVEN(layer.d2()),
              "Structure oriented along X axis does not have even # rows in Y");
   } else if (rmath::radians::kPI_OVER_TWO == mc_structure->orientation()) {
-    ER_CHECK(RCSW_IS_EVEN(layer.d2()),
+    ER_CHECK(RCSW_IS_EVEN(layer.d1()),
              "Structure oriented along Y axis does not have even # rows in X");
   }
   /* PROPERTY: Must be traversable by robots in the specified orientation */

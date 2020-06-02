@@ -48,8 +48,7 @@ lane_alloc_metrics_collector::lane_alloc_metrics_collector(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> lane_alloc_metrics_collector::csv_header_cols(
-    void) const {
+std::list<std::string> lane_alloc_metrics_collector::csv_header_cols(void) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>();
 
@@ -81,8 +80,7 @@ boost::optional<std::string> lane_alloc_metrics_collector::csv_line_build(void) 
   return boost::make_optional(line);
 } /* csv_line_build() */
 
-void lane_alloc_metrics_collector::collect(
-    const rmetrics::base_metrics& metrics) {
+void lane_alloc_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].alloc_count += m.alloc_count(mc_target_id, i);

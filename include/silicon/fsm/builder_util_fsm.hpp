@@ -24,24 +24,27 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "rcppsw/er/client.hpp"
 
 #include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
-#include "cosm/ta/taskable.hpp"
 #include "cosm/spatial/fsm/util_hfsm.hpp"
+#include "cosm/ta/taskable.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
 namespace silicon::controller::perception {
 class builder_perception_subsystem;
-} /* namespace silicon::perception */
+} // namespace silicon::controller::perception
+
+namespace silicon::repr {
+class construction_lane;
+} /* namespace silicon::repr */
 
 NS_START(silicon, fsm);
 
@@ -62,7 +65,6 @@ class builder_util_fsm : public csfsm::util_hfsm,
                          public cta::taskable,
                          public rer::client<builder_util_fsm> {
  public:
-
   /**
    * How close the robot needs to be to the vectors representing the
    * ingress/egress lanes in terms of difference in position. If they veer
@@ -82,7 +84,7 @@ class builder_util_fsm : public csfsm::util_hfsm,
                    rmath::rng* rng,
                    uint8_t max_states);
 
-  ~builder_util_fsm(void) override = default;
+  ~builder_util_fsm(void) override;
 
   /* not copy constructible or copy assignable by default */
   builder_util_fsm(const builder_util_fsm&) = delete;
@@ -117,9 +119,10 @@ class builder_util_fsm : public csfsm::util_hfsm,
     return mc_perception;
   }
 
-  const repr::construction_lane* lane(void) const { return &m_lane; }
-  void lane(repr::construction_lane&& lane) { m_lane = std::move(lane); }
-
+  const repr::construction_lane* allocated_lane(void) const {
+    return mc_alloc_lane;
+  }
+  void allocated_lane(const repr::construction_lane* l) { mc_alloc_lane = l; }
 
   /**
    * \brief Return \c TRUE if there is another robot too close to the current
@@ -159,8 +162,7 @@ class builder_util_fsm : public csfsm::util_hfsm,
  private:
   /* clang-format off */
   const scperception::builder_perception_subsystem* mc_perception;
-
-  repr::construction_lane                           m_lane{};
+  const srepr::construction_lane*                   mc_alloc_lane{nullptr};
   /* clang-format on */
 };
 

@@ -64,8 +64,8 @@ rtypes::timestep env_dynamics::ct_block_manip_penalty(void) const {
    * Relies on homogeneously applied penalties for all block manipulation events
    * in all structures.
    */
-  return ct_penalty_handler(block_op_src::ekCT_BLOCK_MANIP,
-                            rtypes::type_uuid(0))->penalty_calc(m_timestep);
+  return ct_penalty_handler(block_op_src::ekCT_BLOCK_MANIP, rtypes::type_uuid(0))
+      ->penalty_calc(m_timestep);
 } /* ct_block_manip_penalty() */
 
 void env_dynamics::register_controller(

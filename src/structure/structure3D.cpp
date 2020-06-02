@@ -57,7 +57,7 @@ structure3D::structure3D(const config::structure3D_config* config,
       m_subtargetso(subtargetso_calc()),
       m_subtargetsno(subtargetsno_calc()) {
   ER_ASSERT(rmath::radians::kZERO == mc_config.orientation ||
-            rmath::radians::kPI_OVER_TWO == mc_config.orientation,
+                rmath::radians::kPI_OVER_TWO == mc_config.orientation,
             "Bad structure orientation: '%s'",
             rcppsw::to_string(mc_config.orientation).c_str());
 
@@ -91,7 +91,7 @@ bool structure3D::block_placement_valid(const crepr::block3D_variant& block,
    */
 
   ER_CHECK(rmath::radians::kZERO == z_rotation ||
-           rmath::radians::kPI_OVER_TWO == z_rotation,
+               rmath::radians::kPI_OVER_TWO == z_rotation,
            "Bad rotation %s: must be %s or %s",
            rcppsw::to_string(z_rotation).c_str(),
            rcppsw::to_string(rmath::radians::kZERO).c_str(),
@@ -145,9 +145,7 @@ void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
   m_occupied_cells.push_back((block->dpos3D() - origind()) / mc_unit_dim_factor);
   m_placed.push_back(std::move(block));
   ++m_placed_since_reset;
-  ER_INFO("Added block%d to structure (%zu total)",
-          id.v(),
-          m_placed.size());
+  ER_INFO("Added block%d to structure (%zu total)", id.v(), m_placed.size());
 } /* block_add() */
 
 bool structure3D::is_complete(void) const {
@@ -212,9 +210,7 @@ structure3D::cell_spec structure3D::cell_spec_calc(
                           return a + rcppsw::to_string(l) + ",";
                         });
 
-    ER_TRACE("Checking block extent cells %s (%zu)",
-             sum.c_str(),
-             extents.size());
+    ER_TRACE("Checking block extent cells %s (%zu)", sum.c_str(), extents.size());
     /*
      * Check all extents for the current block to
      * see if they match the location we were
@@ -271,11 +267,12 @@ rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
 } /* cell_loc_abs() */
 
 size_t structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
-  ER_ASSERT(std::fmod(mc_block_unit_dim, map->grid_resolution().v()) <=
-            std::numeric_limits<double>::epsilon(),
-            "Block unit dimension (%f) not a multiple of arena grid resolution (%f)",
-            mc_block_unit_dim,
-            map->grid_resolution().v());
+  ER_ASSERT(
+      std::fmod(mc_block_unit_dim, map->grid_resolution().v()) <=
+          std::numeric_limits<double>::epsilon(),
+      "Block unit dimension (%f) not a multiple of arena grid resolution (%f)",
+      mc_block_unit_dim,
+      map->grid_resolution().v());
   return static_cast<size_t>(mc_block_unit_dim / map->grid_resolution().v());
 } /* unit_dim_factor_calc() */
 
@@ -352,7 +349,7 @@ void structure3D::reset(void) {
 
 void structure3D::reset_metrics(void) {
   m_placed_since_reset = 0;
-  for (auto *t : subtargets()) {
+  for (auto* t : subtargets()) {
     t->reset_metrics();
   } /* for(*t..) */
 } /* reset_metrics() */

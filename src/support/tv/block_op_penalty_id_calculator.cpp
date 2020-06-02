@@ -55,7 +55,7 @@ rtypes::type_uuid block_op_penalty_id_calculator::operator()(
       break;
     case block_op_src::ekCT_BLOCK_MANIP:
       ER_ASSERT(nullptr != controller.block() &&
-                rtypes::constants::kNoUUID != controller.block()->id(),
+                    rtypes::constants::kNoUUID != controller.block()->id(),
                 "Robot not carrying block?");
       id = controller.block()->id();
       break;

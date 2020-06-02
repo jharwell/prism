@@ -31,12 +31,12 @@
 
 #include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/metrics/config/output_config.hpp"
+#include "cosm/repr/base_block3D.hpp"
 #include "cosm/robots/footbot/config/saa_xml_names.hpp"
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
-#include "cosm/repr/base_block3D.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
@@ -50,8 +50,7 @@ NS_START(silicon, controller);
  * Constructors/Destructor
  ******************************************************************************/
 constructing_controller::constructing_controller(void)
-    : ER_CLIENT_INIT("silicon.controller"),
-      m_perception(nullptr) {}
+    : ER_CLIENT_INIT("silicon.controller"), m_perception(nullptr) {}
 
 constructing_controller::~constructing_controller(void) = default;
 
@@ -104,8 +103,7 @@ void constructing_controller::reset(void) {
 void constructing_controller::perception_init(
     const cspconfig::perception_config* perceptionp) {
   m_perception = std::make_unique<perception::builder_perception_subsystem>(
-      perceptionp,
-      saa()->sensing());
+      perceptionp, saa()->sensing());
 } /* perception_init() */
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {

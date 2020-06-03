@@ -42,8 +42,8 @@ NS_START(silicon, controller, perception);
 const scperception::ct_skel_info* perception_receptor::nearest_ct(
     const rmath::vector3d& pos) const {
   auto pred = [&](const auto& target1, const auto& target2) {
-    return (target1.originr() - pos).length() <
-           (target2.originr() - pos).length();
+    return (target1.roriginr() - pos).length() <
+           (target2.roriginr() - pos).length();
   };
   auto it = std::min_element(m_targets.begin(), m_targets.end(), pred);
   if (m_targets.end() != it) {

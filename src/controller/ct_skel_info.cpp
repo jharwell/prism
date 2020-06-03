@@ -33,26 +33,50 @@ NS_START(silicon, controller, perception);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-rmath::vector3d ct_skel_info::originr(void) const {
-  return m_target->originr();
-} /* originr() */
+rmath::vector3d ct_skel_info::roriginr(void) const {
+  return m_target->roriginr();
+} /* roriginr() */
 
-rmath::vector3z ct_skel_info::origind(void) const {
-  return m_target->origind();
-} /* origind() */
+rmath::vector3z ct_skel_info::rorigind(void) const {
+  return m_target->rorigind();
+} /* rorigind() */
+
+rmath::vector3d ct_skel_info::voriginr(void) const {
+  return m_target->voriginr();
+} /* voriginr() */
+
+rmath::vector3z ct_skel_info::vorigind(void) const {
+  return m_target->vorigind();
+} /* vorigind() */
+
+size_t ct_skel_info::vshell_sized(void) const{
+  return m_target->vshell_sized();
+} /* vshell_sized() */
 
 rmath::vector3d ct_skel_info::center(void) const {
-  return m_target->originr() + rmath::vector3d(m_target->xrsize() / 2.0,
+  return m_target->voriginr() + rmath::vector3d(m_target->xrsize() / 2.0,
                                                m_target->yrsize() / 2.0,
                                                m_target->zrsize() / 2.0);
 } /* center() */
 
 rmath::vector3d ct_skel_info::bbr(void) const {
-  return {m_target->xrsize(), m_target->yrsize(), m_target->zrsize()};
+  /*
+   * Targets are surrounded by layers of virtual cells, which we don't care
+   * about when allocating construction lanes.
+   */
+  return {m_target->xrsize() - m_target->vshell_sizer().v() * 2,
+        m_target->yrsize() - m_target->vshell_sizer().v() * 2,
+        m_target->zrsize()};
 } /* bbr() */
 
-rmath::vector3z ct_skel_info::bbd(void) const {
-  return {m_target->xdsize(), m_target->ydsize(), m_target->zdsize()};
+rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
+  /*
+   * Targets are surrounded by layers of virtual cells, which we don't care
+   * about when allocating construction lanes.
+   */
+  return {m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
+        m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
+        m_target->zdsize()};
 } /* bbd() */
 
 const rmath::radians& ct_skel_info::orientation(void) const {
@@ -68,11 +92,11 @@ rtypes::type_uuid ct_skel_info::id(void) const {
 } /* id() */
 
 rmath::ranged ct_skel_info::xrange(void) const {
-  return m_target->xrange();
+  return m_target->xranger(true);
 } /* xrange() */
 
 rmath::ranged ct_skel_info::yrange(void) const {
-  return m_target->yrange();
+  return m_target->yranger(true);
 } /* yrange() */
 
 double ct_skel_info::block_unit_dim(void) const {

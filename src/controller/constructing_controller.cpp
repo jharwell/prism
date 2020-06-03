@@ -40,6 +40,7 @@
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/fsm/construction_transport_goal.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -217,5 +218,32 @@ bool constructing_controller::in_nest(void) const {
 bool constructing_controller::block_detected(void) const {
   return saa()->sensing()->ground()->detect("block");
 } /* block_detected() */
+
+/*******************************************************************************
+ * Movement Metrics
+ ******************************************************************************/
+rtypes::spatial_dist constructing_controller::ts_distance(
+    const csmetrics::movement_category& category) const {
+  if (csmetrics::movement_category::ekALL == category) {
+    return ts_distance_impl();
+  } else if (csmetrics::movement_category::ekHOMING == category) {
+    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE == block_transport_goal()) {
+      return ts_distance_impl();
+    }
+  }
+  return rtypes::spatial_dist(0);
+} /* ts_distance() */
+
+rmath::vector3d constructing_controller::ts_velocity(
+    const csmetrics::movement_category& category) const {
+  if (csmetrics::movement_category::ekALL == category) {
+    return ts_velocity_impl();
+  } else if (csmetrics::movement_category::ekHOMING == category) {
+    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE == block_transport_goal()) {
+      return ts_velocity_impl();
+    }
+  }
+  return {};
+} /* ts_velocity() */
 
 NS_END(controller, silicon);

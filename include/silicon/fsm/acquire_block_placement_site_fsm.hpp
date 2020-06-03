@@ -33,6 +33,7 @@
 #include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -144,6 +145,7 @@ class acquire_block_placement_site_fsm
 
   /* clang-format off */
   std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};
+  calculators::lane_alignment                m_alignment_calc;
   /* clang-format on */
 };
 

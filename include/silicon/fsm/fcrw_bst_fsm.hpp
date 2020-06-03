@@ -231,6 +231,7 @@ class fcrw_bst_fsm final
   csfsm::explore_for_goal_fsm                       m_forage_fsm;
   acquire_block_placement_site_fsm                  m_block_place_fsm;
   structure_egress_fsm                              m_structure_egress_fsm;
+  double                                            m_ct_approach_polar_sign{-1};
   /* clang-format on */
 };
 

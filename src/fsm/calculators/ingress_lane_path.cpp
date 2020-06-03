@@ -1,5 +1,5 @@
 /**
- * \file ingress_path_calculator.cpp
+ * \file ingress_lane_path.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/ingress_path_calculator.hpp"
+#include "silicon/fsm/calculators/ingress_lane_path.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
@@ -32,35 +32,38 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-ingress_path_calculator::ingress_path_calculator(
+ingress_lane_path::ingress_lane_path(
     const csubsystem::sensing_subsystemQ3D* sensing)
-    : ER_CLIENT_INIT("silicon.fsm.ingress_path_calculator"),
+    : ER_CLIENT_INIT("silicon.fsm.calculator.ingress_lane_path"),
       mc_sensing(sensing) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> ingress_path_calculator::operator()(
+std::vector<rmath::vector2d> ingress_lane_path::operator()(
     const srepr::construction_lane* lane) const {
   auto pos = mc_sensing->rpos2D();
 
   /* 1st point: robot's current location */
   std::vector<rmath::vector2d> path{pos};
 
-  if (rmath::radians::kZERO == lane->orientation()) {
+  if (rmath::radians::kZERO == lane->orientation() ||
+      rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: get aligned with middle of ingress lane */
     path.push_back({pos.x(), lane->ingress().y()});
+
     /* 3rd point: ingress */
     path.push_back(lane->ingress().to_2D());
-
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation() ||
+             rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: get aligned with ingress lane */
     path.push_back({lane->ingress().x(), pos.y()});
+
     /* 3rd point: ingress */
     path.push_back(lane->ingress().to_2D());
   } else {
@@ -70,4 +73,4 @@ std::vector<rmath::vector2d> ingress_path_calculator::operator()(
   return path;
 } /* operator()() */
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);

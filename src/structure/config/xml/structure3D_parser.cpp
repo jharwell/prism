@@ -38,6 +38,22 @@ void structure3D_parser::parse(const ticpp::Element& node) {
   XML_PARSE_ATTR(node, m_config, anchor);
   XML_PARSE_ATTR(node, m_config, orientation);
 
+  /*
+   * Since we don't know (for sure), and in general should not rely upon, the #
+   * of decimal places used in the specification for structure orientation in
+   * the input file, we round it to the nearest cardinal direction, if it is
+   * specified with a reasonable # of decimals and is close enough to one.
+   */
+  if (rmath::radians::kZERO.is_equal(m_config->orientation)) {
+    m_config->orientation = rmath::radians::kZERO;
+  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation)) {
+    m_config->orientation = rmath::radians::kPI_OVER_TWO;
+  } else if (rmath::radians::kPI.is_equal(m_config->orientation)) {
+    m_config->orientation = rmath::radians::kPI;
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation)) {
+    m_config->orientation = rmath::radians::kTHREE_PI_OVER_TWO;
+  }
+
   m_grid.parse(node);
 
   m_config->bounding_box =

@@ -53,13 +53,16 @@ class ct_skel_info {
   explicit ct_skel_info(const sstructure::structure3D* target)
       : m_target(target) {}
 
+  size_t vshell_sized(void) const;
   rmath::vector3d center(void) const;
-  rmath::vector3d originr(void) const;
-  rmath::vector3z origind(void) const;
+  rmath::vector3d roriginr(void) const;
+  rmath::vector3z rorigind(void) const;
+  rmath::vector3d voriginr(void) const;
+  rmath::vector3z vorigind(void) const;
   rmath::ranged xrange(void) const;
   rmath::ranged yrange(void) const;
   rmath::vector3d bbr(void) const;
-  rmath::vector3z bbd(void) const;
+  rmath::vector3z bbd(bool include_virtual = false) const;
   double block_unit_dim(void) const;
   size_t unit_dim_factor(void) const;
   const rmath::radians& orientation(void) const;

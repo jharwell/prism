@@ -44,7 +44,7 @@ struct structure3D_builder_config;
 struct construct_targets_config;
 } /* namespace config */
 
-class structure3D_builder;
+class base_structure3D_builder;
 class structure3D;
 } /* namespace silicon::structure */
 
@@ -115,10 +115,10 @@ class ct_manager : public rer::client<ct_manager> {
                                       target_id);
   }
 
-  const structure3D_builder* builder(const rtypes::type_uuid& target_id) const {
+  const base_structure3D_builder* builder(const rtypes::type_uuid& target_id) const {
     return builder_lookup(target_id);
   }
-  structure3D_builder* builder(const rtypes::type_uuid& target_id) {
+  base_structure3D_builder* builder(const rtypes::type_uuid& target_id) {
     return const_cast<const ct_manager*>(this)->builder_lookup(target_id);
   }
   const structure3D* target(const rtypes::type_uuid& id) const {
@@ -152,9 +152,9 @@ class ct_manager : public rer::client<ct_manager> {
   bool construction_feasible(const structure3D* target) const;
 
   using builders_vectoro_type =
-      std::vector<std::unique_ptr<structure::structure3D_builder>>;
+      std::vector<std::unique_ptr<structure::base_structure3D_builder>>;
 
-  structure3D_builder* builder_lookup(const rtypes::type_uuid& target_id) const;
+  base_structure3D_builder* builder_lookup(const rtypes::type_uuid& target_id) const;
   structure3D* target_lookup(const rtypes::type_uuid& id) const;
 
   /* clang-format off */

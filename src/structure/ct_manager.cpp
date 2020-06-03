@@ -29,7 +29,7 @@
 #include "silicon/structure/config/structure3D_builder_config.hpp"
 #include "silicon/structure/operations/validate_spec.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/structure/structure3D_builder.hpp"
+#include "silicon/structure/builder_factory.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -58,6 +58,9 @@ void ct_manager::init(
     const rct::config::waveform_config* const placement_penalty_config) {
   ER_INFO("Initializing %zu construction targets",
           targets_config->targets.size());
+
+  builder_factory factory;
+
   for (size_t i = 0; i < targets_config->targets.size(); ++i) {
     ER_INFO("Initializing construction target %zu", i);
     auto target = std::make_unique<sstructure::structure3D>(
@@ -68,29 +71,26 @@ void ct_manager::init(
       continue;
     }
     auto name =
-        "structure" + rcppsw::to_string(target->id()) + "placement_penalty";
+        "structure" + rcppsw::to_string(target->id()) + "_placement_penalty";
     auto handler = std::make_unique<sstv::block_op_penalty_handler>(
         m_arena_map, placement_penalty_config, name);
     m_envd->ct_placement_handler_register(target->id(), std::move(handler));
-
+    auto builder = factory.create(builder_config->build_src,
+                                  builder_config,
+                                  target.get(),
+                                  m_sm);
     m_targetsno.push_back(target.get());
     m_targetsro.push_back(target.get());
     m_targetso.push_back(std::move(target));
-    m_builderso.push_back(std::make_unique<sstructure::structure3D_builder>(
-        builder_config, m_targetso[i].get(), m_sm));
+    m_builderso.push_back(std::move(builder));
     ER_INFO("Initialized construction target %zu", i);
   } /* for(i..) */
 } /* init() */
 
 void ct_manager::update(const rtypes::timestep& t) {
   for (auto& builder : m_builderso) {
-    if (builder->build_static_enabled()) {
-      builder->build_static(m_arena_map->blocks(), t);
-    }
+    builder->update(t, m_arena_map->blocks());
   } /* for(&builder..) */
-  for (auto* target : targetsno()) {
-    target->reset_metrics();
-  } /* for(*ct..) */
 } /* update() */
 
 void ct_manager::reset(void) {
@@ -103,7 +103,7 @@ void ct_manager::reset(void) {
   } /* for(&target..) */
 } /* reset() */
 
-structure3D_builder* ct_manager::builder_lookup(
+base_structure3D_builder* ct_manager::builder_lookup(
     const rtypes::type_uuid& target_id) const {
   auto it =
       std::find_if(m_builderso.begin(), m_builderso.end(), [&](auto& builder) {
@@ -132,8 +132,8 @@ bool ct_manager::construction_feasible(const structure3D* target) const {
     return false;
   }
   for (auto& existing_t : m_targetso) {
-    if (existing_t->xrange().overlaps_with(target->xrange()) &&
-        existing_t->yrange().overlaps_with(target->yrange())) {
+    if (existing_t->xranger().overlaps_with(target->xranger()) &&
+        existing_t->yranger().overlaps_with(target->yranger())) {
       ER_WARN("Construction target%s overlaps with target%s",
               rcppsw::to_string(target->id()).c_str(),
               rcppsw::to_string(existing_t->id()).c_str());

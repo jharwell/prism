@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-#include "silicon/structure/structure3D.hpp"
+#include "silicon/controller/perception/ct_skel_info.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -48,72 +48,54 @@ std::vector<lane_geometry> allocator::lane_locs_calc(
   std::vector<lane_geometry> ret;
 
   /*
-   * Need to account for block width so we calculate the CENTER of the
-   * ingress/egress lanes.
+   * For all orientations, the actual ingress points are in the cell that is one
+   * unit OUTSIDE of the actual target (a virtual cell) in some direction, so we
+   * compute that, and let the \ref lane_geometry class compute everything else.
    */
-  rmath::vector3d correction(target->block_unit_dim() / 2.0,
-                             target->block_unit_dim() / 2.0,
-                             0.0);
-
+  auto bbd = target->bbd(true);
   if (rmath::radians::kZERO == target->orientation()) {
-    for (size_t j = 0; j < target->bbd().y(); j += 2) {
-      /*
-       * Coordinates of the nearest cell within the bounding box for the target
-       * to the ingress/egress points (which are one cell outside the box).
-       */
-      rmath::vector3z ingress_nearest(target->bbd().x() - 1, j, 0);
-      rmath::vector3z egress_nearest(target->bbd().x() - 1, j + 1, 0);
+    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized(); j += 2) {
+      rmath::vector3z ingress_nearest(bbd.x() - 1, j, 0);
+      rmath::vector3z egress_nearest(bbd.x() - 1, j + 1, 0);
 
-      /*
-       * The real coordinates of the ingress/egress lanes returned lie in the
-       * "virtual" cells which border the bounding box; this is to ensure
-       * algorithm correctness with all stygmergic configurations.
-       */
-      auto ingress = target->cell_loc_abs(ingress_nearest) +
-                     rmath::vector3d::X * target->block_unit_dim();
-      auto egress = target->cell_loc_abs(egress_nearest) +
-                    rmath::vector3d::X * target->block_unit_dim();
-      rmath::vector3d center(target->originr().x() +
-                                 (ingress.x() - target->originr().x()) / 2.0,
-                             ingress.y(),
-                             0.0);
-
-      auto geometry = lane_geometry(ingress_nearest,
-                                    egress_nearest,
-                                    ingress + correction,
-                                    egress + correction,
-                                    center + correction);
+      auto geometry = lane_geometry(target,
+                                    ingress_nearest,
+                                    egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
-    for (size_t i = 0; i < target->bbd().x(); i += 2) {
-      /*
-       * Coordinates of the nearest cell within the bounding box for the target
-       * to the ingress/egress points (which are one cell outside the box).
-       */
-      rmath::vector3z ingress_nearest(i, target->bbd().y() - 1, 0);
-      rmath::vector3z egress_nearest(i + 1, target->bbd().y() - 1, 0);
+    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized(); i += 2) {
+      rmath::vector3z ingress_nearest(i + 1, bbd.y() - 1, 0);
+      rmath::vector3z egress_nearest(i, bbd.y() - 1, 0);
 
-      /*
-       * The real coordinates of the ingress/egress lanes returned lie in the
-       * "virtual" cells which border the bounding box; this is to ensure
-       * algorithm correctness with all stygmergic configurations.
-       */
-      auto ingress = target->cell_loc_abs(ingress_nearest) +
-                     rmath::vector3d::Y * target->block_unit_dim();
-      auto egress = target->cell_loc_abs(egress_nearest) +
-                    rmath::vector3d::Y * target->block_unit_dim();
-      rmath::vector3d center(ingress.x(),
-                             target->originr().y() -
-                                 (ingress.y() - target->originr().y()) / 2.0,
-                             0.0);
-      auto geometry = lane_geometry(ingress_nearest,
-                                    egress_nearest,
-                                    ingress + correction,
-                                    egress + correction,
-                                    center + correction);
+      auto geometry = lane_geometry(target,
+                                    ingress_nearest,
+                                    egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(i..) */
+  } else if (rmath::radians::kPI == target->orientation()) {
+    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized(); j += 2) {
+      rmath::vector3z ingress_nearest(0, j + 1, 0);
+      rmath::vector3z egress_nearest(0, j, 0);
+
+      auto geometry = lane_geometry(target,
+                                    ingress_nearest,
+                                    egress_nearest);
+      ret.push_back(std::move(geometry));
+    } /* for(j..) */
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
+    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized(); i += 2) {
+      rmath::vector3z ingress_nearest(i, 0, 0);
+      rmath::vector3z egress_nearest(i + 1, 0, 0);
+
+      auto geometry = lane_geometry(target,
+                                    ingress_nearest,
+                                    egress_nearest);
+      ret.push_back(std::move(geometry));
+    } /* for(i..) */
+  } else {
+    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
+                      rcppsw::to_string(target->orientation()).c_str());
   }
   return ret;
 } /* lane_locs_calc() */
@@ -129,21 +111,21 @@ std::unique_ptr<repr::construction_lane> allocator::operator()(
    */
   auto hist_it = m_history.find(target->id());
   if (m_history.end() == hist_it) {
-    allocation_history h(locs.size(), m_rng->uniform(0, locs.size() - 1));
+    allocation_history h(locs.size(), m_rng->uniform(0UL, locs.size() - 1));
     m_history.insert({target->id(), h});
   }
   auto& hist = m_history.find(target->id())->second;
 
   size_t id = 0;
   if (kPolicyRandom == mc_config.policy) {
-    id = m_rng->uniform(0, locs.size() - 1);
+    id = m_rng->uniform(0UL, locs.size() - 1);
   } else if (kPolicyLRU == mc_config.policy) {
     id = (hist.prev_lane + 1) % locs.size();
     hist.prev_lane = id;
   } else if (kPolicyClosest == mc_config.policy) {
     auto pred = [&](const auto& loc1, const auto& loc2) {
-      return (robot_loc - loc1.ingress()).length() <
-             (robot_loc - loc2.ingress()).length();
+      return (robot_loc - loc1.ingress_start()).length() <
+             (robot_loc - loc2.ingress_start()).length();
     };
     auto it = std::min_element(locs.begin(), locs.end(), pred);
     id = std::distance(locs.begin(), it);
@@ -156,15 +138,15 @@ std::unique_ptr<repr::construction_lane> allocator::operator()(
   ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
           id,
           rcppsw::to_string(target->orientation()).c_str(),
-          rcppsw::to_string(locs[id].ingress()).c_str(),
-          rcppsw::to_string(locs[id].egress()).c_str());
+          rcppsw::to_string(locs[id].ingress_start()).c_str(),
+          rcppsw::to_string(locs[id].egress_start()).c_str());
   return std::make_unique<repr::construction_lane>(
       id,
       target->orientation(),
-      locs[id].ingress(),
-      locs[id].egress(),
-      locs[id].ingress_nearest_cell(),
-      locs[id].egress_nearest_cell());
+      locs[id].ingress_start(),
+      locs[id].egress_start(),
+      locs[id].ingress_cell(),
+      locs[id].egress_cell());
 } /* operator()() */
 
 /*******************************************************************************

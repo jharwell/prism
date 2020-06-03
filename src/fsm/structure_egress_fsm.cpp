@@ -33,6 +33,8 @@
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/fsm/construction_signal.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/fsm/calculators/egress_path.hpp"
+#include "silicon/fsm/calculators/egress_lane_path.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -61,10 +63,11 @@ structure_egress_fsm::structure_egress_fsm(
                                                         nullptr),
                             HFSM_STATE_MAP_ENTRY_EX_ALL(&structure_egress,
                                                         nullptr,
-                                                        nullptr,
+                                                        &entry_structure_egress,
                                                         &exit_structure_egress),
                             HFSM_STATE_MAP_ENTRY_EX(&wait_for_robot),
-                            HFSM_STATE_MAP_ENTRY_EX(&finished)) {}
+                            HFSM_STATE_MAP_ENTRY_EX(&finished)),
+      m_alignment_calc(saa->sensing()) {}
 
 /*******************************************************************************
  * States
@@ -82,7 +85,9 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
                        robot_proximity_type::ekMANHATTAN));
   } else {
     if (path->is_complete()) {
-      auto egress_path = calc_egress_path();
+      auto egress_path = calculators::egress_path(sensing(),
+                                                 perception(),
+                                                 rng())(allocated_lane());
       event_data_hold(false);
       internal_event(ekST_STRUCTURE_EGRESS,
                      std::make_unique<csteer2D::ds::path_state>(egress_path));
@@ -98,16 +103,11 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
 HFSM_STATE_DEFINE(structure_egress_fsm,
                   structure_egress,
                   csteer2D::ds::path_state* path) {
-  ER_ASSERT(lane_alignment_verify_pos(allocated_lane()->egress().to_2D(),
-                                      allocated_lane()->orientation()),
+  auto alignment = m_alignment_calc(allocated_lane());
+  ER_ASSERT(alignment.egress_pos,
             "Bad alignment (position) on structure egress");
-  ER_ASSERT(lane_alignment_verify_pos(allocated_lane()->egress().to_2D(),
-                                      allocated_lane()->orientation()),
-            "Bad alignment (orientation) on structure egress");
-  auto* ct = perception()->nearest_ct();
+
   bool in_ct_zone =
-      ct->xrange().contains(saa()->sensing()->rpos2D().x()) &&
-      ct->yrange().contains(saa()->sensing()->rpos2D().y()) &&
       saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest");
   /*
    * A robot in front of us is too close--wait for it to move before
@@ -144,14 +144,18 @@ HFSM_EXIT_DEFINE(structure_egress_fsm, exit_structure_egress) {
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->disable();
 }
 
+HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_structure_egress) {
+  /*
+   * Enable proximity sensor, which is needed as we exit the nest/construction
+   * zone and move back into the 2D arena as part of structure egress.
+   */
+  saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->enable();
+}
+
 HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
   if (ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
-
-  auto* sensor = saa()->sensing()->sensor<chal::sensors::ground_sensor>();
-  ER_ASSERT(!sensor->detect("nest"),
-            "In finished state but still in construction zone");
   return rpfsm::event_signal::ekHANDLED;
 }
 
@@ -172,7 +176,7 @@ void structure_egress_fsm::task_start(cta::taskable_argument* c_arg) {
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
   allocated_lane(a);
 
-  auto path = calc_path_to_egress();
+  auto path = calculators::egress_lane_path(sensing())(allocated_lane());
   external_event(kTRANSITIONS[current_state()],
                  std::make_unique<csteer2D::ds::path_state>(path));
 } /* task_start() */
@@ -195,48 +199,5 @@ void structure_egress_fsm::init(void) {
   actuation()->reset();
   util_hfsm::init();
 } /* init() */
-
-std::vector<rmath::vector2d> structure_egress_fsm::calc_egress_path(void) {
-  auto pos = saa()->sensing()->rpos2D();
-  auto* ct = perception()->nearest_ct();
-  std::vector<rmath::vector2d> path = {pos};
-
-  /*
-   * We add some padding to the x/y range of the construction target, because
-   * the nest extends a little beyond that range on the ingress/egress face, and
-   * we (ideally) want to be out of the nest when we finish structure egress.
-   */
-  if (rmath::radians::kZERO == allocated_lane()->orientation()) {
-    double x = rng()->uniform(ct->xrange().ub() + ct->block_unit_dim() * 2.0,
-                              perception()->arena_xrange().ub());
-    path.push_back({x, allocated_lane()->egress().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == allocated_lane()->orientation()) {
-    double y = rng()->uniform(ct->yrange().ub() + ct->block_unit_dim() * 2.0,
-                              perception()->arena_yrange().ub());
-    path.push_back({allocated_lane()->egress().x(), y});
-  }
-  return path;
-} /* calc_egress_path() */
-
-std::vector<rmath::vector2d> structure_egress_fsm::calc_path_to_egress(
-    void) const {
-  auto rpos = saa()->sensing()->rpos2D();
-  std::vector<rmath::vector2d> path = {rpos};
-
-  /*
-   * We only have a path to the ingress lane if we are not currently in it
-   * (i.e., placed our block at the back of the ingress lane).
-   */
-  if (rmath::radians::kZERO == allocated_lane()->orientation() &&
-      !lane_alignment_verify_pos(allocated_lane()->egress().to_2D(),
-                                 allocated_lane()->orientation())) {
-    path.push_back({rpos.x(), allocated_lane()->egress().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == allocated_lane()->orientation() &&
-             !lane_alignment_verify_pos(allocated_lane()->egress().to_2D(),
-                                        allocated_lane()->orientation())) {
-    path.push_back({rpos.x(), allocated_lane()->egress().y()});
-  }
-  return path;
-} /* calc_path_to_egress() */
 
 NS_END(fsm, silicon);

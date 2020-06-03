@@ -1,5 +1,5 @@
 /**
- * \file placement_intent_calculator.hpp
+ * \file egress_path.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_PLACEMENT_INTENT_CALCULATOR_HPP_
-#define INCLUDE_SILICON_FSM_PLACEMENT_INTENT_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_PATH_HPP_
+#define INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_PATH_HPP_
 
 /*******************************************************************************
  * Includes
@@ -28,8 +28,8 @@
 
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
+#include "rcppsw/math/rng.hpp"
 
-#include "silicon/fsm/block_placer.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -39,53 +39,59 @@ namespace silicon::repr {
 class construction_lane;
 } /* namespace silicon::repr */
 
-namespace silicon::controller::perception {
-class builder_perception_subsystem;
-} /* namespace silicon::controller::perception */
-
 namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(silicon, fsm);
+namespace silicon::controller::perception {
+class builder_perception_subsystem;
+} /* namespace silicon::controller::perception */
+
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class placement_intent_calculator
- * \ingroup fsm
+ * \class egress_path
+ * \ingroup fsm calculators
  *
- * \brief Once a robot has reached the end of its placement end, it will be
- * adjacent to a cell it wants to place a block into; this class calculates that
- * cell, which can vary depending on structure orientation and current robot
- * position on the structure, so the calculation is pulled out into its own
- * class.
+ * \brief Once a robot has reached the egress lane within its allocated
+ * construction lane after placing a block on the structure, calculate a path
+ * off of the 3D structure and back into the 2D arena.
  */
-class placement_intent_calculator
-    : public rer::client<placement_intent_calculator> {
+class egress_path : public rer::client<egress_path> {
  public:
-  placement_intent_calculator(
-      const csubsystem::sensing_subsystemQ3D* sensing,
-      const scperception::builder_perception_subsystem* perception);
+  /*
+   * Padding for the x/y range of the construction target, because the nest
+   * extends a little beyond that range on the ingress/egress face, and we
+   * (ideally) want to be out of the nest when we finish structure egress.
+   */
+  static constexpr const size_t kNEST_PADDING = 2;
 
-  block_placer::placement_intent operator()(
+  egress_path(const csubsystem::sensing_subsystemQ3D* sensing,
+              const scperception::builder_perception_subsystem* perception,
+              rmath::rng* rng);
+
+  std::vector<rmath::vector2d> operator()(
       const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
-  placement_intent_calculator(const placement_intent_calculator&) = delete;
-  const placement_intent_calculator& operator=(
-      const placement_intent_calculator&) = delete;
-  placement_intent_calculator(placement_intent_calculator&&) = delete;
-  placement_intent_calculator& operator=(placement_intent_calculator&&) = delete;
+  egress_path(const egress_path&) = delete;
+  const egress_path& operator=(const egress_path&) =
+      delete;
+  egress_path(egress_path&&) = delete;
+  egress_path& operator=(egress_path&&) = delete;
 
  private:
   /* clang-format off */
   const csubsystem::sensing_subsystemQ3D*           mc_sensing;
   const scperception::builder_perception_subsystem* mc_perception;
+
+  rmath::rng*                                       m_rng;
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_PLACEMENT_INTENT_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_PATH_HPP_ */

@@ -26,6 +26,8 @@
  ******************************************************************************/
 #include <utility>
 
+#include <argos3/core/simulator/entity/floor_entity.h>
+
 #include "cosm/arena/operations/free_block_drop.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
@@ -34,7 +36,7 @@
 
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/structure/ct_manager.hpp"
-#include "silicon/structure/structure3D_builder.hpp"
+#include "silicon/structure/base_structure3D_builder.hpp"
 #include "silicon/support/mpl/ct_block_place_spec.hpp"
 
 /*******************************************************************************
@@ -70,11 +72,13 @@ class base_ct_block_place_interactor
 
   base_ct_block_place_interactor(sstructure::ct_manager* const manager,
                                  arena_map_type* const arena_map,
-                                 metrics_agg_type* const metrics_agg)
+                                 metrics_agg_type* const metrics_agg,
+                                 argos::CFloorEntity* const floor)
       : ER_CLIENT_INIT("silicon.support.base_ct_block_place_interactor"),
         m_ct_manager(manager),
         m_arena_map(arena_map),
-        m_metrics_agg(metrics_agg) {}
+        m_metrics_agg(metrics_agg),
+        m_floor(floor) {}
 
   base_ct_block_place_interactor(base_ct_block_place_interactor&&) = default;
 
@@ -159,7 +163,7 @@ class base_ct_block_place_interactor
     } else {
       ER_WARN("Block placement on target%s@%s, orientation=%s invalid",
               rcppsw::to_string(target->id()).c_str(),
-              rcppsw::to_string(intent->site).c_str(),
+              rcppsw::to_string(intent->site.offset).c_str(),
               rcppsw::to_string(intent->orientation).c_str());
     }
 
@@ -176,9 +180,8 @@ class base_ct_block_place_interactor
                            const fsm::block_placer::placement_intent& intent,
                            const rtypes::timestep& t) {
     robot_block_place_visitor_type rplace_op(controller.entity_id(),
-                                             controller.block()->dpos3D());
-    caops::nest_block_process_visitor aproc_op(controller.block()->id(),
-                                               t);
+                                             controller.block()->danchor3D());
+    caops::nest_block_process_visitor aproc_op(controller.block(), t);
 
     auto* ct = controller.perception()->nearest_ct();
     auto builder = m_ct_manager->builder(ct->id());
@@ -196,18 +199,22 @@ class base_ct_block_place_interactor
 
     /* place the block! */
     auto block = controller.block_release();
-    ER_ASSERT(builder->place_block(std::move(block),
-                                   intent.site,
-                                   intent.orientation),
+    bool res = builder->place_block(std::move(block),
+                                    intent.site,
+                                    intent.orientation);
+    ER_ASSERT(res,
               "Failed to place block on target%s@%s, orientation=%s",
               rcppsw::to_string(structure->id()).c_str(),
-              rcppsw::to_string(intent.site).c_str(),
+              rcppsw::to_string(intent.site.offset).c_str(),
               rcppsw::to_string(intent.orientation).c_str());
     /*
      * Distribute the block so that the # blocks available to robots in the
      * arena stays the same after the build process "consumes" one.
      */
     aproc_op.visit(*m_arena_map);
+
+    /* The floor texture must be updated */
+    m_floor->SetChanged();
 
     /* update controller with block placement */
     rplace_op.visit(controller);
@@ -218,15 +225,16 @@ class base_ct_block_place_interactor
       return crepr::block3D_variant(static_cast<crepr::ramp_block3D*>(block));
     } else if (crepr::block_type::ekCUBE == block->md()->type()) {
       return crepr::block3D_variant(static_cast<crepr::cube_block3D*>(block));
-    } else {
-      ER_FATAL_SENTINEL("Bad block type %d",
-                        rcppsw::as_underlying(block->md()->type()));
     }
+    ER_FATAL_SENTINEL("Bad block type %d",
+                      rcppsw::as_underlying(block->md()->type()));
+    return crepr::block3D_variant(static_cast<crepr::cube_block3D*>(nullptr));
   }
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
   arena_map_type* const        m_arena_map;
   metrics_agg_type * const     m_metrics_agg;
+  argos::CFloorEntity*const    m_floor;
   /* clang-format on */
 };
 

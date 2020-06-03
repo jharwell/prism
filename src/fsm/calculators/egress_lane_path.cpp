@@ -1,5 +1,5 @@
 /**
- * \file ct_approach_calculator.cpp
+ * \file egress_lane_path.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,60 +21,57 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/ct_approach_calculator.hpp"
+#include "silicon/fsm/calculators/egress_lane_path.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/fsm/builder_util_fsm.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-ct_approach_calculator::ct_approach_calculator(
-    const csubsystem::sensing_subsystemQ3D* sensing,
-    double lane_alignment_tol)
-    : ER_CLIENT_INIT("silicon.fsm.ct_approach_calculator"),
-      mc_lane_alignment_tol(lane_alignment_tol),
+egress_lane_path::egress_lane_path(
+    const csubsystem::sensing_subsystemQ3D* sensing)
+    : ER_CLIENT_INIT("silicon.fsm.calculator.egress_lane_path"),
       mc_sensing(sensing) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-ct_approach_calculator::ct_approach_ret ct_approach_calculator::operator()(
+std::vector<rmath::vector2d> egress_lane_path::operator()(
     const srepr::construction_lane* lane) const {
-  ct_approach_ret ret;
-  if (rmath::radians::kZERO == lane->orientation()) {
-    /* We are OK in X if we are on the +X side of the construction target */
-    ret.x_ok = mc_sensing->rpos2D().x() >= lane->ingress().x();
+    auto rpos = mc_sensing->rpos2D();
+    std::vector<rmath::vector2d> path = {rpos};
 
+    auto alignment = calculators::lane_alignment(mc_sensing)(lane);
     /*
-     * We are OK in Y if we are (reasonably) close to the Y coordinate of the
-     * ingress lane.
+     * We only have a path to the ingress lane if we are not currently in it
+     * (i.e., placed our block at the back of the ingress lane).
      */
-    ret.orthogonal_dist = lane->ingress().y() - mc_sensing->rpos2D().y();
-    ret.y_ok = std::fabs(ret.orthogonal_dist) <= mc_lane_alignment_tol;
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    /* We are OK in Y if we are on the +Y side of the construction target */
-    ret.y_ok = mc_sensing->rpos2D().y() >= lane->ingress().y();
-
-    /*
-     * We are OK in X if we are (reasonably) close to the X coordinate of the
-     * ingress lane.
-     */
-    ret.orthogonal_dist = lane->ingress().x() - mc_sensing->rpos2D().x();
-    ret.x_ok = std::fabs(ret.orthogonal_dist) <= mc_lane_alignment_tol;
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
-  }
-  return ret;
+    if ((rmath::radians::kZERO == lane->orientation() ||
+         rmath::radians::kPI == lane->orientation())) {
+      if (!alignment.egress_pos) {
+        path.push_back({rpos.x(), lane->egress().y()});
+      }
+    } else if ((rmath::radians::kPI_OVER_TWO == lane->orientation() ||
+                rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation())) {
+      if (!alignment.egress_pos) {
+        path.push_back({lane->egress().x(), rpos.y()});
+      }
+    } else {
+      ER_FATAL_SENTINEL("Bad orientation: '%s'",
+                        rcppsw::to_string(lane->orientation()).c_str());
+    }
+    return path;
 } /* operator()() */
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);

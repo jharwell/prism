@@ -48,9 +48,12 @@ std::list<std::string> structure_progress_metrics_collector::csv_header_cols(
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>{
       /* clang-format off */
+    "int_avg_complete_count",
+    "cum_avg_complete_count",
     "int_avg_placed_count",
     "cum_avg_placed_count",
-    "size_in_blocks",
+    "int_avg_manifest_size",
+    "cum_avg_manifest_size",
       /* clang-format on */
   };
 
@@ -70,14 +73,17 @@ boost::optional<std::string> structure_progress_metrics_collector::csv_line_buil
   }
   std::string line;
 
-  /* interval counts */
-  line += csv_entry_intavg(m_interval.n_placed_count);
+  /* complete counts */
+  line += csv_entry_intavg(m_interval.complete_count);
+  line += csv_entry_tsavg(m_cum.complete_count);
 
-  /* cumulative counts */
-  line += csv_entry_tsavg(m_cum.n_placed_count);
+  /* placed counts */
+  line += csv_entry_intavg(m_interval.placed_count);
+  line += csv_entry_tsavg(m_cum.placed_count);
 
-  /* other stuff */
-  line += rcppsw::to_string(m_cum.n_total_count) + separator();
+  /* manifest sizes */
+  line += rcppsw::to_string(m_interval.manifest_size) + separator();
+  line += rcppsw::to_string(m_cum.manifest_size) + separator();
 
   return boost::make_optional(line);
 } /* csv_line_build() */
@@ -85,18 +91,18 @@ boost::optional<std::string> structure_progress_metrics_collector::csv_line_buil
 void structure_progress_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::structure_progress_metrics&>(metrics);
-  m_interval.n_placed_count += m.n_placed_blocks();
-  m_interval.n_total_count = m.n_total_blocks();
+  m_interval.complete_count += m.is_complete();
+  m_interval.placed_count += m.n_interval_placed();
+  m_interval.manifest_size = m.manifest_size();
 
-  m_cum.n_placed_count += m.n_placed_blocks();
-  m_cum.n_total_count = m.n_total_blocks();
-
-  /* gather from subtargets */
+  m_cum.complete_count += m.is_complete();
+  m_cum.placed_count += m.n_total_placed();
+  m_cum.manifest_size = m.manifest_size();
 } /* collect() */
 
 void structure_progress_metrics_collector::reset_after_interval(void) {
-  m_interval.n_placed_count = 0;
-  m_interval.n_total_count = 0;
+  m_interval.complete_count = 0;
+  m_interval.placed_count = 0;
 } /* reset_after_interval() */
 
 NS_END(metrics, structure, silicon);

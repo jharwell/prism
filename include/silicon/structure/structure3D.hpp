@@ -32,6 +32,7 @@
 #include "rcppsw/ds/grid3D_overlay.hpp"
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector3.hpp"
+#include "rcppsw/types/spatial_dist.hpp"
 
 #include "cosm/ds/block3D_vector.hpp"
 #include "cosm/ds/cell3D.hpp"
@@ -42,6 +43,7 @@
 #include "silicon/structure/config/structure3D_config.hpp"
 #include "silicon/structure/metrics/structure_progress_metrics.hpp"
 #include "silicon/structure/metrics/structure_state_metrics.hpp"
+#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -63,6 +65,11 @@ class subtarget;
  * \brief Graphical representation of the 3D structure to be built. Purely a
  * representation/data structure; does not contain any operations other than
  * basic add/remove/etc.
+ *
+ * Two cells of padding surround the 3D structure in a virtual "shell"; this is
+ * to make the implementation of the algorithm which utilizes robot LOS correct
+ * in all stygmergic configurations, so the size of the structure return by \ref
+ * xdsize(), \ref ydsize() etc. \a includes these padded cells.
  */
 class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
                           public metrics::structure_state_metrics,
@@ -77,7 +84,10 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     rmath::radians z_rotation{};
     size_t extent{0};
   };
+
   using rds::grid3D_overlay<cds::cell3D>::operator[];
+
+  static constexpr const size_t kSUBTARGET_CELL_WIDTH = 2;
 
   structure3D(const config::structure3D_config* config,
               const carena::base_arena_map* map,
@@ -92,11 +102,12 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     return m_occupied_cells;
   }
 
-  /* structure progress metrics */
-  size_t n_placed_blocks(void) const override { return m_placed_since_reset; }
-  size_t n_total_blocks(void) const override {
-    return mc_config.cube_blocks.size() + mc_config.ramp_blocks.size();
-  }
+  /* progress metrics */
+  bool is_complete(void) const override;
+  size_t n_total_placed(void) const override;
+  size_t n_interval_placed(void) const override;
+  size_t manifest_size(void) const override;
+
   /**
    * \brief Reset metric collection state for the structure.
    *
@@ -107,26 +118,114 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
 
   void reset_metrics(void) override;
 
-  rmath::vector3d originr(void) const { return mc_config.anchor; }
-  rmath::vector3z origind(void) const {
-    return rmath::dvec2zvec(originr(), mc_arena_grid_res.v());
+  /**
+   * \brief Get the size of the virtual shell which surrounds the target, in
+   * units of # cells;
+   */
+  size_t vshell_sized(void) const { return 2; }
+
+  /**
+   * \brief Get the size of the virtual shell which surrounds the target, in
+   * spatial distance;
+   */
+  rtypes::spatial_dist vshell_sizer(void) const {
+    return rtypes::spatial_dist(block_unit_dim() * 2);
   }
-  size_t volumetric_size(void) const { return xdsize() * ydsize() * zdsize(); }
+
+  /**
+   * \brief Get the real arena coordinates of the REAL origin of the structure,
+   * NOT the coordinates of the origin of the virtual shell which surrounds the
+   * structure.
+   */
+  rmath::vector3d roriginr(void) const {
+    return voriginr() + rmath::vector3d(vshell_sizer().v(),
+                                        vshell_sizer().v(),
+                                        0.0);
+  }
+  /**
+   * \brief Get the discrete arena coordinates of the REALL origin of the
+   * structure, NOT the coordinates of the origin of the virtual shell which
+   * surrounds the structure.
+   */
+  rmath::vector3z rorigind(void) const {
+    return vorigind() + rmath::vector3z(vshell_sized(),
+                                        vshell_sized(),
+                                        0);
+  }
+
+  /**
+   * \brief Get the real arena coordinates of the origin of the virtual shell
+   * which surrounds the structure in X and Y.
+   */
+  rmath::vector3d voriginr(void) const {
+    return grid3D_overlay<cds::cell3D>::originr();
+  }
+
+  /**
+   * \brief Get the discrete arena coordinates of the origin of the virtual
+   * shell which surrounds the structure in X and Y.
+   */
+  rmath::vector3z vorigind(void) const {
+    return grid3D_overlay<cds::cell3D>::origind();
+  }
+
+  /**
+   * \brief Return the orientation for the structure.
+   *
+   * If the orientation is 0, then internal coordinates for the cells comprising
+   */
+
   const rmath::radians& orientation(void) const {
     return mc_config.orientation;
   }
+
+  size_t volumetric_size(bool include_virtual = false) const {
+    return xranged(include_virtual).span() *
+        yranged(include_virtual).span() *
+        zranged().span();
+  }
+
   bool block_placement_valid(const crepr::block3D_variant& block,
-                             const rmath::vector3z& loc,
+                             const ct_coord& coord,
                              const rmath::radians& z_rotation);
 
   rtypes::type_uuid id(void) const { return mc_id; }
-  rmath::ranged xrange(void) const {
-    return rmath::ranged(originr().x(), originr().x() + xrsize());
+  rmath::ranged xranger(bool include_virtual = false) const {
+    if (include_virtual) {
+      return rmath::ranged(voriginr().x(), voriginr().x() + xrsize());
+    } else {
+      return rmath::ranged(roriginr().x(),
+                           roriginr().x() + xrsize() - vshell_sizer().v() * 2);
+    }
   }
-  rmath::ranged yrange(void) const {
-    return rmath::ranged(originr().y(), originr().y() + yrsize());
+  rmath::ranged yranger(bool include_virtual = false) const {
+    if (include_virtual) {
+      return rmath::ranged(voriginr().y(), voriginr().y() + yrsize());
+    } else {
+      return rmath::ranged(roriginr().y(),
+                           roriginr().y() + yrsize() - vshell_sizer().v()* 2);
+    }
   }
-  rmath::ranged zrange(void) const {
+  rmath::rangez xranged(bool include_virtual = false) const {
+    if (include_virtual) {
+      return rmath::rangez(vorigind().x(), vorigind().x() + xdsize());
+    } else {
+      return rmath::rangez(rorigind().x(),
+                           rorigind().x() + xdsize() - vshell_sized() * 2);
+    }
+  }
+  rmath::rangez yranged(bool include_virtual = false) const {
+    if (include_virtual) {
+      return rmath::rangez(vorigind().y(), vorigind().y() + ydsize());
+    } else {
+      return rmath::rangez(rorigind().y(),
+                           rorigind().y() + ydsize() - vshell_sized()* 2);
+    }
+  }
+  rmath::rangez zranged(void) const {
+    return rmath::rangez(origind().z(), origind().z() + zdsize());
+  }
+  rmath::ranged zranger(void) const {
     return rmath::ranged(originr().z(), originr().z() + zrsize());
   }
 
@@ -134,13 +233,11 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   size_t unit_dim_factor(void) const { return mc_unit_dim_factor; }
 
   /**
-   * \brief Return \c TRUE if a block with the same ID as the \p query currently
-   * exists in the structure, and \c FALSE otherwise. Search is performed by
-   * block LOCATION, rather than ID, because the structure changes the IDs of
-   * the cloned blocks placed on the structure in order to differentiate them
-   * from the blocks in the arena.
+   * \brief Return \c TRUE if the a cell spec exists for the specified block,
+   * and \c FALSE otherwise. Search is performed by block location (assumed to
+   * be relative to structure virtual origin).
    */
-  bool contains(const crepr::base_block3D* query) const;
+  bool spec_exists(const crepr::base_block3D* query) const;
 
   /**
    * \brief Return \c TRUE if the specified 2D location is within the bounds of
@@ -150,8 +247,8 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * \param include_virtual Should the ring of "virtual" cells which surround
    *                        the structure be included in the search check?
    */
-
   bool contains(const rmath::vector2d& loc, bool include_virtual) const;
+
   /**
    * \brief Add a block to the structure after verifying its placement is valid
    * via \ref block_addition_valid().
@@ -159,26 +256,14 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   void block_add(std::unique_ptr<crepr::base_block3D> block);
 
   /**
-   * \brief Return \c TRUE if the structure has been completed and \c FALSE
-   * otherwise.
-   */
-  bool is_complete(void) const;
-
-  /**
    * \brief Given a location within the bounding box for the structure, retrieve
    * the final state the cell should be in once the structure is completed via
    * lookup (MUCH faster than having to compute it every queury in large
    * structures).
+   *
+   * \param coord Coordinates of the desired cell
    */
-  const cell_spec* cell_spec_retrieve(const rmath::vector3z& coord) const;
-
-  /**
-   * \brief For ramp blocks, compute the list of cells which will be in the
-   * BLOCK_EXTENT state as part of the specified ramp block once the structure
-   * is completed.
-   */
-  std::vector<rmath::vector3z> spec_to_block_extents(
-      const config::ramp_block_loc_spec* spec) const;
+  const cell_spec* cell_spec_retrieve(const ct_coord& coord) const;
 
   /**
    * \brief Verify cell state for block addition.
@@ -195,8 +280,10 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   /**
    * \brief Return the 0-based index of the \ref subtarget to which the
    * specified cell belongs.
+   *
+   * \param cell The coordinates of the cell to check.
    */
-  subtarget* cell_subtarget(const cds::cell3D& cell);
+  subtarget* parent_subtarget(const ct_coord& coord);
 
   const subtarget_vectorno& subtargets(void) const { return m_subtargetsno; }
   rtypes::type_uuid placement_id(void) {
@@ -206,19 +293,17 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   void reset(void);
 
  private:
+  /* force usage of the origin functions defined in this class */
+  using grid3D_overlay<cds::cell3D>::originr;
+  using grid3D_overlay<cds::cell3D>::origind;
+
   using subtarget_vectoro = std::vector<std::unique_ptr<subtarget>>;
   using cell_spec_map_type = std::map<rmath::vector3z, cell_spec>;
 
-  /**
-   * \brief Size of the extent for ramp blocks, based what is hard-coded in
-   * COSM. If that changes, then this will need to change too.
-   */
-  static constexpr const uint kRAMP_BLOCK_EXTENT_SIZE = 2;
-
   size_t unit_dim_factor_calc(const carena::base_arena_map* map) const;
 
-  subtarget_vectoro subtargetso_calc(void) const;
-  subtarget_vectorno subtargetsno_calc(void) const;
+  subtarget_vectoro subtargetso_init(void) const;
+  subtarget_vectorno subtargetsno_init(void) const;
 
   /**
    * \brief Given a location within the bounding box for the structure, compute
@@ -228,7 +313,14 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    */
   cell_spec cell_spec_calc(const rmath::vector3z& coord) const;
 
-  cell_spec_map_type cell_spec_map_calc(void);
+  cell_spec_map_type cell_spec_map_init(void);
+
+  /**
+   * \brief Return if the specified orientation is a valid orientation for the
+   * structure. Used as an initialization check.
+   */
+
+  bool orientation_valid(const rmath::radians& orientation) const;
 
   /* clang-format off */
   const rtypes::type_uuid          mc_id;
@@ -251,9 +343,23 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * structures.
    */
   std::vector<rmath::vector3z>     m_occupied_cells{};
-  cell_spec_map_type               m_cell_spec_map;
-  subtarget_vectoro                m_subtargetso;
-  subtarget_vectorno               m_subtargetsno;
+
+  /**
+   * Specification for all cells in the structure. Cannot be computed in the
+   * constructor initializer list because it requires cell locations to be
+   * populated, which only happens in the BODY of the constructor. Keys are
+   * relative to the REAL origin of the structure, not the origin of the virtual
+   * shell.
+   */
+  cell_spec_map_type               m_cell_spec_map{};
+
+  /**
+   * Subtargets within the structure. Cannot be computed in the constructor
+   * initializer list because it requires cell locations to be populated, which
+   * only happens in the BODY of the constructor.
+   */
+  subtarget_vectoro                m_subtargetso{};
+  subtarget_vectorno               m_subtargetsno{};
   /* clang-format on */
 };
 

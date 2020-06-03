@@ -58,15 +58,22 @@ class subtarget : public rer::client<subtarget>,
   const subtarget& operator=(const subtarget&) = delete;
 
   /* progress metrics */
-  size_t n_total_blocks(void) const override { return mc_total_block_count; }
-  size_t n_placed_blocks(void) const override { return m_placed_block_count; }
+  bool is_complete(void) const override {
+    return mc_manifest_size == n_total_placed();
+  }
+  size_t n_total_placed(void) const override { return m_total_placed; }
+  size_t n_interval_placed(void) const override { return m_interval_placed; }
+  size_t manifest_size(void) const override { return mc_manifest_size; }
 
   /**
    * \brief Update the count of blocks within the slice as the result of a block
    * placement. This function is provided so that you don't have to recalculate
    * the block count EVERY time, which is very expensive in large structures.
    */
-  void placed_block_count_update(size_t c) { m_placed_block_count += c; }
+  void placed_count_update(size_t c) {
+    m_total_placed += c;
+    m_interval_placed += c;
+  }
 
   /**
    * \brief Return \c TRUE if the subtarget contains the specified cell
@@ -81,16 +88,17 @@ class subtarget : public rer::client<subtarget>,
    */
   rmath::vector3z slice_axis_calc(const rmath::radians& orientation) const;
 
-  size_t total_block_count_calc(const slice2D& slice,
-                                const structure3D* structure) const;
+  size_t manifest_size_calc(const slice2D& slice,
+                            const structure3D* structure) const;
 
   /* clang-format off */
   const size_t  mc_id;
   const slice2D mc_entry;
   const slice2D mc_exit;
-  const size_t  mc_total_block_count{0};
+  const size_t  mc_manifest_size{0};
 
-  size_t        m_placed_block_count{0};
+  size_t        m_total_placed{0};
+  size_t        m_interval_placed{0};
   /* clang-format on */
 };
 

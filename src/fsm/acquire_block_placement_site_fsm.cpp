@@ -33,9 +33,9 @@
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/fsm/construction_signal.hpp"
 #include "silicon/fsm/fs_acq_checker.hpp"
-#include "silicon/fsm/fs_path_calculator.hpp"
-#include "silicon/fsm/placement_intent_calculator.hpp"
-#include "silicon/fsm/placement_path_calculator.hpp"
+#include "silicon/fsm/calculators/ingress_path.hpp"
+#include "silicon/fsm/calculators/placement_intent.hpp"
+#include "silicon/fsm/calculators/placement_path.hpp"
 #include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -69,7 +69,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
                                       nullptr,
                                       nullptr,
                                       nullptr),
-          HFSM_STATE_MAP_ENTRY_EX(&finished)) {}
+          HFSM_STATE_MAP_ENTRY_EX(&finished)),
+      m_alignment_calc(saa->sensing()) {}
 
 acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
     default;
@@ -83,14 +84,16 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, start) {
 
 HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
                      entry_acquire_frontier_set) {
+  /* disable proximity sensor and enable camera while on the structure */
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
+  saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->disable();
 }
 
 HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
-  ER_ASSERT(lane_alignment_verify_pos(allocated_lane()->ingress().to_2D(),
-                                      allocated_lane()->orientation()),
+  auto alignment = m_alignment_calc(allocated_lane());
+  ER_ASSERT(alignment.ingress_pos,
             "Bad alignment (position) during frontier set acqusition");
-  ER_ASSERT(lane_alignment_verify_azimuth(allocated_lane()->orientation()),
+  ER_ASSERT(alignment.azimuth,
             "Bad alignment (orientation) during frontier set acquisition");
 
   /*
@@ -125,7 +128,7 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
       saa()->steer_force2D().accum(
           saa()->steer_force2D().path_following(m_path.get()));
     } else { /* arrived! */
-      auto calculator = placement_path_calculator(sensing(), perception());
+      auto calculator = calculators::placement_path(sensing(), perception());
       m_path = std::make_unique<csteer2D::ds::path_state>(
           calculator(allocated_lane(), acq));
       internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
@@ -182,7 +185,7 @@ void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg)
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
   allocated_lane(a);
 
-  auto calculator = fs_path_calculator(sensing());
+  auto calculator = calculators::ingress_path(sensing(), perception());
   m_path =
       std::make_unique<csteer2D::ds::path_state>(calculator(allocated_lane()));
   external_event(kTRANSITIONS[current_state()]);
@@ -204,7 +207,7 @@ block_placer::placement_intent acquire_block_placement_site_fsm::
     placement_intent_calc(void) const {
   ER_ASSERT(fsm_state::ekST_FINISHED == current_state(),
             "Placement cell can only be calculated once the FSM finishes");
-  auto calculator = placement_intent_calculator(sensing(), perception());
+  auto calculator = calculators::placement_intent(sensing(), perception());
   return calculator(allocated_lane());
 } /* placement_intent_calc() */
 

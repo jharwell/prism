@@ -1,5 +1,5 @@
 /**
- * \file placement_intent_calculator.cpp
+ * \file placement_intent.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/placement_intent_calculator.hpp"
+#include "silicon/fsm/calculators/placement_intent.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
@@ -33,25 +33,33 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-placement_intent_calculator::placement_intent_calculator(
+placement_intent::placement_intent(
     const csubsystem::sensing_subsystemQ3D* sensing,
     const scperception::builder_perception_subsystem* perception)
-    : ER_CLIENT_INIT("silicon.fsm.placement_intent_calculator"),
+    : ER_CLIENT_INIT("silicon.fsm.calculator.placement_intent"),
       mc_sensing(sensing),
       mc_perception(perception) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-block_placer::placement_intent placement_intent_calculator::operator()(
+block_placer::placement_intent placement_intent::operator()(
     const srepr::construction_lane* lane) const {
-  auto pos = mc_sensing->dpos3D();
   auto* ct = mc_perception->nearest_ct();
+  auto pos = mc_sensing->dpos3D();
+
+  /**
+   * The CT cell the robot is in is calculated relative to the origin of the
+   * nest (which is where their LOS kicks in), NOT relative to the real origin
+   * of the structure.
+   */
+  auto robot_ct_cell = (pos - ct->vorigind()) / ct->unit_dim_factor();
+
   block_placer::placement_intent ret;
 
   /*
@@ -59,29 +67,48 @@ block_placer::placement_intent placement_intent_calculator::operator()(
    * such. This will be fixed once the most basic construction has been
    * validated.
    */
+
+  ER_INFO("Calculate placement intent: robot_pos=%s,robot_ct_cell=%s",
+          rcppsw::to_string(pos).c_str(),
+          rcppsw::to_string(robot_ct_cell).c_str());
+
+  /*
+   * For all targets, we have to compute placement intent from the robot's
+   * current position.
+   *
+   * 1. Intent is always the cell directly in front of the robot, along the unit
+   *    vector for whatever direction the target's orientation is in, accounting
+   *    for the fact that the target grid resolution may be greater than that of
+   *    the arena.
+   *
+   * 2. Subtract the target origin to get a relative location within the the
+   *    construction target, again accounting for the fact that the structure
+   *    grid resolution may be greater than that of the arena.
+   */
+  rmath::vector3z intent_abs;
   if (rmath::radians::kZERO == lane->orientation()) {
-    /*
-     * This is the absolute location of the block placement intent in the
-     * ARENA, which is what the origind() function also returns for the
-     * structure. However, to get to the relative intent within the target
-     * structure, simply subtracting the origind() is not enough if the grid
-     * resolution for the structure is larger than that for the arena.
-     */
-    auto intent_abs = pos - rmath::vector3z::X * ct->unit_dim_factor();
-    ret = {(intent_abs - ct->origind()) / ct->unit_dim_factor(),
-           rmath::radians::kZERO};
+    /* intent is one cell -X from robot's current position  */
+    intent_abs = robot_ct_cell - rmath::vector3z::X;
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    auto intent_abs = pos - rmath::vector3z::Y * ct->unit_dim_factor();
-    ret = {(intent_abs - ct->origind()) / ct->unit_dim_factor(),
-           rmath::radians::kZERO};
+    /* intent is one cell -Y from robot's current position  */
+    intent_abs = robot_ct_cell - rmath::vector3z::Y;
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    /* intent is one cell +X from robot's current position  */
+    intent_abs = robot_ct_cell + rmath::vector3z::X;
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    /* intent is one cell +Y from robot's current position  */
+    intent_abs = robot_ct_cell + rmath::vector3z::Y;
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
+
+  structure::ct_coord coord{intent_abs, structure::coord_relativity::ekVORIGIN};
+  ret = {coord, rmath::radians::kZERO};
   ER_INFO("Calculated placement intent: %s@%s",
-          rcppsw::to_string(ret.site).c_str(),
+          rcppsw::to_string(ret.site.offset).c_str(),
           rcppsw::to_string(ret.orientation).c_str());
   return ret;
 } /* operator()() */
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);

@@ -1,5 +1,5 @@
 /**
- * \file fs_path_calculator.hpp
+ * \file lane_alignment.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_FS_PATH_CALCULATOR_HPP_
-#define INCLUDE_SILICON_FSM_FS_PATH_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_
+#define INCLUDE_SILICON_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_
 
 /*******************************************************************************
  * Includes
@@ -28,6 +28,7 @@
 
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
+#include "rcppsw/types/spatial_dist.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -42,43 +43,60 @@ namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class fs_path_calculator
- * \ingroup fsm
+ * \class lane_alignment
+ * \ingroup fsm calculators
  *
- * \brief Once a robot has reached the ingress point of its chosen construction
- * lane, calculate the path to the "frontier set", which is defined as the set
- * of cells adjacent to cells containing the latest set of placed blocks. The
- * exact location of this set is unknown to the robot a priori, as other robots
- * could have placed blocks within this last since it last placed one, so the
- * calculated path is to the BACK of the ingress lane; once the robot encounters
- * a stygmetric configuration that is a member of the frontier set, it will go
- * on to the next phase of the builder FSM.
+ * \brief Calculate the alignment of a robot to the ingress/egress lanes within
+ * a construction lane in terms of position and orientation.
  */
-class fs_path_calculator : public rer::client<fs_path_calculator> {
+class lane_alignment : public rer::client<lane_alignment> {
  public:
-  explicit fs_path_calculator(const csubsystem::sensing_subsystemQ3D* sensing);
+  struct ret_type {
+    bool ingress_pos{false};
+    bool egress_pos{false};
+    bool azimuth{false};
+  };
 
-  std::vector<rmath::vector2d> operator()(
-      const srepr::construction_lane* lane) const;
+  /**
+   * How close the robot needs to be to the vectors representing the
+   * ingress/egress lanes in terms of difference in position.
+   */
+  static const rtypes::spatial_dist kTRAJECTORY_ORTHOGONAL_TOL;
+
+  /**
+   * How close the robot needs to be to a the vectors representing the
+   * ingress/egress lanes in terms of azimuth angle deviation.
+   */
+  static const rmath::radians kAZIMUTH_TOL;
+
+  explicit lane_alignment(const csubsystem::sensing_subsystemQ3D* sensing)
+      : ER_CLIENT_INIT("silicon.fsm.calculator.lane_alignment"),
+        mc_sensing(sensing) {}
+
+  ret_type operator()(const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
-  fs_path_calculator(const fs_path_calculator&) = delete;
-  const fs_path_calculator& operator=(const fs_path_calculator&) = delete;
-  fs_path_calculator(fs_path_calculator&&) = delete;
-  fs_path_calculator& operator=(fs_path_calculator&&) = delete;
+  lane_alignment(const lane_alignment&) = delete;
+  const lane_alignment& operator=(const lane_alignment&) = delete;
+  lane_alignment(lane_alignment&&) = delete;
+  lane_alignment& operator=(lane_alignment&&) = delete;
 
  private:
+  bool verify_pos(const rmath::vector2d& lane_point,
+                  const rmath::radians& orientation) const;
+  bool verify_azimuth(const rmath::radians& orientation) const;
+
   /* clang-format off */
   const csubsystem::sensing_subsystemQ3D* mc_sensing;
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_FS_PATH_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_ */

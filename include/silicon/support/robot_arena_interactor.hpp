@@ -68,7 +68,7 @@ class robot_arena_interactor final
         m_arena_pickup(map,
                        floor,
                        envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
-        m_block_place(manager, map, metrics_agg) {}
+        m_block_place(manager, map, metrics_agg, floor) {}
 
   robot_arena_interactor(robot_arena_interactor&&) = default;
 

@@ -66,18 +66,21 @@ class builder_util_fsm : public csfsm::util_hfsm,
                          public rer::client<builder_util_fsm> {
  public:
   /**
-   * How close the robot needs to be to the vectors representing the
-   * ingress/egress lanes in terms of difference in position. If they veer
-   * outside of this, an assertion will be triggered.
+   * \brief Verify that the robot position is still (mostly) parallel to the
+   * vector defining the construction lane.
    */
-  static constexpr const double kLANE_VECTOR_DIST_TOL = 0.2;
+  static bool lane_alignment_verify_pos(
+      const csubsystem::sensing_subsystemQ3D* sensing,
+      const rmath::vector2d& lane_point,
+      const rmath::radians& orientation);
 
   /**
-   * How close the robot needs to be to a given angle in order to be considered
-   * to have that azimuth heading. If they veer outside of this range, an
-   * assertion will be triggered while traversing the ingress/egress lanes.
+   * \brief Verify that the headingposition is still (mostly) parallel to the
+   * angle of the vector defining the construction lane.
    */
-  static const rmath::radians kROBOT_AZIMUTH_TOL;
+  static bool lane_alignment_verify_azimuth(
+      const csubsystem::sensing_subsystemQ3D* sensing,
+      const rmath::radians& orientation);
 
   builder_util_fsm(const scperception::builder_perception_subsystem* perception,
                    crfootbot::footbot_saa_subsystem* saa,
@@ -92,6 +95,7 @@ class builder_util_fsm : public csfsm::util_hfsm,
 
   /* HFSM overrides */
   void init(void) override;
+
 
  protected:
   enum class robot_proximity_type {
@@ -142,19 +146,6 @@ class builder_util_fsm : public csfsm::util_hfsm,
    * avoid (more) special cases in the builder algorithm.
    */
   bool robot_manhattan_proximity(void) const;
-
-  /**
-   * \brief Verify that the robot position is still (mostly) parallel to the
-   * vector defining the construction lane.
-   */
-  bool lane_alignment_verify_pos(const rmath::vector2d& lane_point,
-                                 const rmath::radians& orientation) const;
-
-  /**
-   * \brief Verify that the headingposition is still (mostly) parallel to the
-   * angle of the vector defining the construction lane.
-   */
-  bool lane_alignment_verify_azimuth(const rmath::radians& orientation) const;
 
   /* builder states */
   HFSM_STATE_DECLARE(builder_util_fsm, wait_for_robot, const robot_wait_data);

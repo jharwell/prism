@@ -40,7 +40,7 @@ NS_START(silicon, controller, operations, detail);
 block_pickup::block_pickup(crepr::base_block3D* block,
                            const rtypes::type_uuid& robot_id,
                            const rtypes::timestep& t)
-    : ccops::block_pickup(block, robot_id, t) {}
+    : ccops::base_block_pickup(block, robot_id, t) {}
 
 /*******************************************************************************
  * Single Target Construction

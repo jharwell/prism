@@ -67,7 +67,8 @@ void base_loop_functions::init(ticpp::Element& node) {
   /* initialize arena map and distribute blocks */
   auto* aconfig = config()->config_get<caconfig::arena_map_config>();
   auto* vconfig = config()->config_get<cvconfig::visualization_config>();
-  arena_map_init<carena::base_arena_map>(aconfig, vconfig);
+  arena_map_create<carena::base_arena_map>(aconfig);
+  arena_map_init(vconfig);
 
   /* initialize temporal variance injection */
   tv_init(config()->config_get<tv::config::tv_manager_config>());
@@ -165,7 +166,7 @@ void base_loop_functions::post_step(void) {
 } /* post_step() */
 
 void base_loop_functions::reset(void) {
-  arena_map()->distribute_all_blocks();
+  arena_map()->initialize(this);
   m_ct_manager->reset();
 } /* reset() */
 

@@ -1,5 +1,5 @@
 /**
- * \file place_block.cpp
+ * \file block_place.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/place_block.hpp"
+#include "silicon/structure/operations/block_place.hpp"
 
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
@@ -29,6 +29,7 @@
 #include "silicon/structure/operations/cell3D_block_extent.hpp"
 #include "silicon/structure/operations/cell3D_block_place.hpp"
 #include "silicon/structure/subtarget.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -38,23 +39,24 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void place_block::operator()(crepr::cube_block3D* block) const {
+void block_place::operator()(crepr::cube_block3D* block) const {
   do_place(std::unique_ptr<crepr::cube_block3D>(block));
 } /* operator()() */
 
-void place_block::operator()(crepr::ramp_block3D* block) const {
+void block_place::operator()(crepr::ramp_block3D* block) const {
   do_place(std::unique_ptr<crepr::ramp_block3D>(block));
 } /* operator()()*/
 
-void place_block::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
+void block_place::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
+
   ER_INFO("Cube block%d to structure cell@%s,z_rot=%s",
           block->id().v(),
-          rcppsw::to_string(mc_cell).c_str(),
+          rcppsw::to_string(mc_coord).c_str(),
           rcppsw::to_string(mc_z_rot).c_str());
 
   /* update host cell */
-  cell3D_block_place_visitor op(mc_cell, block.get());
-  op.visit(m_structure->access(mc_cell));
+  cell3D_block_place_visitor op(mc_coord, block.get());
+  op.visit(m_structure->access(mc_coord));
 
   /*
    * Set the new location for the block (equivalent to the absolute location of
@@ -64,26 +66,27 @@ void place_block::do_place(std::unique_ptr<crepr::cube_block3D> block) const {
    * does not use that, so that SHOULD be OK for now.
    */
   rmath::vector3d cell_loc =
-      m_structure->cell_loc_abs(m_structure->access(mc_cell));
-  block->rpos3D(cell_loc + embodiment_offset_calc(block.get()));
-  block->dpos3D(m_structure->origind() + mc_cell);
+      m_structure->cell_loc_abs(m_structure->access(mc_coord));
+  block->ranchor3D(cell_loc + embodiment_offset_calc(block.get()));
+  block->danchor3D(m_structure->vorigind() + mc_coord);
 
   /* actually add the block to the structure */
   m_structure->block_add(std::move(block));
 
   /* update subtarget */
-  auto subtarget = m_structure->cell_subtarget(m_structure->access(mc_cell));
-  subtarget->placed_block_count_update(1);
+  auto subtarget = m_structure->parent_subtarget({mc_coord,
+                                                  coord_relativity::ekVORIGIN});
+  subtarget->placed_count_update(1);
 } /* do_place() */
 
-void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
+void block_place::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
   ER_INFO("Ramp block%d to structure cell@%s,z_rot=%s",
           block->id().v(),
-          rcppsw::to_string(mc_cell).c_str(),
+          rcppsw::to_string(mc_coord).c_str(),
           rcppsw::to_string(mc_z_rot).c_str());
   /* update host cell */
-  cell3D_block_place_visitor host_op(mc_cell, block.get());
-  host_op.visit(m_structure->access(mc_cell));
+  cell3D_block_place_visitor host_op(mc_coord, block.get());
+  host_op.visit(m_structure->access(mc_coord));
 
   /*
    * Set the new location for the block (equivalent to the absolute location of
@@ -93,24 +96,24 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
    * does not use that, so that SHOULD be OK for now.
    */
   rmath::vector3d cell_loc =
-      m_structure->cell_loc_abs(m_structure->access(mc_cell));
-  block->rpos3D(cell_loc + embodiment_offset_calc(block.get()));
-  block->dpos3D(m_structure->origind() + mc_cell);
+       m_structure->cell_loc_abs(m_structure->access(mc_coord));
+  block->ranchor3D(cell_loc + embodiment_offset_calc(block.get()));
+  block->danchor3D(m_structure->vorigind() + mc_coord);
 
   /* update cells for block extent */
   if (rmath::radians::kZERO == mc_z_rot) {
-    auto ub = static_cast<size_t>(mc_cell.x() +
-                                  block->dims3D().x() / block->dims3D().y());
-    for (size_t x = mc_cell.x() + 1; x < ub; ++x) {
-      rmath::vector3z extent_loc(x, mc_cell.y(), mc_cell.z());
+    auto ub = static_cast<size_t>(mc_coord.x() +
+                                  block->rdim3D().x() / block->rdim3D().y());
+    for (size_t x = mc_coord.x() + 1; x < ub; ++x) {
+      rmath::vector3z extent_loc(x, mc_coord.y(), mc_coord.z());
       cell3D_block_extent_visitor op(extent_loc, block.get());
       op.visit(m_structure->access(extent_loc));
     } /* for(x..) */
   } else if (rmath::radians::kPI_OVER_TWO == mc_z_rot) {
-    auto ub = static_cast<size_t>(mc_cell.y() +
-                                  block->dims3D().x() / block->dims3D().y());
-    for (size_t y = mc_cell.y() + 1; y < ub; ++y) {
-      rmath::vector3z extent_loc(mc_cell.x(), y, mc_cell.z());
+    auto ub = static_cast<size_t>(mc_coord.y() +
+                                  block->rdim3D().x() / block->rdim3D().y());
+    for (size_t y = mc_coord.y() + 1; y < ub; ++y) {
+      rmath::vector3z extent_loc(mc_coord.x(), y, mc_coord.z());
       cell3D_block_extent_visitor op(extent_loc, block.get());
       op.visit(m_structure->access(extent_loc));
     } /* for(y..) */
@@ -124,17 +127,18 @@ void place_block::do_place(std::unique_ptr<crepr::ramp_block3D> block) const {
   m_structure->block_add(std::move(block));
 
   /* update subtarget */
-  auto subtarget = m_structure->cell_subtarget(m_structure->access(mc_cell));
-  subtarget->placed_block_count_update(1);
+  auto subtarget = m_structure->parent_subtarget({mc_coord,
+                                                  coord_relativity::ekVORIGIN});
+  subtarget->placed_count_update(1);
 } /* do_place() */
 
-rmath::vector3d place_block::embodiment_offset_calc(
+rmath::vector3d block_place::embodiment_offset_calc(
     const crepr::base_block3D* block) const {
   /* X,Y axes of block and arena align */
   if (rmath::radians::kZERO == mc_z_rot) {
-    return {block->dims3D().x() / 2.0, block->dims3D().y() / 2.0, 0.0};
+    return {block->rdim3D().x() / 2.0, block->rdim3D().y() / 2.0, 0.0};
   } else { /* X,Y axes of block and arena are swapped */
-    return {block->dims3D().y() / 2.0, block->dims3D().x() / 2.0, 0.0};
+    return {block->rdim3D().y() / 2.0, block->rdim3D().x() / 2.0, 0.0};
   }
 } /* embodiment_offset_calc() */
 

@@ -30,6 +30,7 @@
 #include "rcppsw/types/type_uuid.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,8 +51,7 @@ NS_START(silicon, fsm);
 class block_placer {
  public:
   struct placement_intent {
-    /** relative location (cell) within target structure */
-    rmath::vector3z site{};
+    structure::ct_coord site{};
 
     /** orientation in specified cell */
     rmath::radians orientation{};

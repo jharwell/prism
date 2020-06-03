@@ -25,8 +25,10 @@
  ******************************************************************************/
 #include <argos3/plugins/robots/foot-bot/simulator/footbot_entity.h>
 #include <argos3/plugins/simulator/visualizations/qt-opengl/qtopengl_user_functions.h>
+#include <argos3/core/utility/math/quaternion.h>
 
 #include "silicon/silicon.hpp"
+#include "silicon/controller/controller_fwd.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -64,6 +66,12 @@ class construction_qt_user_functions : public argos::CQTOpenGLUserFunctions {
   ~construction_qt_user_functions(void) override = default;
 
   void Draw(argos::CFootBotEntity& c_entity);
+
+ private:
+  void los_render(const controller::constructing_controller* controller,
+                  const argos::CQuaternion& orientation);
+  void nearest_ct_render(const controller::constructing_controller* controller,
+                         const argos::CQuaternion& orientation);
 };
 
 NS_END(support, silicon);

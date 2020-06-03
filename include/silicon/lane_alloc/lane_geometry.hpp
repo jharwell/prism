@@ -25,8 +25,10 @@
  * Includes
  ******************************************************************************/
 #include "rcppsw/math/vector3.hpp"
+#include "rcppsw/er/client.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/controller/perception/ct_skel_info.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -43,18 +45,11 @@ NS_START(silicon, lane_alloc);
  * \brief Representation of the geometry (ingress/egress points, center, etc) of
  * an allocated construction lane.
  */
-class lane_geometry {
+class lane_geometry : public rer::client<lane_geometry> {
  public:
-  lane_geometry(const rmath::vector3z& ingress_nearest_cell,
-                const rmath::vector3z& egress_nearest_cell,
-                const rmath::vector3d& ingress,
-                const rmath::vector3d& egress,
-                const rmath::vector3d& center)
-      : mc_ingress_nearest_cell(ingress_nearest_cell),
-        mc_egress_nearest_cell(egress_nearest_cell),
-        mc_ingress(ingress),
-        mc_egress(egress),
-        mc_center(center) {}
+  lane_geometry(const scperception::ct_skel_info* target,
+                const rmath::vector3z& ingress_nearest_cell,
+                const rmath::vector3z& egress_nearest_cell);
 
   lane_geometry(const lane_geometry&) = default;
   lane_geometry& operator=(const lane_geometry&) = default;
@@ -62,25 +57,29 @@ class lane_geometry {
   lane_geometry(lane_geometry&&) = default;
   lane_geometry& operator=(lane_geometry&&) = delete;
 
-  const rmath::vector3z& ingress_nearest_cell(void) const {
-    return mc_ingress_nearest_cell;
+  const rmath::vector3z& ingress_cell(void) const {
+    return mc_ingress_cell;
   }
-  const rmath::vector3z& egress_nearest_cell(void) const {
-    return mc_egress_nearest_cell;
+  const rmath::vector3z& egress_cell(void) const {
+    return mc_egress_cell;
   }
 
-  const rmath::vector3d& ingress(void) const { return mc_ingress; }
-  const rmath::vector3d& egress(void) const { return mc_egress; }
+  const rmath::vector3d& ingress_start(void) const { return m_ingress_start; }
+  const rmath::vector3d& egress_start(void) const { return m_egress_start; }
 
-  const rmath::vector3d& center(void) const { return mc_center; }
+  const rmath::vector3d& ingress_center(void) const { return m_ingress_center; }
+  const rmath::vector3d& egress_center(void) const { return m_egress_center; }
 
  private:
   /* clang-format off */
-  const rmath::vector3z mc_ingress_nearest_cell;
-  const rmath::vector3z mc_egress_nearest_cell;
-  const rmath::vector3d mc_ingress;
-  const rmath::vector3d mc_egress;
-  const rmath::vector3d mc_center;
+  const rmath::vector3z mc_ingress_cell;
+  const rmath::vector3z mc_egress_cell;
+  const rmath::vector3d mc_cell_corr;
+
+  rmath::vector3d m_ingress_start{};
+  rmath::vector3d m_egress_start{};
+  rmath::vector3d m_ingress_center{};
+  rmath::vector3d m_egress_center{};
   /* clang-format on */
 };
 

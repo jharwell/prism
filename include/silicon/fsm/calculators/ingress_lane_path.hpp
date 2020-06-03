@@ -1,5 +1,5 @@
 /**
- * \file ingress_path_calculator.hpp
+ * \file ingress_lane_path.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_INGRESS_PATH_CALCULATOR_HPP_
-#define INCLUDE_SILICON_FSM_INGRESS_PATH_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_
+#define INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_
 
 /*******************************************************************************
  * Includes
@@ -42,33 +42,33 @@ namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class ingress_path_calculator
- * \ingroup fsm
+ * \class ingress_lane_path
+ * \ingroup fsm calculators
  *
  * \brief Once a robot is sufficiently close to the X/Y coordinate of the ingress
  * point for a construction lane (which dimension depends on orientation),
  * calculate the path TO the ingress point.
  */
-class ingress_path_calculator : public rer::client<ingress_path_calculator> {
+class ingress_lane_path : public rer::client<ingress_lane_path> {
  public:
-  explicit ingress_path_calculator(
+  explicit ingress_lane_path(
       const csubsystem::sensing_subsystemQ3D* sensing);
 
   std::vector<rmath::vector2d> operator()(
       const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
-  ingress_path_calculator(const ingress_path_calculator&) = delete;
-  const ingress_path_calculator& operator=(const ingress_path_calculator&) =
+  ingress_lane_path(const ingress_lane_path&) = delete;
+  const ingress_lane_path& operator=(const ingress_lane_path&) =
       delete;
-  ingress_path_calculator(ingress_path_calculator&&) = delete;
-  ingress_path_calculator& operator=(ingress_path_calculator&&) = delete;
+  ingress_lane_path(ingress_lane_path&&) = delete;
+  ingress_lane_path& operator=(ingress_lane_path&&) = delete;
 
  private:
   /* clang-format off */
@@ -76,6 +76,6 @@ class ingress_path_calculator : public rer::client<ingress_path_calculator> {
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_INGRESS_PATH_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_ */

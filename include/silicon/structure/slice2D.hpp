@@ -111,15 +111,27 @@ class slice2D : public rer::client<slice2D> {
  private:
   /**
    * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the first slice dimension for all values.
+   * from the first slice dimension in the negative direction for all values.
    */
-  bool is_traversable_d1(void) const;
+  bool is_traversable_d1_neg(void) const;
 
   /**
    * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the second slice dimension for all values.
+   * from the second slice dimension in the negative direction for all values.
    */
-  bool is_traversable_d2(void) const;
+  bool is_traversable_d2_neg(void) const;
+
+  /**
+   * \brief Determine if the layer is traversable by robots entering/exiting
+   * from the first slice dimension in the positive direction for all values.
+   */
+  bool is_traversable_d1_pos(void) const;
+
+  /**
+   * \brief Determine if the layer is traversable by robots entering/exiting
+   * from the second slice dimension in the positive direction for all values.
+   */
+  bool is_traversable_d2_pos(void) const;
 
   /**
    * \brief Determine if the layer is physically feasible for construction.

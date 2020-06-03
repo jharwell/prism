@@ -101,6 +101,12 @@ class constructing_controller
   /* block carrying controller overrides */
   bool block_detected(void) const override;
 
+  /* movement metrics */
+  rtypes::spatial_dist ts_distance(
+      const csmetrics::movement_category& category) const override;
+  rmath::vector3d ts_velocity(
+      const csmetrics::movement_category& category) const override;
+
   virtual const perception::builder_perception_subsystem* perception(void) const {
     return m_perception.get();
   }
@@ -109,6 +115,9 @@ class constructing_controller
   }
 
   double los_dim(void) const;
+
+  bool display_nearest_ct(void) const { return m_display_nearest_ct; }
+  void display_nearest_ct(bool b) { m_display_nearest_ct = b; }
 
   /**
    * \brief If \c TRUE, the robot is currently at least most of the way in the
@@ -136,6 +145,7 @@ class constructing_controller
   void perception_init(const cspconfig::perception_config* perceptionp);
 
   /* clang-format off */
+  bool                                                      m_display_nearest_ct{false};
   block_manip_recorder_type                                 m_block_manip{};
   std::unique_ptr<perception::builder_perception_subsystem> m_perception;
   /* clang-format on */

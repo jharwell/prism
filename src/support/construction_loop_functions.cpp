@@ -38,7 +38,7 @@
 #include "cosm/controller/operations/metrics_extract.hpp"
 #include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/interactors/applicator.hpp"
-#include "cosm/metrics/blocks/transport_metrics_collector.hpp"
+#include "cosm/foraging/metrics/block_transport_metrics_collector.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
@@ -94,7 +94,7 @@ struct functor_maps_initializer {
     config_map->emplace(
         typeid(controller),
         robot_configurer<T>(
-            lf->config()->config_get<cvconfig::visualization_config>(),
+            lf->config()->config_get<config::visualization_config>(),
             lf->ct_manager()->targetsro()));
     /*
      * We need to set up the Q3D LOS updaters for EVERY possible construction
@@ -161,6 +161,7 @@ void construction_loop_functions::private_init(void) {
   arena.grid.dims = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
       &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
+
   /* this starts at 0, and ARGoS starts at 1, so sync up */
   m_metrics_agg->timestep_inc_all();
 
@@ -241,7 +242,7 @@ void construction_loop_functions::post_step(void) {
   ndc_push();
   /* Update block distribution status */
   auto* collector =
-      m_metrics_agg->get<cmetrics::blocks::transport_metrics_collector>(
+      m_metrics_agg->get<cfmetrics::block_transport_metrics_collector>(
           "blocks::transport");
   arena_map()->redist_governor()->update(
       rtypes::timestep(GetSpace().GetSimulationClock()),
@@ -257,7 +258,12 @@ void construction_loop_functions::post_step(void) {
   /* Not a clean way to do this in the metrics collectors... */
   if (m_metrics_agg->metrics_write(rmetrics::output_mode::ekAPPEND)) {
     tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>()->reset_metrics();
+
+    for (auto *target : ct_manager()->targetsno()) {
+      target->reset_metrics();
+    } /* for(*target..) */
   }
+
   m_metrics_agg->interval_reset_all();
   m_metrics_agg->timestep_inc_all();
 
@@ -276,42 +282,6 @@ void construction_loop_functions::reset(void) {
   m_metrics_agg->reset_all();
   ndc_pop();
 } /* reset() */
-
-argos::CColor construction_loop_functions::GetFloorColor(
-    const argos::CVector2& plane_pos) {
-  rmath::vector2d tmp(plane_pos.GetX(), plane_pos.GetY());
-
-  /* check if the point is inside any of the nests */
-  for (auto* nest : arena_map()->nests()) {
-    if (nest->contains_point(tmp)) {
-      return argos::CColor(nest->color().red(),
-                           nest->color().green(),
-                           nest->color().blue());
-    }
-  } /* for(*nest..) */
-
-  for (auto* block : arena_map()->blocks()) {
-    /*
-     * If Z > 0, the block is on the structure, so no need to even do the
-     * comparisons for determining floor structure.
-     */
-    if (block->rpos3D().z() > 0) {
-      continue;
-    }
-    /*
-     * Even though each block type has a unique color, the only distinction
-     * that robots can make to determine if they are on a block or not is
-     * between shades of black/white. So, all blocks must appear as black, even
-     * when they are not actually (when blocks are picked up their correct color
-     * is shown through visualization).
-     */
-    if (block->contains_point2D(tmp)) {
-      return argos::CColor::BLACK;
-    }
-  } /* for(block..) */
-
-  return argos::CColor::WHITE;
-} /* GetFloorColor() */
 
 /*******************************************************************************
  * General Member Functions
@@ -415,15 +385,15 @@ structure::structure3D* construction_loop_functions::robot_target(
    * not, then clear out the robot's old LOS so it does not refer to out of date
    * info anymore, and we will get a segfault if it tries to.
    *
-   * The second condition is necessary so that robots will get a LOS when in the
-   * "virtual" cell right outside of the ingress lane, and will correctly
-   * compute the placement paths for the last block in a lane on a given level.
+   * We check if the robot is currently inside the a given target's boundaries
+   * INCLUDING the virtual cells that surround it; this is necessary so that
+   * robots will get a LOS and correctly compute the placement paths for the
+   * last block in a lane on a given level.
    */
   auto target_it = std::find_if(ct_manager()->targetsno().begin(),
                                 ct_manager()->targetsno().end(),
                                 [&](auto* target) {
-                                  return target->contains(c->rpos2D(), false) ||
-                                         target->contains(c->rpos2D(), true);
+                                  return target->contains(c->rpos2D(), true);
                                 });
 
   if (ct_manager()->targetsno().end() == target_it) {

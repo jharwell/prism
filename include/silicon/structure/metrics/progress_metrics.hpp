@@ -46,15 +46,26 @@ NS_START(silicon, structure, metrics);
 class progress_metrics : public virtual rmetrics::base_metrics {
  public:
   /**
-   * \brief Return # of blocks that have been placed on the structure/subtarget
-   * since the last time metrics reset reset.
+   * \brief Return if the \ref structure3D, \ref subtarget has been completed.
    */
-  virtual size_t n_placed_blocks(void) const = 0;
+  virtual bool is_complete(void) const = 0;
+
+  /**
+   * \brief Return # of blocks that have been placed on the structure/subtarget
+   * since the start of constrution/simulation.
+   */
+  virtual size_t n_total_placed(void) const = 0;
+
+  /**
+   * \brief Return # of blocks that have been placed on the structure/subtarget
+   * since the start of the current interval.
+   */
+  virtual size_t n_interval_placed(void) const = 0;
 
   /**
    * \brief Return the total # of blocks that comprise the structure/subtarget.
    */
-  virtual size_t n_total_blocks(void) const = 0;
+  virtual size_t manifest_size(void) const = 0;
 };
 
 NS_END(metrics, structure, silicon);

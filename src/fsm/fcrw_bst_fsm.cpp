@@ -30,11 +30,12 @@
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/fsm/construction_signal.hpp"
-#include "silicon/fsm/ct_approach_calculator.hpp"
-#include "silicon/fsm/ingress_path_calculator.hpp"
+#include "silicon/fsm/calculators/ct_approach.hpp"
+#include "silicon/fsm/calculators/ingress_lane_path.hpp"
 #include "silicon/lane_alloc/allocator.hpp"
 #include "silicon/repr/construction_lane.hpp"
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -135,15 +136,15 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data* data) 
         m_allocator(sensing()->rpos3D(), mc_perception->nearest_ct());
 
     auto calculator =
-        ct_approach_calculator(sensing(),
-                               builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+        calculators::ct_approach(sensing(),
+                                 calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
     auto approach = calculator(m_allocated_lane.get());
 
     if (!(approach.x_ok && approach.y_ok)) {
       ER_INFO("Construction target approach required");
       internal_event(ekST_CT_APPROACH);
     } else {
-      auto path = ingress_path_calculator(sensing())(m_allocated_lane.get());
+      auto path = calculators::ingress_lane_path(sensing())(m_allocated_lane.get());
       ER_INFO("Calculated transport path to lane%zu ingress with %zu waypoints",
               m_allocated_lane->id(),
               path.size());
@@ -163,16 +164,18 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data* data) 
 }
 
 HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
-  if (fsm_states::ekST_CT_APPROACH != last_state()) {
-    ER_DEBUG("Beginning construction target approach");
-  }
-
   auto calculator =
-      ct_approach_calculator(sensing(), builder_util_fsm::kLANE_VECTOR_DIST_TOL);
+      calculators::ct_approach(sensing(),
+                               calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
   auto approach = calculator(m_allocated_lane.get());
 
+  if (fsm_states::ekST_CT_APPROACH != last_state()) {
+    ER_DEBUG("Beginning construction target approach");
+    m_ct_approach_polar_sign = std::copysign(1.0, approach.ingress_angle.value());
+  }
+
   if (approach.x_ok && approach.y_ok) {
-    auto path = ingress_path_calculator(sensing())(m_allocated_lane.get());
+    auto path = calculators::ingress_lane_path(sensing())(m_allocated_lane.get());
     ER_INFO("Calculated transport path to lane%zu ingress with %zu waypoints",
             m_allocated_lane->id(),
             path.size());
@@ -192,17 +195,14 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
   auto* light = sensing()->sensor<chal::sensors::light_sensor>();
   auto light_force = saa()->steer_force2D().phototaxis(light->readings());
 
-  auto polar_force =
-      saa()->steer_force2D().polar(m_allocated_lane->ingress().to_2D());
+  auto polar_force = saa()->steer_force2D().polar(m_allocated_lane->ingress().to_2D()) *
+                     m_ct_approach_polar_sign;
   /*
    * We need the sign of the orthogonal distance to the ingress lane so that we
    * calculate polar force of the appropriate sign (i.e., not going all the way
    * around in a circle to reach the ingress clockwise when a short
    * counter-clockwise path is MUCH shorter).
    */
-  if (approach.x_ok && !approach.y_ok) {
-    polar_force *= std::copysign(1.0, approach.orthogonal_dist);
-  }
   auto* ct = mc_perception->nearest_ct();
   ER_ASSERT(nullptr != ct,
             "Cannot compute approach forces without construction target");

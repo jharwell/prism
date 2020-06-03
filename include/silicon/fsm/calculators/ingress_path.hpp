@@ -1,5 +1,5 @@
 /**
- * \file placement_path_calculator.hpp
+ * \file ingress_path.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_PLACEMENT_PATH_CALCULATOR_HPP_
-#define INCLUDE_SILICON_FSM_PLACEMENT_PATH_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_PATH_HPP_
+#define INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_PATH_HPP_
 
 /*******************************************************************************
  * Includes
@@ -29,7 +29,6 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
 
-#include "silicon/fsm/stygmergic_configuration.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -39,45 +38,45 @@ namespace silicon::repr {
 class construction_lane;
 } /* namespace silicon::repr */
 
-namespace silicon::controller::perception {
-class builder_perception_subsystem;
-} /* namespace silicon::controller::perception */
-
 namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(silicon, fsm);
+namespace silicon::controller::perception {
+class builder_perception_subsystem;
+} /* namespace silicon::controller::perception */
+
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class placement_path_calculator
- * \ingroup fsm
+ * \class ingress_path
+ * \ingroup fsm calculators
  *
- * \brief Once a robot has reach the frontier set and acquired a specific
- * stygmetrig configuration (acquired meaning it has entered the robot's LOS),
- * calculate a path to a cell adjacent to the cell the robot will place a block
- * in (the placement site), so that block placement will be triggered by the
- * loop functions.
+ * \brief Once a robot has reached the ingress point of its chosen construction
+ * lane, calculate the path to the "frontier set", which is defined as the set
+ * of cells adjacent to cells containing the latest set of placed blocks. The
+ * exact location of this set is unknown to the robot a priori, as other robots
+ * could have placed blocks within this last since it last placed one, so the
+ * calculated path is to the BACK of the ingress lane; once the robot encounters
+ * a stygmetric configuration that is a member of the frontier set, it will go
+ * on to the next phase of the builder FSM.
  */
-class placement_path_calculator : public rer::client<placement_path_calculator> {
+class ingress_path : public rer::client<ingress_path> {
  public:
-  placement_path_calculator(
-      const csubsystem::sensing_subsystemQ3D* sensing,
-      const scperception::builder_perception_subsystem* perception);
+  ingress_path(const csubsystem::sensing_subsystemQ3D* sensing,
+               const scperception::builder_perception_subsystem* perception);
 
   std::vector<rmath::vector2d> operator()(
-      const srepr::construction_lane* lane,
-      const stygmergic_configuration& acq) const;
+      const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
-  placement_path_calculator(const placement_path_calculator&) = delete;
-  const placement_path_calculator& operator=(const placement_path_calculator&) =
-      delete;
-  placement_path_calculator(placement_path_calculator&&) = delete;
-  placement_path_calculator& operator=(placement_path_calculator&&) = delete;
+  ingress_path(const ingress_path&) = delete;
+  const ingress_path& operator=(const ingress_path&) = delete;
+  ingress_path(ingress_path&&) = delete;
+  ingress_path& operator=(ingress_path&&) = delete;
 
  private:
   /* clang-format off */
@@ -86,6 +85,6 @@ class placement_path_calculator : public rer::client<placement_path_calculator> 
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_PLACEMENT_PATH_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CALCULATORS_INGRESS_PATH_HPP_ */

@@ -27,7 +27,7 @@
 #include "rcppsw/patterns/visitor/visitor.hpp"
 #include "rcppsw/types/type_uuid.hpp"
 
-#include "cosm/controller/operations/block_pickup.hpp"
+#include "cosm/controller/operations/base_block_pickup.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/fsm/fsm_fwd.hpp"
@@ -48,7 +48,7 @@ NS_START(silicon, controller, operations, detail);
  * \brief Fired whenever a robot picks up a free block in the arena (i.e. one
  * that is not part of a cache).
  */
-class block_pickup : public ccops::block_pickup {
+class block_pickup : public ccops::base_block_pickup {
  private:
   struct visit_typelist_impl {
     using controllers = controller::typelist;
@@ -74,7 +74,7 @@ class block_pickup : public ccops::block_pickup {
                     const rtypes::timestep& t);
 
  private:
-  using ccops::block_pickup::visit;
+  using ccops::base_block_pickup::visit;
 };
 
 NS_END(detail);

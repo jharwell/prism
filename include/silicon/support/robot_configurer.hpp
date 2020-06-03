@@ -28,8 +28,7 @@
 #include <memory>
 #include <utility>
 
-#include "cosm/vis/config/visualization_config.hpp"
-
+#include "silicon/support/config/visualization_config.hpp"
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/controller/perception/perception_receptor.hpp"
 #include "silicon/ds/ct_vector.hpp"
@@ -51,7 +50,7 @@ NS_START(silicon, support);
 template <typename TController>
 class robot_configurer : public boost::static_visitor<void> {
  public:
-  robot_configurer(const cvconfig::visualization_config* const vis_config,
+  robot_configurer(const config::visualization_config* const vis_config,
                    const sds::ct_vectorro& targets)
       : mc_vis_config(vis_config), mc_targets(targets) {}
 
@@ -66,6 +65,7 @@ class robot_configurer : public boost::static_visitor<void> {
       c->display_id(mc_vis_config->robot_id);
       c->display_steer2D(mc_vis_config->robot_steer2D);
       c->display_los(mc_vis_config->robot_los);
+      c->display_nearest_ct(mc_vis_config->robot_nearest_ct);
     }
     scperception::perception_receptor::ct_info_vector infos;
     for (auto* t : mc_targets) {
@@ -78,8 +78,8 @@ class robot_configurer : public boost::static_visitor<void> {
 
  private:
   /* clang-format off */
-  const cvconfig::visualization_config * const mc_vis_config;
-  const sds::ct_vectorro                       mc_targets;
+  const config::visualization_config * const mc_vis_config;
+  const sds::ct_vectorro                     mc_targets;
   /* clang-format on */
 };
 

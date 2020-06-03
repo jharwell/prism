@@ -26,6 +26,7 @@
 #include <algorithm>
 
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -40,6 +41,9 @@ slice2D::slice2D(const slice_coords& coords, const structure3D* structure)
       mc_coords(coords),
       mc_view(structure->subgrid(mc_coords.ll, mc_coords.ur)),
       mc_structure(structure) {
+  ER_INFO("Coordinates: LL=%s, UR=%s",
+          rcppsw::to_string(mc_coords.ll).c_str(),
+          rcppsw::to_string(mc_coords.ur).c_str());
   ER_ASSERT(rmath::vector3z::X == mc_coords.axis ||
                 rmath::vector3z::Y == mc_coords.axis ||
                 rmath::vector3z::Z == mc_coords.axis,
@@ -77,14 +81,31 @@ bool slice2D::is_hamiltonian(void) const {
   }
 } /* is_hamiltonian() */
 
-bool slice2D::is_traversable_d1(void) const {
+bool slice2D::is_traversable(const rmath::radians& orientation) const {
+  if (rmath::radians::kZERO == orientation) {
+    return is_traversable_d1_neg();
+  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
+    return is_traversable_d2_neg();
+  } else if (rmath::radians::kPI == orientation) {
+    return is_traversable_d1_pos();
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
+    return is_traversable_d2_pos();
+  } else {
+    ER_FATAL_SENTINEL("Bad orientation for traversability: %s",
+                      rcppsw::to_string(orientation).c_str());
+  }
+  return false;
+} /* is_traversable() */
+
+bool slice2D::is_traversable_d1_neg(void) const {
   /*
    * Assume Z axis in the comments in this function, but the code should work
    * for any axis.
    */
   for (size_t j = 0; j < d2(); ++j) {
     for (size_t i = 0; i < d1(); ++i) {
-      auto* spec = mc_structure->cell_spec_retrieve(access(i, j).loc());
+      auto* spec = mc_structure->cell_spec_retrieve({access(i, j).loc(),
+                                                     coord_relativity::ekVORIGIN});
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -103,7 +124,8 @@ bool slice2D::is_traversable_d1(void) const {
           continue;
         }
         auto* spec2 =
-            mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
+            mc_structure->cell_spec_retrieve({access(i + spec->extent, j).loc(),
+                                              coord_relativity::ekVORIGIN});
 
         /*
          * Ramp blocks, if they are oriented along the X axis (in either
@@ -140,7 +162,8 @@ bool slice2D::is_traversable_d1(void) const {
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
         auto* spec2 =
-            mc_structure->cell_spec_retrieve(access(i + spec->extent, j).loc());
+            mc_structure->cell_spec_retrieve({access(i + spec->extent, j).loc(),
+                                              coord_relativity::ekVORIGIN});
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kZERO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -159,16 +182,104 @@ bool slice2D::is_traversable_d1(void) const {
     } /* for(i..) */
   }   /* for(j..) */
   return true;
-} /* is_traversable_d1() */
+} /* is_traversable_d1_neg() */
 
-bool slice2D::is_traversable_d2(void) const {
+bool slice2D::is_traversable_d1_pos(void) const {
+  /*
+   * Assume Z axis in the comments in this function, but the code should work
+   * for any axis.
+   */
+  for (int j = d2() - 1; j >= 0; --j) {
+    for (int i = d1() - 1; i >= 0; --i) {
+      auto* spec = mc_structure->cell_spec_retrieve({access(i, j).loc(),
+                                                     coord_relativity::ekVORIGIN});
+      /*
+       * Cells containing cube blocks can never result in discontinuity within
+       * the mc_view.
+       */
+      if (crepr::block_type::ekCUBE == spec->block_type) {
+        ER_TRACE("cell(%d,%d) contains cube--always traversable", i, j);
+        continue;
+      }
+
+      if (crepr::block_type::ekRAMP == spec->block_type) {
+        /*
+         * Ramp block extends to the end of the row in X, so no more checking
+         * needed
+         */
+        if (i - spec->extent <= 0) {
+          continue;
+        }
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve({access(i - spec->extent, j).loc(),
+                                              coord_relativity::ekVORIGIN});
+
+        /*
+         * Ramp blocks, if they are oriented along the X axis (in either
+         * direction), will cause discontinuities if we encounter either:
+         *
+         * - Two adjacent blocks at x, x-block_extent-1 oriented in the SAME
+         *   direction
+         * - Two blocks oriented in OPPOSITE directions without either an empty
+         *   cell or cube block in between, depending.
+         */
+        if (crepr::block_type::ekRAMP == spec2->block_type) {
+          ER_TRACE(
+              "cell(%d,%d) contains ramp,cell(%d-%lu=%lu,%d) also "
+              "contains ramp",
+              i,
+              j,
+              i,
+              spec->extent,
+              i - spec->extent,
+              j);
+
+          return false;
+        }
+      }
+      /*
+       * If there is a cube block in (i,j) then discontinuities occur if we
+       * encounter either:
+       *
+       * - A ramp block oriented in any other way than -x in cell
+       *   (i-cube_block_extent, j).
+       *
+       * - A ramp block extent cell in (i-cube_block_extent,j)
+       */
+      else if (crepr::block_type::ekCUBE == spec->block_type &&
+               cell_is_exterior(access(i, j))) {
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve({access(i - spec->extent, j).loc(),
+                                              coord_relativity::ekVORIGIN});
+        if ((crepr::block_type::ekRAMP == spec2->block_type &&
+             rmath::radians::kZERO != spec2->z_rotation) ||
+            cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
+          ER_TRACE(
+              "cell(%d,%d) contains cube, cell(%d-%lu=%lu,%d) also "
+              "ramp not oriented in -x",
+              i,
+              j,
+              i,
+              spec->extent,
+              i - spec->extent,
+              j);
+          return false;
+        }
+      }
+    } /* for(i..) */
+  }   /* for(j..) */
+  return true;
+} /* is_traversable_d1_pos() */
+
+bool slice2D::is_traversable_d2_neg(void) const {
   /*
    * Assume Z axis in the comments in this function, but the code should work
    * for any axis.
    */
   for (size_t i = 0; i < d1(); ++i) {
     for (size_t j = 0; j < d2(); ++j) {
-      auto* spec = mc_structure->cell_spec_retrieve(access(i, j).loc());
+      auto* spec = mc_structure->cell_spec_retrieve({access(i, j).loc(),
+                                                     coord_relativity::ekVORIGIN});
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -185,7 +296,8 @@ bool slice2D::is_traversable_d2(void) const {
           continue;
         }
         auto* spec2 =
-            mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
+            mc_structure->cell_spec_retrieve({access(i, j + spec->extent).loc(),
+                                              coord_relativity::ekVORIGIN});
 
         /*
          * Ramp blocks, if they are oriented along the Y axis (in either
@@ -222,7 +334,8 @@ bool slice2D::is_traversable_d2(void) const {
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
         auto* spec2 =
-            mc_structure->cell_spec_retrieve(access(i, j + spec->extent).loc());
+            mc_structure->cell_spec_retrieve({access(i, j + spec->extent).loc(),
+                                              coord_relativity::ekVORIGIN});
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kPI_OVER_TWO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -241,23 +354,98 @@ bool slice2D::is_traversable_d2(void) const {
     } /* for(i..) */
   }   /* for(j..) */
   return true;
-} /* is_traversable_d2() */
+} /* is_traversable_d2_neg() */
 
-bool slice2D::is_traversable(const rmath::radians& orientation) const {
-  if (rmath::radians::kZERO == orientation) {
-    return is_traversable_d1();
-  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    return is_traversable_d2();
-  }
-  ER_FATAL_SENTINEL("Bad orientation for traversability: %s",
-                    rcppsw::to_string(orientation).c_str());
-  return false;
-} /* is_traversable() */
+bool slice2D::is_traversable_d2_pos(void) const {
+  /*
+   * Assume Z axis in the comments in this function, but the code should work
+   * for any axis.
+   */
+  for (int i = d1() - 1; i >= 0; --i) {
+    for (int j = d2() - 1; j >= 0; --j) {
+      auto* spec = mc_structure->cell_spec_retrieve({access(i, j).loc(),
+                                                     coord_relativity::ekVORIGIN});
+      /*
+       * Cells containing cube blocks can never result in discontinuity within
+       * the mc_view.
+       */
+      if (crepr::block_type::ekCUBE == spec->block_type) {
+        continue;
+      }
+      if (crepr::block_type::ekRAMP == spec->block_type) {
+        /*
+         * Ramp block extends to the end of the row in Y, so no more checking
+         * needed
+         */
+        if (j - spec->extent <= 0) {
+          continue;
+        }
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve({access(i, j - spec->extent).loc(),
+                                              coord_relativity::ekVORIGIN});
+
+        /*
+         * Ramp blocks, if they are oriented along the Y axis (in either
+         * direction), will cause discontinuities if we encounter either:
+         *
+         * - Two adjacent blocks at y, y-block_extent-1 oriented in the SAME
+         *   direction
+         * - Two blocks oriented in OPPOSITE directions without either an empty
+         *   cell or cube block in between, depending.
+         */
+        if (crepr::block_type::ekRAMP == spec2->block_type) {
+          ER_TRACE(
+              "cell(%d,%d) contains ramp,cell(%d,%lu=%d-%zu) also "
+              "contains ramp",
+              i,
+              j,
+              i,
+              j - spec->extent,
+              j,
+              spec->extent);
+
+          return false;
+        }
+      }
+      /*
+       * If there is a cube block in (i,j) then discontinuities occur if we
+       * encounter either:
+       *
+       * - A ramp block oriented in any other way than -y in cell
+       *   (i, j-cube_block_extent).
+       *
+       * - A ramp block extent cell in (i, j-cube_block_extent)
+       */
+      else if (crepr::block_type::ekCUBE == spec->block_type &&
+               cell_is_exterior(access(i, j))) {
+        auto* spec2 =
+            mc_structure->cell_spec_retrieve({access(i, j - spec->extent).loc(),
+                                              coord_relativity::ekVORIGIN});
+        if ((crepr::block_type::ekRAMP == spec2->block_type &&
+             rmath::radians::kPI_OVER_TWO != spec2->z_rotation) ||
+            cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
+          ER_TRACE(
+              "cell(%d,%d) contains cube, cell(%d,%lu=%d-%zu) also "
+              "ramp not oriented in -x",
+              i,
+              j,
+              i,
+              j - spec->extent,
+              j,
+              spec->extent);
+          return false;
+        }
+      }
+    } /* for(i..) */
+  }   /* for(j..) */
+  return true;
+} /* is_traversable_d2_pos() */
 
 bool slice2D::is_feasible(void) const {
   for (size_t i = 0; i < d1(); ++i) {
     for (size_t j = 0; j < d2(); ++j) {
-      auto* spec = mc_structure->cell_spec_retrieve(access(i, j).loc());
+      auto* spec = mc_structure->cell_spec_retrieve({access(i, j).loc(),
+                                                     coord_relativity::ekVORIGIN});
       /*
        * You can't have cube blocks (or any other type of block) specified in
        * the cells that should be occupied by the ramp block extent).
@@ -266,7 +454,8 @@ bool slice2D::is_feasible(void) const {
           rmath::radians::kZERO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
           auto* extent_spec =
-              mc_structure->cell_spec_retrieve(access(i + m, j).loc());
+              mc_structure->cell_spec_retrieve({access(i + m, j).loc(),
+                                                coord_relativity::ekVORIGIN});
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -275,7 +464,8 @@ bool slice2D::is_feasible(void) const {
                  rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
           auto* extent_spec =
-              mc_structure->cell_spec_retrieve(access(i, j + m).loc());
+              mc_structure->cell_spec_retrieve({access(i, j + m).loc(),
+                                                coord_relativity::ekVORIGIN});
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -284,7 +474,8 @@ bool slice2D::is_feasible(void) const {
                  rmath::radians::kPI == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
           auto* extent_spec =
-              mc_structure->cell_spec_retrieve(access(i - m, j).loc());
+              mc_structure->cell_spec_retrieve({access(i - m, j).loc(),
+                                                coord_relativity::ekVORIGIN});
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -293,7 +484,8 @@ bool slice2D::is_feasible(void) const {
                  rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
           auto* extent_spec =
-              mc_structure->cell_spec_retrieve(access(i, j - m).loc());
+              mc_structure->cell_spec_retrieve({access(i, j - m).loc(),
+                                                coord_relativity::ekVORIGIN});
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -305,14 +497,17 @@ bool slice2D::is_feasible(void) const {
 } /* is_feasible() */
 
 bool slice2D::cell_is_exterior(const cds::cell3D& cell) const {
-  bool exterior_d1 = RCSW_IS_BETWEEN(cell.loc().x(), 1, d1() - 1);
-  bool exterior_d2 = RCSW_IS_BETWEEN(cell.loc().y(), 1, d2() - 1);
+  bool exterior_d1 = RCSW_IS_BETWEEN(cell.loc().x(), 1, d1() - 1) ||
+                     RCSW_IS_BETWEEN(cell.loc().x(), 1, d2() - 1);
+  bool exterior_d2 = RCSW_IS_BETWEEN(cell.loc().y(), 1, d2() - 1) ||
+                     RCSW_IS_BETWEEN(cell.loc().y(), 1, d1() - 1);
   return exterior_d1 && exterior_d2;
 } /* cell_is_hole() */
 
 bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
   auto* ijkminus1 =
-      mc_structure->cell_spec_retrieve(cell.loc() - rmath::vector3z::Z);
+      mc_structure->cell_spec_retrieve({cell.loc() - rmath::vector3z::Z,
+                                        coord_relativity::ekVORIGIN});
 
   size_t face_count = 0;
   /*
@@ -329,7 +524,8 @@ bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
                  cfsm::cell3D_state::ekST_HAS_BLOCK == ijkminus1->state &&
                  crepr::block_type::ekCUBE == ijkminus1->block_type);
 
-  auto* spec = mc_structure->cell_spec_retrieve(cell.loc());
+  auto* spec = mc_structure->cell_spec_retrieve({cell.loc(),
+                                                 coord_relativity::ekVORIGIN});
   return cfsm::cell3D_state::ekST_EMPTY == spec->state && face_count > 0;
 } /* cell_is_simple_hole() */
 
@@ -446,22 +642,31 @@ bool slice2D::contains(const rmath::vector3z& coord) const {
 slice2D::slice_coords slice2D::coords_calc(const rmath::vector3z& axis,
                                            const structure3D* structure,
                                            size_t offset) {
+  rmath::vector3z ll;
+  rmath::vector3z ur;
   if (rmath::vector3z::X == axis) {
-    return {axis,
-            offset,
-            {offset, 0, 0},
-            {offset + 1, structure->ydsize(), structure->zdsize()}};
+    ll = {structure->vshell_sized() + offset,
+          structure->vshell_sized(),
+          0};
+    ur = {structure->vshell_sized() + offset + 1,
+          structure->ydsize() - structure->vshell_sized(),
+          structure->zdsize()};
   } else if (rmath::vector3z::Y == axis) {
-    return {axis,
-            offset,
-            {0, offset, 0},
-            {structure->xdsize(), offset + 1, structure->zdsize()}};
+    ll = {structure->vshell_sized(),
+          structure->vshell_sized() + offset,
+          0};
+    ur = {structure->xdsize() - structure->vshell_sized(),
+          structure->vshell_sized() + offset + 1,
+          structure->zdsize()};
+  } else if (rmath::vector3z::Z == axis) {
+    ll = {structure->vshell_sized(), structure->vshell_sized(), offset};
+    ur = {structure->xdsize() - structure->vshell_sized(),
+          structure->ydsize() - structure->vshell_sized(),
+          offset + 1};
   } else {
-    return {axis,
-            offset,
-            {0, 0, offset},
-            {structure->xdsize(), structure->ydsize(), offset + 1}};
+    assert(false);
   }
+  return {axis, offset, ll, ur};
 }
 
 NS_END(structure, silicon);

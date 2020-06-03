@@ -38,14 +38,14 @@ subtarget::subtarget(const structure3D* structure, size_t id)
       mc_id(id),
       mc_entry(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
                                     structure,
-                                    id * 2),
+                                    id * structure3D::kSUBTARGET_CELL_WIDTH),
                structure),
       mc_exit(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
                                    structure,
-                                   id * 2 + 1),
+                                   id * structure3D::kSUBTARGET_CELL_WIDTH + 1),
               structure),
-      mc_total_block_count(total_block_count_calc(mc_entry, structure) +
-                           total_block_count_calc(mc_exit, structure)) {}
+      mc_manifest_size(manifest_size_calc(mc_entry, structure) +
+                       manifest_size_calc(mc_exit, structure)) {}
 
 /*******************************************************************************
  * Member Functions
@@ -57,27 +57,30 @@ bool subtarget::contains_cell(const rmath::vector3z& coord) const {
 rmath::vector3z subtarget::slice_axis_calc(
     const rmath::radians& orientation) const {
   /* orientated in +X -> slice along Y */
-  if (rmath::radians::kZERO == orientation) {
+  if (rmath::radians::kZERO == orientation ||
+      rmath::radians::kPI == orientation) {
     return rmath::vector3z::Y;
   } /* orientated in +Y -> slice along X */
-  else if (rmath::radians::kPI_OVER_TWO == orientation) {
+  else if (rmath::radians::kPI_OVER_TWO == orientation ||
+           rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
     return rmath::vector3z::X;
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation for slice axis calculation: '%s",
-                      rcppsw::to_string(orientation).c_str());
   }
+  ER_FATAL_SENTINEL("Bad orientation for slice axis calculation: '%s",
+                    rcppsw::to_string(orientation).c_str());
+  return {};
 } /* slice_axis_calc() */
 
-size_t subtarget::total_block_count_calc(const slice2D& slice,
-                                         const structure3D* structure) const {
+size_t subtarget::manifest_size_calc(const slice2D& slice,
+                                     const structure3D* structure) const {
   size_t count = 0;
   for (size_t i = 0; i < slice.d1(); ++i) {
     for (size_t j = 0; j < slice.d2(); ++j) {
-      auto* spec = structure->cell_spec_retrieve(slice.access(i, j).loc());
+      auto* spec = structure->cell_spec_retrieve({slice.access(i, j).loc(),
+                                                  coord_relativity::ekVORIGIN});
       count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
     } /* for(j..) */
   }   /* for(i..) */
   return count;
-} /* total_block_count_calc() */
+} /* manifest_size_calc() */
 
 NS_END(structure, silicon);

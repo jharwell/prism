@@ -41,7 +41,9 @@ bool validate_spec_layers::operator()(void) const {
              z);
     ER_DEBUG("Layer%zu OK", z);
   } /* for(z..) */
+  ER_INFO("All layers validated");
   return true;
+
 error:
   return false;
 } /* operator()() */

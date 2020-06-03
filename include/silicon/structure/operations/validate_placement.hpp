@@ -30,6 +30,7 @@
 #include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -60,11 +61,11 @@ class validate_placement : public rer::client<validate_placement>,
                            public boost::static_visitor<bool> {
  public:
   validate_placement(const structure3D* structure,
-                           const rmath::vector3z& loc,
-                           const rmath::radians& z_rotation)
+                     const ct_coord& coord,
+                     const rmath::radians& z_rotation)
       : ER_CLIENT_INIT("silicon.structure.validate_placement"),
         mc_structure(structure),
-        mc_loc(loc),
+        mc_coord(coord),
         mc_z_rot(z_rotation) {}
 
   /* Not copy constructible or copy assignment by default  */
@@ -75,9 +76,14 @@ class validate_placement : public rer::client<validate_placement>,
   bool operator()(const crepr::ramp_block3D* block) const;
 
  private:
+  /**
+   * \brief Validation checks common to all types of blocks.
+   */
+  bool validate_common(void) const;
+
   /* clang-format off */
   const structure3D*    mc_structure;
-  const rmath::vector3z mc_loc;
+  const ct_coord        mc_coord;
   const rmath::radians  mc_z_rot;
   /* clang-format on */
 };

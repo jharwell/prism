@@ -1,5 +1,5 @@
 /**
- * \file fs_path_calculator.cpp
+ * \file ct_coord.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,48 +21,35 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/fs_path_calculator.hpp"
-
-#include "rcppsw/math/radians.hpp"
-
-#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
-
-#include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, structure);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-fs_path_calculator::fs_path_calculator(
-    const csubsystem::sensing_subsystemQ3D* sensing)
-    : ER_CLIENT_INIT("silicon.fsm.fs_path_calculator"), mc_sensing(sensing) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> fs_path_calculator::operator()(
-    const srepr::construction_lane* lane) const {
-  /* 1st point: robot's current position */
-  std::vector<rmath::vector2d> path = {mc_sensing->rpos2D()};
-
-  if (rmath::radians::kZERO == lane->orientation()) {
-    /* 2nd point: middle of the chosen lane */
-    path.push_back({0.0, lane->ingress().y()});
-
-    /* 3rd point: Back of the structure */
-    path.push_back({0.0, lane->ingress().y()});
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    /* 2nd point: middle of the chosen lane */
-    path.push_back({lane->ingress().x(), 0.0});
-
-    /* 3rd point: Back of the structure */
-    path.push_back({lane->ingress().x(), 0.0});
+rmath::vector3z to_vcoord(const ct_coord& coord, const structure3D* ct) {
+  if (coord_relativity::ekRORIGIN == coord.relative_to) {
+    return (ct->rorigind() - ct->vorigind()) + coord.offset;
+  } else {
+    return coord.offset;
   }
-  return path;
-} /* operator()() */
+} /* to_vcoord() */
 
-NS_END(fsm, silicon);
+rmath::vector3z to_rcoord(const ct_coord& coord, const structure3D* ct) {
+  if (coord_relativity::ekVORIGIN == coord.relative_to) {
+    return coord.offset - (ct->rorigind() - ct->vorigind());
+  } else {
+    return coord.offset;
+  }
+} /* to_rcoord() */
+
+NS_END(structure, silicon);

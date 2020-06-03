@@ -1,5 +1,5 @@
 /**
- * \file placement_path_calculator.cpp
+ * \file placement_path.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/placement_path_calculator.hpp"
+#include "silicon/fsm/calculators/placement_path.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
@@ -33,28 +33,28 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-placement_path_calculator::placement_path_calculator(
+placement_path::placement_path(
     const csubsystem::sensing_subsystemQ3D* sensing,
     const scperception::builder_perception_subsystem* perception)
-    : ER_CLIENT_INIT("silicon.fsm.placement_path_calculator"),
+    : ER_CLIENT_INIT("silicon.fsm.calculator.placement_path"),
       mc_sensing(sensing),
       mc_perception(perception) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> placement_path_calculator::operator()(
+std::vector<rmath::vector2d> placement_path::operator()(
     const srepr::construction_lane* lane,
     const stygmergic_configuration& acq) const {
-  auto dpos = mc_sensing->dpos2D();
   auto rpos = mc_sensing->rpos2D();
   auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = {rpos};
+  double cell_size = ct->block_unit_dim();
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
@@ -62,41 +62,62 @@ std::vector<rmath::vector2d> placement_path_calculator::operator()(
    * validated.
    */
   if (rmath::radians::kZERO == lane->orientation()) {
+    rmath::vector2d forward1(rpos.x() - 1 * cell_size * 1.5, rpos.y());
+    rmath::vector2d right1(rpos.x() - 1 * cell_size * 1.5,
+                           rpos.y() + 1 * cell_size);
     if (stygmergic_configuration::ekLANE_EMPTY == acq ||
         stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      rmath::vector2z forward1(dpos.x() - 1 * ct->unit_dim_factor(), dpos.y());
-      path.push_back(
-          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
+      path.push_back(forward1);
     } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      rmath::vector2z forward1(dpos.x() - 1 * ct->unit_dim_factor(), dpos.y());
-      rmath::vector2z right1(dpos.x() - 1 * ct->unit_dim_factor(),
-                             dpos.y() + 1 * ct->unit_dim_factor());
-      path.push_back(
-          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
-      path.push_back(
-          rmath::zvec2dvec(right1, mc_perception->arena_resolution().v()));
+      path.push_back(forward1);
+      path.push_back(right1);
     }
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    rmath::vector2d forward1(rpos.x(), rpos.y() - 1 * cell_size * 1.5);
+    rmath::vector2d right1(rpos.x() - 1 * cell_size,
+                           rpos.y() - 1 * cell_size * 1.5);
     if (stygmergic_configuration::ekLANE_EMPTY == acq ||
         stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
-      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 * ct->unit_dim_factor());
-      path.push_back(
-          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
+      path.push_back(forward1);
     } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
     } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
-      rmath::vector2z forward1(dpos.x(), dpos.y() - 1 * ct->unit_dim_factor());
-      rmath::vector2z right1(dpos.x() - 1 * ct->unit_dim_factor(),
-                             dpos.y() - 1 * ct->unit_dim_factor());
-      path.push_back(
-          rmath::zvec2dvec(forward1, mc_perception->arena_resolution().v()));
-      path.push_back(
-          rmath::zvec2dvec(right1, mc_perception->arena_resolution().v()));
+      path.push_back(forward1);
+      path.push_back(right1);
     }
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    rmath::vector2d forward1(rpos.x() + 1 * cell_size * 1.5, rpos.y());
+    rmath::vector2d right1(rpos.x() + 1 * cell_size * 1.5,
+                           rpos.y() - 1 * cell_size);
+    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
+        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+      path.push_back(forward1);
+    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+      /* no further waypoints needed */
+    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+      path.push_back(forward1);
+      path.push_back(right1);
+    }
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    rmath::vector2d forward1(rpos.x(), rpos.y() + 1 * cell_size * 1.5);
+    rmath::vector2d right1(rpos.x() + 1 * cell_size,
+                           rpos.y() + 1 * cell_size * 1.5);
+    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
+        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+      path.push_back(forward1);
+    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+      /* no further waypoints needed */
+    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+      path.push_back(forward1);
+      path.push_back(right1);
+    }
+  } else {
+    ER_FATAL_SENTINEL("Bad orientation: '%s'",
+                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return path;
 } /* operator()() */
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);

@@ -1,5 +1,5 @@
 /**
- * \file place_block.hpp
+ * \file block_place.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_PLACE_BLOCK_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_PLACE_BLOCK_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_PLACE_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_PLACE_HPP_
 
 /*******************************************************************************
  * Includes
@@ -29,38 +29,44 @@
 
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/er/client.hpp"
+#include "cosm/repr/cube_block3D.hpp"
+#include "cosm/repr/ramp_block3D.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, operations);
+NS_START(silicon, structure);
+class structure3D;
+
+NS_START(operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class place_block
+ * \class block_place
  * \ingroup structure operations
  *
- * \brief Simple functor to add free blocks of any type from \ref
- * crepr::block3D_variant to \ref structure.
+ * \brief Add placed blocks of any type from \ref crepr::block3D_variant to a
+ * \ref structure3D. The specified cell location must be relative to the virtual
+ * origin of the structure.
  */
-class place_block : public rer::client<place_block>,
+class block_place : public rer::client<block_place>,
                     public boost::static_visitor<void> {
  public:
-  place_block(const rmath::vector3z& cell,
+  block_place(const ct_coord& coord,
               const rmath::radians& z_rotation,
               structure3D* structure)
-      : ER_CLIENT_INIT("silicon.structure.operations.place_block"),
-        mc_cell(cell),
+      : ER_CLIENT_INIT("silicon.structure.operations.block_place"),
+        mc_coord(to_vcoord(coord, structure)),
         mc_z_rot(z_rotation),
         m_structure(structure) {}
 
-  place_block(const place_block&) = delete;
-  place_block& operator=(const place_block&) = delete;
+  block_place(const block_place&) = delete;
+  block_place& operator=(const block_place&) = delete;
 
   /**
    * \brief Place a cube block onto the structure. The function argument is an
@@ -112,8 +118,9 @@ class place_block : public rer::client<place_block>,
   void do_place(std::unique_ptr<crepr::ramp_block3D> block) const;
   void do_place(std::unique_ptr<crepr::cube_block3D> block) const;
 
+
   /* clang-format off */
-  const rmath::vector3z          mc_cell;
+  const rmath::vector3z          mc_coord;
   const rmath::radians           mc_z_rot;
 
   structure3D*                   m_structure;
@@ -122,4 +129,4 @@ class place_block : public rer::client<place_block>,
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_PLACE_BLOCK_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_PLACE_HPP_ */

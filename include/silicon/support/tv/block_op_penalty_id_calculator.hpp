@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATOR_HPP_
-#define INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATORS_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATORS_HPP_
 
 /*******************************************************************************
  * Includes
@@ -70,4 +70,4 @@ class block_op_penalty_id_calculator : public rer::client<block_op_penalty_id_ca
 
 NS_END(tv, support, silicon);
 
-#endif /* INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_BLOCK_OP_PENALTY_ID_CALCULATORS_HPP_ */

@@ -32,6 +32,10 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
+namespace cosm::ds {
+class cell3D;
+} /* namespace cosm::ds */
+
 namespace silicon::repr {
 class construction_lane;
 } /* namespace silicon::repr */
@@ -71,6 +75,24 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
   fs_acq_checker& operator=(fs_acq_checker&&) = delete;
 
  private:
+  struct los_lane_cells {
+    const cds::cell3D* ingress{nullptr};
+    const cds::cell3D* egress{nullptr};
+  };
+
+  /**
+   * How far ahead of the robot's current cell location on the structure to look
+   * for stygmergic configurations, in units of cells. This is a critical value
+   * for overall builder FSM provable correctness.
+   */
+  static constexpr const size_t kDETECT_CELL_DIST = 2;
+
+  los_lane_cells los_cells_calc(const srepr::construction_lane* lane) const;
+
+  stygmergic_configuration configuration_calc(
+      const los_lane_cells& los_cells,
+      const srepr::construction_lane* lane) const;
+
   /* clang-format off */
   const csubsystem::sensing_subsystemQ3D*           mc_sensing;
   const scperception::builder_perception_subsystem* mc_perception;

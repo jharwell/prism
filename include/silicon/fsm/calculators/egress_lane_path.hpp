@@ -1,5 +1,5 @@
 /**
- * \file ct_approach_calculator.hpp
+ * \file egress_lane_path.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,13 +18,16 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_CT_APPROACH_CALCULATOR_HPP_
-#define INCLUDE_SILICON_FSM_CT_APPROACH_CALCULATOR_HPP_
+#ifndef INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_LANE_PATH_HPP_
+#define INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_LANE_PATH_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <vector>
+
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/vector2.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -39,48 +42,39 @@ namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(silicon, fsm);
+NS_START(silicon, fsm, calculators);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class ct_approach_calculator
- * \ingroup fsm
+ * \class egress_lane_path
+ * \ingroup fsm calculators
  *
- * \brief Calculates (1) if the robot is on the correct face of the target structure
- * when it picks up a block (2) if it is close enough to its chosen construction
- * lane to begin the entry sequence (3) the orthogonal distance to the ingress
- * point on its chosen construction lane if (2) is violated.
- *
- * Calculation results used to drive the robot to the necessary face using 2D
- * steering forces.
+ * \brief Once a robot has placed its block on its chosen construction target,
+ * calculate the path TO the egress lane within its allocated construction lane.
  */
-class ct_approach_calculator : public rer::client<ct_approach_calculator> {
+class egress_lane_path : public rer::client<egress_lane_path> {
  public:
-  struct ct_approach_ret {
-    bool x_ok{false};
-    bool y_ok{false};
-    double orthogonal_dist{-1};
-  };
-  ct_approach_calculator(const csubsystem::sensing_subsystemQ3D* sensing,
-                         double lane_alignment_tol);
+  explicit egress_lane_path(
+      const csubsystem::sensing_subsystemQ3D* sensing);
 
-  ct_approach_ret operator()(const srepr::construction_lane* lane) const;
+  std::vector<rmath::vector2d> operator()(
+      const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
-  ct_approach_calculator(const ct_approach_calculator&) = delete;
-  const ct_approach_calculator& operator=(const ct_approach_calculator&) = delete;
-  ct_approach_calculator(ct_approach_calculator&&) = delete;
-  ct_approach_calculator& operator=(ct_approach_calculator&&) = delete;
+  egress_lane_path(const egress_lane_path&) = delete;
+  const egress_lane_path& operator=(const egress_lane_path&) =
+      delete;
+  egress_lane_path(egress_lane_path&&) = delete;
+  egress_lane_path& operator=(egress_lane_path&&) = delete;
 
  private:
   /* clang-format off */
-  const double                            mc_lane_alignment_tol;
   const csubsystem::sensing_subsystemQ3D* mc_sensing;
   /* clang-format on */
 };
 
-NS_END(fsm, silicon);
+NS_END(calculators, fsm, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_CT_APPROACH_CALCULATOR_HPP_ */
+#endif /* INCLUDE_SILICON_FSM_CALCULATORS_EGRESS_LANE_PATH_HPP_ */

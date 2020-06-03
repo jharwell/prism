@@ -57,11 +57,13 @@ class ct_block_place_interactor
                                               TControllerSpecMap>::arena_map_type;
   ct_block_place_interactor(sstructure::ct_manager* const manager,
                             arena_map_type* const arena_map,
-                            metrics_agg_type* const metrics_agg)
+                            metrics_agg_type* const metrics_agg,
+                            argos::CFloorEntity*const floor)
       : base_ct_block_place_interactor<TController, TControllerSpecMap>(
             manager,
             arena_map,
-            metrics_agg) {}
+            metrics_agg,
+            floor) {}
 
   ct_block_place_interactor(ct_block_place_interactor&&) = default;
 

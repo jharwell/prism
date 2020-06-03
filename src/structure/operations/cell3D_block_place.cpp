@@ -51,7 +51,8 @@ void cell3D_block_place::visit(cds::cell3D& cell) {
 
 void cell3D_block_place::visit(cfsm::cell3D_fsm& fsm) {
   ER_ASSERT(!fsm.state_has_block() && !fsm.state_in_block_extent(),
-            "FSM in wrong state");
+            "FSM in wrong state: %d",
+            fsm.current_state());
   fsm.event_block_place();
 } /* visit() */
 

@@ -68,8 +68,9 @@ class subtargets_metrics_collector final : public rmetrics::base_metrics_collect
 
  private:
   struct stats {
-    size_t n_placed_count{0};
-    size_t n_total_count{0};
+    size_t placed_count{0};
+    size_t manifest_size{0};
+    size_t complete_count{0};
   };
 
   std::list<std::string> csv_header_cols(void) const override;

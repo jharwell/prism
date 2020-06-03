@@ -44,8 +44,7 @@ NS_START(silicon, controller, operations, detail);
  * \class ct_block_place
  * \ingroup operations detail
  *
- * \brief Fired whenever a robot picks up a free block in the arena (i.e. one
- * that is not part of a cache).
+ * \brief Fired whenever a robot places a block on a construction target.
  */
 class ct_block_place : public cdops::cell3D_op {
  private:

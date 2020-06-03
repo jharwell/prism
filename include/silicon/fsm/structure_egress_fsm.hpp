@@ -29,6 +29,7 @@
 #include "cosm/steer2D/ds/path_state.hpp"
 
 #include "silicon/fsm/builder_util_fsm.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -114,6 +115,7 @@ class structure_egress_fsm : public builder_util_fsm,
                      structure_egress,
                      csteer2D::ds::path_state);
   HFSM_EXIT_DECLARE(structure_egress_fsm, exit_structure_egress);
+  HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_structure_egress);
 
   HFSM_STATE_DECLARE_ND(structure_egress_fsm, finished);
 
@@ -123,18 +125,9 @@ class structure_egress_fsm : public builder_util_fsm,
 
   HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
-  /**
-   * \brief Calculate the path from the robot's current position to the egress
-   * lane (this path might be empty if the robot was already in the egress lane
-   * when it placed its block).
-   */
-  std::vector<rmath::vector2d> calc_path_to_egress(void) const;
-
-  /**
-   * \brief Calculate the path from the robot's current position in the egress
-   * lane off of the structure and back to the 2D arena.
-   */
-  std::vector<rmath::vector2d> calc_egress_path(void);
+  /* clang-format off */
+  calculators::lane_alignment m_alignment_calc;
+  /* clang-format on */
 };
 
 NS_END(fsm, silicon);

@@ -154,8 +154,6 @@ class construction_loop_functions
    */
   void robot_post_step(argos::CFootBotEntity& robot);
 
-  argos::CColor GetFloorColor(const argos::CVector2& plane_pos) override RCSW_PURE;
-
   /**
    * \brief Update the LOS for a robot currently on the structure somewhere and
    * NOT in the 2D arena (if they are currently somewhere in the 2D arena, then

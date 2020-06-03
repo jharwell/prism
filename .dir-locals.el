@@ -42,7 +42,7 @@
                                                               "$localroot/include")))
           (add-to-list 'flycheck-gcc-args (concat "-isystem" "/usr/include/eigen3"))
           )
-        (c++-mode))))
+        )))
 
 
 ;;; end of .dir-locals.el

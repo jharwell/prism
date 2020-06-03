@@ -50,9 +50,14 @@ std::list<std::string> subtargets_metrics_collector::csv_header_cols(void) const
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>();
   for (size_t i = 0; i < m_interval.size(); ++i) {
+    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_complete_count");
+    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_complete_count");
+
     cols.push_back("int_avg_subtarget" + std::to_string(i) + "_placed_count");
     cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_placed_count");
-    cols.push_back("subtarget" + std::to_string(i) + "_size_in_blocks");
+
+    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_manifest_size");
+    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_manifest_size");
   } /* for(i..) */
 
   merged.splice(merged.end(), cols);
@@ -71,9 +76,14 @@ boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) 
   std::string line;
 
   for (size_t i = 0; i < m_interval.size(); ++i) {
-    line += csv_entry_intavg(m_interval[i].n_placed_count);
-    line += csv_entry_tsavg(m_cum[i].n_placed_count);
-    line += rcppsw::to_string(m_cum[i].n_total_count) + separator();
+    line += csv_entry_intavg(m_interval[i].complete_count);
+    line += csv_entry_intavg(m_cum[i].complete_count);
+
+    line += csv_entry_tsavg(m_interval[i].placed_count);
+    line += csv_entry_tsavg(m_cum[i].placed_count);
+
+    line += rcppsw::to_string(m_interval[i].manifest_size) + separator();
+    line += rcppsw::to_string(m_cum[i].manifest_size) + separator();
   } /* for(i..) */
 
   return boost::make_optional(line);
@@ -82,9 +92,13 @@ boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) 
 void subtargets_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
   auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
-    m_interval[i].n_placed_count += m.n_placed_blocks();
-    m_cum[i].n_placed_count += m.n_placed_blocks();
-    m_cum[i].n_total_count = m.n_total_blocks();
+    m_interval[i].complete_count += m.is_complete();
+    m_interval[i].placed_count += m.n_interval_placed();
+    m_interval[i].manifest_size = m.manifest_size();
+
+    m_cum[i].complete_count += m.is_complete();
+    m_cum[i].placed_count += m.n_interval_placed();
+    m_cum[i].manifest_size = m.manifest_size();
   } /* for(i..) */
 } /* collect() */
 

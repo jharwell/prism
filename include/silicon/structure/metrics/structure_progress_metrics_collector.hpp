@@ -63,8 +63,9 @@ class structure_progress_metrics_collector final : public rmetrics::base_metrics
 
  private:
   struct stats {
-    size_t n_placed_count;
-    size_t n_total_count;
+    size_t placed_count;
+    size_t manifest_size;
+    size_t complete_count;
   };
 
   std::list<std::string> csv_header_cols(void) const override;

@@ -26,6 +26,7 @@
 #include <boost/mpl/for_each.hpp>
 
 #include "rcppsw/mpl/typelist.hpp"
+#include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/metrics/collector_registerer.hpp"

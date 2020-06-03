@@ -28,16 +28,12 @@
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
 NS_START(silicon, fsm);
-
-/*******************************************************************************
- * Class Constants
- ******************************************************************************/
-const rmath::radians builder_util_fsm::kROBOT_AZIMUTH_TOL = rmath::radians(0.10);
 
 /*******************************************************************************
  * Constructors/Destructors
@@ -78,64 +74,6 @@ void builder_util_fsm::init(void) {
   util_hfsm::init();
 } /* init() */
 
-bool builder_util_fsm::lane_alignment_verify_pos(
-    const rmath::vector2d& lane_point,
-    const rmath::radians& orientation) const {
-  auto dist_diff = sensing()->rpos2D() - lane_point;
-  if (rmath::radians::kZERO == orientation) {
-    ER_CHECK(std::fabs(dist_diff.y()) <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s in Y for lane orientated@'%s': "
-             "%f > %f",
-             rcppsw::to_string(sensing()->rpos2D()).c_str(),
-             rcppsw::to_string(lane_point).c_str(),
-             rcppsw::to_string(orientation).c_str(),
-             std::fabs(dist_diff.y()),
-             kLANE_VECTOR_DIST_TOL);
-  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    ER_CHECK(std::fabs(dist_diff.x()) <= kLANE_VECTOR_DIST_TOL,
-             "Robot@%s too far from ingress@%s in X for lane orientated@'%s': "
-             "%f > %f",
-             rcppsw::to_string(sensing()->rpos2D()).c_str(),
-             rcppsw::to_string(lane_point).c_str(),
-             rcppsw::to_string(orientation).c_str(),
-             std::fabs(dist_diff.x()),
-             kLANE_VECTOR_DIST_TOL);
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(orientation).c_str());
-  }
-  return true;
-
-error:
-  return false;
-} /* lane_alignment_verify_pos() */
-
-bool builder_util_fsm::lane_alignment_verify_azimuth(
-    const rmath::radians& orientation) const {
-  rmath::radians angle_diff;
-  if (rmath::radians::kZERO == orientation) {
-    angle_diff =
-        (rmath::radians::kPI - saa()->sensing()->azimuth()).signed_normalize();
-  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    angle_diff =
-        (rmath::radians::kTHREE_PI_OVER_TWO - saa()->sensing()->azimuth())
-            .signed_normalize();
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(orientation).c_str());
-  }
-  ER_CHECK(angle_diff <= kROBOT_AZIMUTH_TOL,
-           "Robot azimuth (%s) too far from lane orientation (%s): %s > %s",
-           rcppsw::to_string(saa()->sensing()->azimuth()).c_str(),
-           rcppsw::to_string(orientation).c_str(),
-           rcppsw::to_string(angle_diff).c_str(),
-           rcppsw::to_string(kROBOT_AZIMUTH_TOL).c_str());
-  return true;
-
-error:
-  return false;
-} /* lane_alignment_verify_azimuth() */
-
 bool builder_util_fsm::robot_trajectory_proximity(void) const {
   auto readings =
       sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->readings();
@@ -151,16 +89,16 @@ bool builder_util_fsm::robot_trajectory_proximity(void) const {
     auto other_dpos =
         rmath::dvec2zvec(r.vec, mc_perception->arena_resolution().v());
     rmath::range<rmath::radians> pos_x(
-        rmath::radians::kZERO + kROBOT_AZIMUTH_TOL,
-        rmath::radians::kZERO - kROBOT_AZIMUTH_TOL);
-    rmath::range<rmath::radians> neg_x(rmath::radians::kPI + kROBOT_AZIMUTH_TOL,
-                                       rmath::radians::kPI - kROBOT_AZIMUTH_TOL);
+        rmath::radians::kZERO + calculators::lane_alignment::kAZIMUTH_TOL,
+        rmath::radians::kZERO - calculators::lane_alignment::kAZIMUTH_TOL);
+    rmath::range<rmath::radians> neg_x(rmath::radians::kPI + calculators::lane_alignment::kAZIMUTH_TOL,
+                                       rmath::radians::kPI - calculators::lane_alignment::kAZIMUTH_TOL);
     rmath::range<rmath::radians> pos_y(
-        rmath::radians::kPI_OVER_TWO + kROBOT_AZIMUTH_TOL,
-        rmath::radians::kPI_OVER_TWO - kROBOT_AZIMUTH_TOL);
+        rmath::radians::kPI_OVER_TWO + calculators::lane_alignment::kAZIMUTH_TOL,
+        rmath::radians::kPI_OVER_TWO - calculators::lane_alignment::kAZIMUTH_TOL);
     rmath::range<rmath::radians> neg_y(
-        rmath::radians::kTHREE_PI_OVER_TWO + kROBOT_AZIMUTH_TOL,
-        rmath::radians::kTHREE_PI_OVER_TWO - kROBOT_AZIMUTH_TOL);
+        rmath::radians::kTHREE_PI_OVER_TWO + calculators::lane_alignment::kAZIMUTH_TOL,
+        rmath::radians::kTHREE_PI_OVER_TWO - calculators::lane_alignment::kAZIMUTH_TOL);
     if (pos_x.contains(robot_azimuth)) {
       prox |= (other_dpos.x() - robot_dpos.x()) <= 2;
     } else if (neg_x.contains(robot_azimuth)) {

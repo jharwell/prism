@@ -31,7 +31,7 @@ RCPPSW_WARNING_DISABLE_POP()
 
 #include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/vis/block_carry_visualizer.hpp"
-#include "cosm/vis/los_visualizer.hpp"
+#include "cosm/vis/polygon2D_visualizer.hpp"
 #include "cosm/vis/steer2D_visualizer.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
@@ -72,8 +72,23 @@ void construction_qt_user_functions::Draw(argos::CFootBotEntity& c_entity) {
              controller->saa()->steer_force2D().tracker());
   }
   if (controller->display_los() && nullptr != controller->perception()->los()) {
-    auto* los = controller->perception()->los();
+    los_render(controller,
+               c_entity.GetEmbodiedEntity().GetOriginAnchor().Orientation);
+  }
+
+  if (controller->display_nearest_ct() &&
+      nullptr != controller->perception()->nearest_ct()) {
+    nearest_ct_render(controller,
+                      c_entity.GetEmbodiedEntity().GetOriginAnchor().Orientation);
+  }
+}
+
+void construction_qt_user_functions::los_render(
+    const controller::constructing_controller* controller,
+    const argos::CQuaternion& orientation) {
+  auto* los = controller->perception()->los();
     auto* ct = controller->perception()->nearest_ct();
+
 
     /*
      * ARGos Qt user functions draw things relative to the robot's current
@@ -85,17 +100,64 @@ void construction_qt_user_functions::Draw(argos::CFootBotEntity& c_entity) {
      * that too.
      */
     double correction = ct->block_unit_dim();
+
     std::vector<rmath::vector2d> points = {
-        ct->cell_loc_abs(los->abs_ll()).to_2D() - controller->rpos2D(),
-        ct->cell_loc_abs(los->abs_ul()).to_2D() - controller->rpos2D() +
-            rmath::vector2d(0.0, correction),
-        ct->cell_loc_abs(los->abs_ur()).to_2D() - controller->rpos2D() +
-            rmath::vector2d(correction, correction),
-        ct->cell_loc_abs(los->abs_lr()).to_2D() - controller->rpos2D() +
-            rmath::vector2d(correction, 0.0)};
-    cvis::los_visualizer(this)(points);
-  }
-}
+        ct->cell_loc_abs(los->abs_ll()).to_2D(),
+        ct->cell_loc_abs(los->abs_ul()).to_2D() + rmath::vector2d(0.0,
+                                                                  correction),
+        ct->cell_loc_abs(los->abs_ur()).to_2D() + rmath::vector2d(correction,
+                                                                  correction),
+        ct->cell_loc_abs(los->abs_lr()).to_2D() + rmath::vector2d(correction,
+                                                                  0.0)
+    };
+    cvis::polygon2D_visualizer(this).abs_draw(controller->rpos3D(),
+                                              orientation,
+                                              points,
+                                              rutils::color::kBLUE);
+} /* los_render() */
+
+void construction_qt_user_functions::nearest_ct_render(
+    const controller::constructing_controller* controller,
+    const argos::CQuaternion& orientation) {
+    auto* ct = controller->perception()->nearest_ct();
+    auto bbd = ct->bbd(true);
+    size_t shell_size = ct->vshell_sized();
+    double correction = ct->block_unit_dim();
+
+    std::vector<rmath::vector2d> ct_rpoints = {
+      ct->cell_loc_abs(rmath::vector3z(shell_size, shell_size, 0)).to_2D(),
+      ct->cell_loc_abs(rmath::vector3z(shell_size,
+                                       bbd.y() - shell_size,
+                                       0)).to_2D(),
+      ct->cell_loc_abs(rmath::vector3z(bbd.x() - shell_size,
+                                       bbd.y() - shell_size,
+                                       0)).to_2D(),
+      ct->cell_loc_abs(rmath::vector3z(bbd.x() - shell_size,
+                                       shell_size,
+                                       0)).to_2D(),
+    };
+    std::vector<rmath::vector2d> ct_vpoints = {
+      ct->cell_loc_abs(rmath::vector3z(0, 0, 0)).to_2D(),
+      ct->cell_loc_abs(rmath::vector3z(0, bbd.y() -1, 0)).to_2D() +
+      rmath::vector2d(0.0, correction),
+      ct->cell_loc_abs(rmath::vector3z(bbd.x() - 1,
+                                       bbd.y() - 1,
+                                       0)).to_2D() +
+      rmath::vector2d(correction, correction),
+      ct->cell_loc_abs(rmath::vector3z(bbd.x() - 1, 0, 0)).to_2D() +
+      rmath::vector2d(correction, 0.0)
+    };
+    /* Draw BOTH virtual and real bounding boxes in 2D */
+    cvis::polygon2D_visualizer v(this);
+    v.abs_draw(controller->rpos3D(),
+               orientation,
+               ct_rpoints,
+               rutils::color::kRED);
+    v.abs_draw(controller->rpos3D(),
+               orientation,
+               ct_vpoints,
+               rutils::color::kORANGE);
+} /* nearest_ct_render() */
 
 using namespace argos; // NOLINT
 

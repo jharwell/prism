@@ -29,13 +29,16 @@
 #include "rcppsw/er/client.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/slice2D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, operations);
+NS_START(silicon, structure);
+
+class structure3D;
+
+NS_START(operations);
 
 /*******************************************************************************
  * Class Definitions

@@ -22,7 +22,7 @@
   <category name="cosm.steer2D.force_calculator" >
     <priority value ="info" />
   </category>
-  <category name="cosm.robots.footbot" >
+  <category name="cosm.subsystem" >
     <priority value ="trace" />
   </category>
   <category name="cosm.tv.population_dynamics" >
@@ -40,9 +40,6 @@
   <category name="silicon.structure.slice2D" >
     <priority value ="trace" />
   </category>
-  <category name="cosm.robots.footbot.saa" >
-    <priority value ="trace" />
-  </category>
 
   <category name="silicon.controller" >
     <priority value ="info" />
@@ -55,9 +52,6 @@
     <priority value ="trace" />
   </category>
 
-  <category name="cosm.robots.footbot.saa" >
-    <priority value ="info" />
-  </category>
   <category name="cosm.steer2D.force_calculator" >
     <priority value ="info" />
   </category>

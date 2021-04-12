@@ -25,7 +25,7 @@
 
 #include "rcppsw/patterns/fsm/event.hpp"
 
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
+#include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/fsm/calculators/lane_alignment.hpp"
@@ -40,12 +40,12 @@ NS_START(silicon, fsm);
  ******************************************************************************/
 builder_util_fsm::builder_util_fsm(
     const scperception::builder_perception_subsystem* perception,
-    crfootbot::footbot_saa_subsystem* saa,
+    csubsystem::saa_subsystemQ3D* saa,
     rmath::rng* rng,
     uint8_t max_states)
     : util_hfsm(saa, rng, max_states),
       ER_CLIENT_INIT("silicon.fsm.builder_util"),
-      HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       mc_perception(perception) {}
 
 builder_util_fsm::~builder_util_fsm(void) = default;
@@ -53,7 +53,9 @@ builder_util_fsm::~builder_util_fsm(void) = default;
 /*******************************************************************************
  * States
  ******************************************************************************/
-HFSM_STATE_DEFINE(builder_util_fsm, wait_for_robot, const robot_wait_data* data) {
+RCPPSW_HFSM_STATE_DEFINE(builder_util_fsm,
+                         wait_for_robot,
+                         const robot_wait_data* data) {
   saa()->actuation()->actuator<ckin2D::governed_diff_drive>()->reset();
 
   if (robot_proximity_type::ekTRAJECTORY == data->prox_type &&
@@ -91,14 +93,17 @@ bool builder_util_fsm::robot_trajectory_proximity(void) const {
     rmath::range<rmath::radians> pos_x(
         rmath::radians::kZERO + calculators::lane_alignment::kAZIMUTH_TOL,
         rmath::radians::kZERO - calculators::lane_alignment::kAZIMUTH_TOL);
-    rmath::range<rmath::radians> neg_x(rmath::radians::kPI + calculators::lane_alignment::kAZIMUTH_TOL,
-                                       rmath::radians::kPI - calculators::lane_alignment::kAZIMUTH_TOL);
+    rmath::range<rmath::radians> neg_x(
+        rmath::radians::kPI + calculators::lane_alignment::kAZIMUTH_TOL,
+        rmath::radians::kPI - calculators::lane_alignment::kAZIMUTH_TOL);
     rmath::range<rmath::radians> pos_y(
         rmath::radians::kPI_OVER_TWO + calculators::lane_alignment::kAZIMUTH_TOL,
         rmath::radians::kPI_OVER_TWO - calculators::lane_alignment::kAZIMUTH_TOL);
     rmath::range<rmath::radians> neg_y(
-        rmath::radians::kTHREE_PI_OVER_TWO + calculators::lane_alignment::kAZIMUTH_TOL,
-        rmath::radians::kTHREE_PI_OVER_TWO - calculators::lane_alignment::kAZIMUTH_TOL);
+        rmath::radians::kTHREE_PI_OVER_TWO +
+            calculators::lane_alignment::kAZIMUTH_TOL,
+        rmath::radians::kTHREE_PI_OVER_TWO -
+            calculators::lane_alignment::kAZIMUTH_TOL);
     if (pos_x.contains(robot_azimuth)) {
       prox |= (other_dpos.x() - robot_dpos.x()) <= 2;
     } else if (neg_x.contains(robot_azimuth)) {

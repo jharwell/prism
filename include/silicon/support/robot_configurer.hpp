@@ -28,10 +28,10 @@
 #include <memory>
 #include <utility>
 
-#include "silicon/support/config/visualization_config.hpp"
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/controller/perception/perception_receptor.hpp"
 #include "silicon/ds/ct_vector.hpp"
+#include "silicon/support/config/visualization_config.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

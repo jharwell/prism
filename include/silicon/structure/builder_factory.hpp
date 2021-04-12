@@ -27,6 +27,7 @@
 #include <string>
 
 #include "rcppsw/patterns/factory/factory.hpp"
+
 #include "silicon/silicon.hpp"
 #include "silicon/structure/base_structure3D_builder.hpp"
 
@@ -44,12 +45,12 @@ NS_START(silicon, structure);
  *
  * \brief Factory for creating \ref structure3D builders (duh).
  */
-class builder_factory :
-    public rpfactory::releasing_factory<base_structure3D_builder,
-                                        std::string, /* key type */
-                                        const config::structure3D_builder_config*,
-                                        structure3D*,
-                                        cpal::argos_sm_adaptor*> {
+class builder_factory
+    : public rpfactory::releasing_factory<base_structure3D_builder,
+                                          std::string, /* key type */
+                                          const config::structure3D_builder_config*,
+                                          structure3D*,
+                                          cpal::argos_sm_adaptor*> {
  public:
   static constexpr char kStatic[] = "static";
   static constexpr char kSwarm[] = "swarm";

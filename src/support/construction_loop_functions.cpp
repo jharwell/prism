@@ -21,13 +21,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-/*
- * This is needed because without it boost instantiates static assertions that
- * verify that every possible handler<controller> instantiation is valid. These
- * will not happen in reality (or shouldn't), and if they do it's 100% OK to
- * crash with an exception.
- */
-#define BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
 #include "silicon/support/construction_loop_functions.hpp"
 
 #include <boost/mpl/for_each.hpp>
@@ -37,8 +30,8 @@
 #include "cosm/controller/operations/applicator.hpp"
 #include "cosm/controller/operations/metrics_extract.hpp"
 #include "cosm/convergence/convergence_calculator.hpp"
+#include "cosm/foraging/metrics/block_transportee_metrics_collector.hpp"
 #include "cosm/interactors/applicator.hpp"
-#include "cosm/foraging/metrics/block_transport_metrics_collector.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
@@ -203,8 +196,7 @@ void construction_loop_functions::private_init(void) {
    * threads are not set up yet so doing dynamicaly causes a deadlock. Also, it
    * only happens once, so it doesn't really matter if it is slow.
    */
-  cpal::argos_swarm_iterator::controllers<argos::CFootBotEntity,
-                                          controller::constructing_controller,
+  cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
       this, cb, kARGoSRobotType);
 } /* private_init() */
@@ -220,7 +212,7 @@ void construction_loop_functions::pre_step(void) {
   /* Process all robots */
   auto cb = [&](argos::CControllableEntity* robot) {
     ndc_push();
-    robot_pre_step(dynamic_cast<argos::CFootBotEntity&>(robot->GetParent()));
+    robot_pre_step(dynamic_cast<chal::robot&>(robot->GetParent()));
     ndc_pop();
   };
   cpal::argos_swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
@@ -234,7 +226,7 @@ void construction_loop_functions::post_step(void) {
   /* Process all robots: interact with environment then collect metrics */
   auto cb = [&](argos::CControllableEntity* robot) {
     ndc_push();
-    robot_post_step(dynamic_cast<argos::CFootBotEntity&>(robot->GetParent()));
+    robot_post_step(dynamic_cast<chal::robot&>(robot->GetParent()));
     ndc_pop();
   };
   cpal::argos_swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
@@ -242,8 +234,9 @@ void construction_loop_functions::post_step(void) {
   ndc_push();
   /* Update block distribution status */
   auto* collector =
-      m_metrics_agg->get<cfmetrics::block_transport_metrics_collector>(
-          "blocks::transport");
+      m_metrics_agg->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
+                                                                         ":transp"
+                                                                         "ortee");
   arena_map()->redist_governor()->update(
       rtypes::timestep(GetSpace().GetSimulationClock()),
       collector->cum_transported(),
@@ -259,7 +252,7 @@ void construction_loop_functions::post_step(void) {
   if (m_metrics_agg->metrics_write(rmetrics::output_mode::ekAPPEND)) {
     tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>()->reset_metrics();
 
-    for (auto *target : ct_manager()->targetsno()) {
+    for (auto* target : ct_manager()->targetsno()) {
       target->reset_metrics();
     } /* for(*target..) */
   }
@@ -286,7 +279,7 @@ void construction_loop_functions::reset(void) {
 /*******************************************************************************
  * General Member Functions
  ******************************************************************************/
-void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
+void construction_loop_functions::robot_pre_step(chal::robot& robot) {
   auto controller = static_cast<controller::constructing_controller*>(
       &robot.GetControllableEntity().GetController());
 
@@ -302,13 +295,13 @@ void construction_loop_functions::robot_pre_step(argos::CFootBotEntity& robot) {
   robot_losQ3D_update(controller);
 } /* robot_pre_step() */
 
-void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) {
+void construction_loop_functions::robot_post_step(chal::robot& robot) {
   auto controller = static_cast<controller::constructing_controller*>(
       &robot.GetControllableEntity().GetController());
 
   /*
-   * Watch the robot interact with its environment after physics have been */
-  /* updated and its controller has run.
+   * Watch the robot interact with its environment after physics have been
+   * updated and its controller has run.
    */
   auto it = m_interactor_map->find(controller->type_index());
   ER_ASSERT(m_interactor_map->end() != it,
@@ -316,15 +309,16 @@ void construction_loop_functions::robot_post_step(argos::CFootBotEntity& robot) 
             controller->GetId().c_str(),
             controller->type_index().name());
 
-  auto iapplicator =
-      cinteractors::applicator<controller::constructing_controller,
-                               robot_arena_interactor>(
-          controller, rtypes::timestep(GetSpace().GetSimulationClock()));
+  auto iapplicator = cinteractors::applicator<controller::constructing_controller,
+                                              robot_arena_interactor>(
+      controller, rtypes::timestep(GetSpace().GetSimulationClock()));
   boost::apply_visitor(iapplicator,
                        m_interactor_map->at(controller->type_index()));
 
-  /* Collect metrics from robot, now that it has finished interacting with the */
-  /* environment and no more changes to its state will occur this timestep. */
+  /*
+   * Collect metrics from robot, now that it has finished interacting with the
+   * environment and no more changes to its state will occur this timestep.
+   */
   auto it2 = m_metrics_map->find(controller->type_index());
   ER_ASSERT(m_metrics_map->end() != it2,
             "Controller '%s' type '%s' not in construction metrics map",

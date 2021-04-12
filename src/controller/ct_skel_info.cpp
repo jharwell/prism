@@ -49,14 +49,14 @@ rmath::vector3z ct_skel_info::vorigind(void) const {
   return m_target->vorigind();
 } /* vorigind() */
 
-size_t ct_skel_info::vshell_sized(void) const{
+size_t ct_skel_info::vshell_sized(void) const {
   return m_target->vshell_sized();
 } /* vshell_sized() */
 
 rmath::vector3d ct_skel_info::center(void) const {
   return m_target->voriginr() + rmath::vector3d(m_target->xrsize() / 2.0,
-                                               m_target->yrsize() / 2.0,
-                                               m_target->zrsize() / 2.0);
+                                                m_target->yrsize() / 2.0,
+                                                m_target->zrsize() / 2.0);
 } /* center() */
 
 rmath::vector3d ct_skel_info::bbr(void) const {
@@ -64,9 +64,9 @@ rmath::vector3d ct_skel_info::bbr(void) const {
    * Targets are surrounded by layers of virtual cells, which we don't care
    * about when allocating construction lanes.
    */
-  return {m_target->xrsize() - m_target->vshell_sizer().v() * 2,
-        m_target->yrsize() - m_target->vshell_sizer().v() * 2,
-        m_target->zrsize()};
+  return { m_target->xrsize() - m_target->vshell_sizer().v() * 2,
+           m_target->yrsize() - m_target->vshell_sizer().v() * 2,
+           m_target->zrsize() };
 } /* bbr() */
 
 rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
@@ -74,9 +74,9 @@ rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
    * Targets are surrounded by layers of virtual cells, which we don't care
    * about when allocating construction lanes.
    */
-  return {m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
-        m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
-        m_target->zdsize()};
+  return { m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
+           m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
+           m_target->zdsize() };
 } /* bbd() */
 
 const rmath::radians& ct_skel_info::orientation(void) const {

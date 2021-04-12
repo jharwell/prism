@@ -43,8 +43,8 @@ allocator::allocator(const config::lane_alloc_config* config, rmath::rng* rng)
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<lane_geometry> allocator::lane_locs_calc(
-    const scperception::ct_skel_info* target) const {
+std::vector<lane_geometry>
+allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
 
   /*
@@ -54,43 +54,39 @@ std::vector<lane_geometry> allocator::lane_locs_calc(
    */
   auto bbd = target->bbd(true);
   if (rmath::radians::kZERO == target->orientation()) {
-    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized(); j += 2) {
+    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
+         j += 2) {
       rmath::vector3z ingress_nearest(bbd.x() - 1, j, 0);
       rmath::vector3z egress_nearest(bbd.x() - 1, j + 1, 0);
 
-      auto geometry = lane_geometry(target,
-                                    ingress_nearest,
-                                    egress_nearest);
+      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
-    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized(); i += 2) {
+    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
+         i += 2) {
       rmath::vector3z ingress_nearest(i + 1, bbd.y() - 1, 0);
       rmath::vector3z egress_nearest(i, bbd.y() - 1, 0);
 
-      auto geometry = lane_geometry(target,
-                                    ingress_nearest,
-                                    egress_nearest);
+      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(i..) */
   } else if (rmath::radians::kPI == target->orientation()) {
-    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized(); j += 2) {
+    for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
+         j += 2) {
       rmath::vector3z ingress_nearest(0, j + 1, 0);
       rmath::vector3z egress_nearest(0, j, 0);
 
-      auto geometry = lane_geometry(target,
-                                    ingress_nearest,
-                                    egress_nearest);
+      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(j..) */
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
-    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized(); i += 2) {
+    for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
+         i += 2) {
       rmath::vector3z ingress_nearest(i, 0, 0);
       rmath::vector3z egress_nearest(i + 1, 0, 0);
 
-      auto geometry = lane_geometry(target,
-                                    ingress_nearest,
-                                    egress_nearest);
+      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
       ret.push_back(std::move(geometry));
     } /* for(i..) */
   } else {
@@ -100,9 +96,9 @@ std::vector<lane_geometry> allocator::lane_locs_calc(
   return ret;
 } /* lane_locs_calc() */
 
-std::unique_ptr<repr::construction_lane> allocator::operator()(
-    const rmath::vector3d& robot_loc,
-    const scperception::ct_skel_info* target) {
+std::unique_ptr<repr::construction_lane>
+allocator::operator()(const rmath::vector3d& robot_loc,
+                      const scperception::ct_skel_info* target) {
   auto locs = lane_locs_calc(target);
 
   /*
@@ -112,7 +108,7 @@ std::unique_ptr<repr::construction_lane> allocator::operator()(
   auto hist_it = m_history.find(target->id());
   if (m_history.end() == hist_it) {
     allocation_history h(locs.size(), m_rng->uniform(0UL, locs.size() - 1));
-    m_history.insert({target->id(), h});
+    m_history.insert({ target->id(), h });
   }
   auto& hist = m_history.find(target->id())->second;
 
@@ -140,13 +136,12 @@ std::unique_ptr<repr::construction_lane> allocator::operator()(
           rcppsw::to_string(target->orientation()).c_str(),
           rcppsw::to_string(locs[id].ingress_start()).c_str(),
           rcppsw::to_string(locs[id].egress_start()).c_str());
-  return std::make_unique<repr::construction_lane>(
-      id,
-      target->orientation(),
-      locs[id].ingress_start(),
-      locs[id].egress_start(),
-      locs[id].ingress_cell(),
-      locs[id].egress_cell());
+  return std::make_unique<repr::construction_lane>(id,
+                                                   target->orientation(),
+                                                   locs[id].ingress_start(),
+                                                   locs[id].egress_start(),
+                                                   locs[id].ingress_cell(),
+                                                   locs[id].egress_cell());
 } /* operator()() */
 
 /*******************************************************************************
@@ -162,9 +157,8 @@ size_t allocator::alloc_count(const rtypes::type_uuid& target, size_t id) const 
 
 void allocator::reset_metrics(void) {
   for (auto& pair : m_history) {
-    std::fill(pair.second.alloc_counts.begin(),
-              pair.second.alloc_counts.end(),
-              0);
+    std::fill(
+        pair.second.alloc_counts.begin(), pair.second.alloc_counts.end(), 0);
   } /* for(&pair..) */
 } /* reset_metrics() */
 

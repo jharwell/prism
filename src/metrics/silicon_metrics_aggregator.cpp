@@ -91,12 +91,10 @@ silicon_metrics_aggregator::silicon_metrics_aggregator(
  ******************************************************************************/
 void silicon_metrics_aggregator::collect_from_tv(
     const support::tv::tv_manager* const tvm) {
-  collect("tv::environment",
-          *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
+  collect("tv::environment", *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
 
   if (nullptr != tvm->dynamics<ctv::dynamics_type::ekPOPULATION>()) {
-    collect("tv::population",
-            *tvm->dynamics<ctv::dynamics_type::ekPOPULATION>());
+    collect("tv::population", *tvm->dynamics<ctv::dynamics_type::ekPOPULATION>());
   }
 } /* collect_from_tv() */
 
@@ -110,7 +108,7 @@ void silicon_metrics_aggregator::collect_from_ct(
       collect("structure" + rcppsw::to_string(target->id()) + "::subtargets",
               *st);
     } /* for(*t..) */
-  }   /* for(*target..) */
+  } /* for(*target..) */
 } /* collect_from_ct() */
 
 template <typename TController>
@@ -137,14 +135,15 @@ void silicon_metrics_aggregator::register_standard_non_target(
       rmpl::identity<blocks::manipulation_metrics_collector>,
       rmpl::identity<support::tv::metrics::env_dynamics_metrics_collector> >;
   cmetrics::collector_registerer<>::creatable_set creatable_set = {
-      {typeid(blocks::manipulation_metrics_collector),
-       "block_manipulation",
-       "blocks::manipulation",
-       rmetrics::output_mode::ekAPPEND},
-      {typeid(support::tv::metrics::env_dynamics_metrics_collector),
-       "tv_environment",
-       "tv::environment",
-       rmetrics::output_mode::ekAPPEND}};
+    { typeid(blocks::manipulation_metrics_collector),
+      "block_manipulation",
+      "blocks::manipulation",
+      rmetrics::output_mode::ekAPPEND },
+    { typeid(support::tv::metrics::env_dynamics_metrics_collector),
+      "tv_environment",
+      "tv::environment",
+      rmetrics::output_mode::ekAPPEND }
+  };
   cmetrics::collector_registerer<> registerer(mconfig, creatable_set, this);
   boost::mpl::for_each<collector_typelist>(registerer);
 } /* register_standard_non_target() */
@@ -155,10 +154,10 @@ void silicon_metrics_aggregator::register_standard_target(
   using collector_typelist = rmpl::typelist<
       rmpl::identity<structure::metrics::structure_progress_metrics_collector> >;
   cmetrics::collector_registerer<>::creatable_set creatable_set = {
-      {typeid(structure::metrics::structure_progress_metrics_collector),
-       "structure" + rcppsw::to_string(structure->id()) + "_progress",
-       "structure" + rcppsw::to_string(structure->id()) + "::progress",
-       rmetrics::output_mode::ekAPPEND},
+    { typeid(structure::metrics::structure_progress_metrics_collector),
+      "structure" + rcppsw::to_string(structure->id()) + "_progress",
+      "structure" + rcppsw::to_string(structure->id()) + "::progress",
+      rmetrics::output_mode::ekAPPEND },
   };
   cmetrics::collector_registerer<> registerer(mconfig, creatable_set, this);
   boost::mpl::for_each<collector_typelist>(registerer);
@@ -172,10 +171,10 @@ void silicon_metrics_aggregator::register_with_target_lanes(
       rmpl::identity<structure::metrics::subtargets_metrics_collector> >;
 
   cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
-      {typeid(structure::metrics::subtargets_metrics_collector),
-       "structure" + rcppsw::to_string(structure->id()) + "_subtargets",
-       "structure" + rcppsw::to_string(structure->id()) + "::subtargets",
-       rmetrics::output_mode::ekAPPEND},
+    { typeid(structure::metrics::subtargets_metrics_collector),
+      "structure" + rcppsw::to_string(structure->id()) + "_subtargets",
+      "structure" + rcppsw::to_string(structure->id()) + "::subtargets",
+      rmetrics::output_mode::ekAPPEND },
   };
   auto extra_args = std::make_tuple(structure->subtargets().size());
   cmetrics::collector_registerer<extra_args_type> registerer(
@@ -191,10 +190,11 @@ void silicon_metrics_aggregator::register_with_target_lanes_and_id(
       rmpl::typelist<rmpl::identity<slametrics::lane_alloc_metrics_collector> >;
 
   cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
-      {typeid(slametrics::lane_alloc_metrics_collector),
-       "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
-       "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
-       rmetrics::output_mode::ekAPPEND}};
+    { typeid(slametrics::lane_alloc_metrics_collector),
+      "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
+      "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
+      rmetrics::output_mode::ekAPPEND }
+  };
   auto extra_args =
       std::make_tuple(structure->id(), structure->subtargets().size());
   cmetrics::collector_registerer<extra_args_type> registerer(
@@ -209,10 +209,10 @@ void silicon_metrics_aggregator::register_with_target_dims(
   using collector_typelist = rmpl::typelist<
       rmpl::identity<structure::metrics::structure_state_metrics_collector> >;
   cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
-      {typeid(structure::metrics::structure_state_metrics_collector),
-       "structure" + rcppsw::to_string(structure->id()) + "_state",
-       "structure" + rcppsw::to_string(structure->id()) + "::state",
-       rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE},
+    { typeid(structure::metrics::structure_state_metrics_collector),
+      "structure" + rcppsw::to_string(structure->id()) + "_state",
+      "structure" + rcppsw::to_string(structure->id()) + "::state",
+      rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE },
   };
 
   auto extra_args = std::make_tuple(structure->dimsd());

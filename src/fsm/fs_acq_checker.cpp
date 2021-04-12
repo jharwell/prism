@@ -49,9 +49,8 @@ fs_acq_checker::fs_acq_checker(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-stygmergic_configuration fs_acq_checker::operator()(
-    const srepr::construction_lane* lane) const {
-
+stygmergic_configuration
+fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
   auto* los = mc_perception->los();
   ER_ASSERT(nullptr != los,
             "Frontier set acquisition checker called without LOS");
@@ -70,8 +69,8 @@ stygmergic_configuration fs_acq_checker::operator()(
   return configuration_calc(los_cells, lane);
 } /* operator()() */
 
-fs_acq_checker::los_lane_cells fs_acq_checker::los_cells_calc(
-    const srepr::construction_lane* lane) const {
+fs_acq_checker::los_lane_cells
+fs_acq_checker::los_cells_calc(const srepr::construction_lane* lane) const {
   rmath::vector2z ingress_fs_cell;
   rmath::vector2z egress_fs_cell;
   los_lane_cells ret;
@@ -82,8 +81,8 @@ fs_acq_checker::los_lane_cells fs_acq_checker::los_cells_calc(
    * that to figure out the robot's relative location within the LOS.
    */
   auto* ct = mc_perception->nearest_ct();
-  auto robot_ct_cell = (mc_sensing->dpos3D() -
-                        ct->vorigind()) / ct->unit_dim_factor();
+  auto robot_ct_cell =
+      (mc_sensing->dpos3D() - ct->vorigind()) / ct->unit_dim_factor();
   ER_ASSERT(robot_ct_cell >= los->abs_ll(), "Robot CT cell not in LOS");
   auto robot_los_rel = (robot_ct_cell - los->abs_ll()).to_2D();
 
@@ -94,30 +93,22 @@ fs_acq_checker::los_lane_cells fs_acq_checker::los_cells_calc(
    */
   if (rmath::radians::kZERO == lane->orientation()) {
     /* We look in the NEGATIVE X direction for stygmergic configurations */
-    ingress_fs_cell = robot_los_rel + rmath::vector2z(-kDETECT_CELL_DIST,
-                                                      0);
-    egress_fs_cell = robot_los_rel + rmath::vector2z(-kDETECT_CELL_DIST,
-                                                     1);
+    ingress_fs_cell = robot_los_rel + rmath::vector2z(-kDETECT_CELL_DIST, 0);
+    egress_fs_cell = robot_los_rel + rmath::vector2z(-kDETECT_CELL_DIST, 1);
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* We look in the NEGATIVE Y direction for stygmergic configurations */
-    ingress_fs_cell = robot_los_rel + rmath::vector2z(0,
-                                                      -kDETECT_CELL_DIST);
-    egress_fs_cell = robot_los_rel +
-                     rmath::vector2z(0, -kDETECT_CELL_DIST) -
+    ingress_fs_cell = robot_los_rel + rmath::vector2z(0, -kDETECT_CELL_DIST);
+    egress_fs_cell = robot_los_rel + rmath::vector2z(0, -kDETECT_CELL_DIST) -
                      rmath::vector2z(1, 0);
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* We look in the POSITIVE X direction for stygmergic configurations */
-    ingress_fs_cell = robot_los_rel + rmath::vector2z(kDETECT_CELL_DIST,
-                                                      0);
-    egress_fs_cell = robot_los_rel +
-                     rmath::vector2z(kDETECT_CELL_DIST, 0) -
+    ingress_fs_cell = robot_los_rel + rmath::vector2z(kDETECT_CELL_DIST, 0);
+    egress_fs_cell = robot_los_rel + rmath::vector2z(kDETECT_CELL_DIST, 0) -
                      rmath::vector2z(0, 1);
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* We look in the POSITIVE Y direction for stygmergic configurations  */
-    ingress_fs_cell = robot_los_rel + rmath::vector2z(0,
-                                                      kDETECT_CELL_DIST);
-    egress_fs_cell = robot_los_rel + rmath::vector2z(1,
-                                                     kDETECT_CELL_DIST);
+    ingress_fs_cell = robot_los_rel + rmath::vector2z(0, kDETECT_CELL_DIST);
+    egress_fs_cell = robot_los_rel + rmath::vector2z(1, kDETECT_CELL_DIST);
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
@@ -138,9 +129,9 @@ fs_acq_checker::los_lane_cells fs_acq_checker::los_cells_calc(
   return ret;
 } /* los_cells_calc() */
 
-stygmergic_configuration fs_acq_checker::configuration_calc(
-    const los_lane_cells& los_cells,
-    const srepr::construction_lane* lane) const {
+stygmergic_configuration
+fs_acq_checker::configuration_calc(const los_lane_cells& los_cells,
+                                   const srepr::construction_lane* lane) const {
   bool ingress_has_block = los_cells.ingress->state_has_block();
   bool egress_has_block = los_cells.egress->state_has_block();
 
@@ -171,11 +162,13 @@ stygmergic_configuration fs_acq_checker::configuration_calc(
     empty = (ct->vshell_sized() == los_cells.ingress->loc().y() &&
              ct->vshell_sized() == los_cells.egress->loc().y());
   } else if (rmath::radians::kPI == lane->orientation()) {
-    empty = (ct->vshell_sized() + ct->bbd().x() - 1 == los_cells.ingress->loc().x() &&
-             ct->vshell_sized() + ct->bbd().x() - 1 == los_cells.egress->loc().x());
+    empty =
+        (ct->vshell_sized() + ct->bbd().x() - 1 == los_cells.ingress->loc().x() &&
+         ct->vshell_sized() + ct->bbd().x() - 1 == los_cells.egress->loc().x());
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    empty = (ct->vshell_sized() + ct->bbd().y() - 1 == los_cells.ingress->loc().y() &&
-             ct->vshell_sized() + ct->bbd().y() - 1 == los_cells.egress->loc().y());
+    empty =
+        (ct->vshell_sized() + ct->bbd().y() - 1 == los_cells.ingress->loc().y() &&
+         ct->vshell_sized() + ct->bbd().y() - 1 == los_cells.egress->loc().y());
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());

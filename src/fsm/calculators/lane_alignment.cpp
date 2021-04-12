@@ -38,18 +38,17 @@ NS_START(silicon, fsm, calculators);
  * Class Constants
  ******************************************************************************/
 const rmath::radians lane_alignment::kAZIMUTH_TOL = rmath::radians(0.10);
-const rtypes::spatial_dist lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL = rtypes::spatial_dist(0.2);
+const rtypes::spatial_dist lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL =
+    rtypes::spatial_dist(0.2);
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-lane_alignment::ret_type lane_alignment::operator()(
-    const srepr::construction_lane* lane) const {
-  return {verify_pos(lane->ingress().to_2D(),
-                     lane->orientation()),
-        verify_pos(lane->egress().to_2D(),
-                   lane->orientation()),
-        verify_azimuth(lane->orientation())};
+lane_alignment::ret_type
+lane_alignment::operator()(const srepr::construction_lane* lane) const {
+  return { verify_pos(lane->ingress().to_2D(), lane->orientation()),
+           verify_pos(lane->egress().to_2D(), lane->orientation()),
+           verify_azimuth(lane->orientation()) };
 } /* operator()() */
 
 bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
@@ -57,10 +56,12 @@ bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
   auto dist_diff = mc_sensing->rpos2D() - lane_point;
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
-    return (rtypes::spatial_dist::make(dist_diff.y()) <= kTRAJECTORY_ORTHOGONAL_TOL);
+    return (rtypes::spatial_dist::make(dist_diff.y()) <=
+            kTRAJECTORY_ORTHOGONAL_TOL);
   } else if (rmath::radians::kPI_OVER_TWO == orientation ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
-    return (rtypes::spatial_dist::make(dist_diff.x()) <= kTRAJECTORY_ORTHOGONAL_TOL);
+    return (rtypes::spatial_dist::make(dist_diff.x()) <=
+            kTRAJECTORY_ORTHOGONAL_TOL);
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(orientation).c_str());
@@ -71,19 +72,16 @@ bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
 bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   rmath::radians angle_diff;
   if (rmath::radians::kZERO == orientation) {
-    angle_diff =
-        (rmath::radians::kPI - mc_sensing->azimuth()).signed_normalize();
+    angle_diff = (rmath::radians::kPI - mc_sensing->azimuth()).signed_normalize();
   } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    angle_diff =
-        (rmath::radians::kTHREE_PI_OVER_TWO - mc_sensing->azimuth())
-            .signed_normalize();
+    angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO - mc_sensing->azimuth())
+                     .signed_normalize();
   } else if (rmath::radians::kPI == orientation) {
     angle_diff =
         (rmath::radians::kZERO - mc_sensing->azimuth()).signed_normalize();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
     angle_diff =
-        (rmath::radians::kPI_OVER_TWO - mc_sensing->azimuth())
-        .signed_normalize();
+        (rmath::radians::kPI_OVER_TWO - mc_sensing->azimuth()).signed_normalize();
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(orientation).c_str());

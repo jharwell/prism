@@ -26,16 +26,15 @@
 #include "rcppsw/patterns/fsm/event.hpp"
 
 #include "cosm/ds/cell3D.hpp"
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
-#include "cosm/robots/footbot/footbot_sensing_subsystem.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
+#include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/construction_signal.hpp"
-#include "silicon/fsm/fs_acq_checker.hpp"
 #include "silicon/fsm/calculators/ingress_path.hpp"
 #include "silicon/fsm/calculators/placement_intent.hpp"
 #include "silicon/fsm/calculators/placement_path.hpp"
+#include "silicon/fsm/construction_signal.hpp"
+#include "silicon/fsm/fs_acq_checker.hpp"
 #include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -48,28 +47,31 @@ NS_START(silicon, fsm);
  ******************************************************************************/
 acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
     const scperception::builder_perception_subsystem* perception,
-    crfootbot::footbot_saa_subsystem* saa,
+    csubsystem::saa_subsystemQ3D* saa,
     rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
       ER_CLIENT_INIT("silicon.fsm.acquire_block_placement_site"),
-      HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(acquire_frontier_set, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(acquire_placement_loc, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
-      HFSM_DEFINE_STATE_MAP(
+      RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(acquire_frontier_set, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(acquire_placement_loc, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
+      RCPPSW_HFSM_DEFINE_STATE_MAP(
           mc_state_map,
-          HFSM_STATE_MAP_ENTRY_EX(&start),
-          HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_frontier_set,
-                                      nullptr,
-                                      &entry_acquire_frontier_set,
-                                      nullptr),
-          HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot, nullptr, nullptr, nullptr),
-          HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_placement_loc,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr),
-          HFSM_STATE_MAP_ENTRY_EX(&finished)),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&start),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_frontier_set,
+                                             nullptr,
+                                             &entry_acquire_frontier_set,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot,
+                                             nullptr,
+                                             nullptr,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_placement_loc,
+                                             nullptr,
+                                             nullptr,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_alignment_calc(saa->sensing()) {}
 
 acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
@@ -78,18 +80,19 @@ acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
 /*******************************************************************************
  * States
  ******************************************************************************/
-HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, start) {
+RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, start) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
-                     entry_acquire_frontier_set) {
+RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
+                            entry_acquire_frontier_set) {
   /* disable proximity sensor and enable camera while on the structure */
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
   saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->disable();
 }
 
-HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
+RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
+                            acquire_frontier_set) {
   auto alignment = m_alignment_calc(allocated_lane());
   ER_ASSERT(alignment.ingress_pos,
             "Bad alignment (position) during frontier set acqusition");
@@ -102,9 +105,9 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
    * continuing.
    */
   if (robot_trajectory_proximity()) {
-    internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(
-                       robot_proximity_type::ekTRAJECTORY));
+    internal_event(
+        fsm_state::ekST_WAIT_FOR_ROBOT,
+        std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
     return rpfsm::event_signal::ekHANDLED;
   }
   /* No robots in front, but not in nest yet */
@@ -137,7 +140,8 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_frontier_set) {
   }
 }
 
-HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
+RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
+                            acquire_placement_loc) {
   /*
    * We don't check for trajectory proximity to other robots while acquiring the
    * placement location, because when we get to this part, we are guaranteed to
@@ -146,9 +150,9 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
    * deadlocks.
    */
   if (robot_manhattan_proximity()) {
-    internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(
-                       robot_proximity_type::ekMANHATTAN));
+    internal_event(
+        fsm_state::ekST_WAIT_FOR_ROBOT,
+        std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
   } else {
     if (!m_path->is_complete()) {
       auto force = saa()->steer_force2D().path_following(m_path.get());
@@ -161,7 +165,7 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, acquire_placement_loc) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
+RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
   if (fsm_state::ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
@@ -173,13 +177,13 @@ HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
  ******************************************************************************/
 void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg) {
   static const uint8_t kTRANSITIONS[] = {
-      fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* start */
-      rpfsm::event_signal::ekFATAL,         /* acquire_frontier_set */
-      rpfsm::event_signal::ekFATAL,         /* wait_for_robot */
-      rpfsm::event_signal::ekFATAL,         /* acquire placement loc */
-      fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* finished */
+    fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* start */
+    rpfsm::event_signal::ekFATAL, /* acquire_frontier_set */
+    rpfsm::event_signal::ekFATAL, /* wait_for_robot */
+    rpfsm::event_signal::ekFATAL, /* acquire placement loc */
+    fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* finished */
   };
-  FSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, fsm_state::ekST_MAX_STATES);
+  RCPPSW_HFSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, fsm_state::ekST_MAX_STATES);
 
   auto* const a = dynamic_cast<repr::construction_lane*>(c_arg);
   ER_ASSERT(nullptr != a, "Bad construction lane argument");
@@ -203,8 +207,8 @@ void acquire_block_placement_site_fsm::init(void) {
   util_hfsm::init();
 } /* init() */
 
-block_placer::placement_intent acquire_block_placement_site_fsm::
-    placement_intent_calc(void) const {
+block_placer::placement_intent
+acquire_block_placement_site_fsm::placement_intent_calc(void) const {
   ER_ASSERT(fsm_state::ekST_FINISHED == current_state(),
             "Placement cell can only be calculated once the FSM finishes");
   auto calculator = calculators::placement_intent(sensing(), perception());

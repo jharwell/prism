@@ -25,8 +25,8 @@
 
 #include "silicon/structure/config/xml/construct_targets_parser.hpp"
 #include "silicon/structure/config/xml/structure3D_builder_parser.hpp"
-#include "silicon/support/tv/config/xml/tv_manager_parser.hpp"
 #include "silicon/support/config/xml/visualization_parser.hpp"
+#include "silicon/support/tv/config/xml/tv_manager_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -57,7 +57,7 @@ loop_function_repository::loop_function_repository(void) noexcept {
 
   parser_register<support::config::xml::visualization_parser,
                   support::config::visualization_config>(
-                      support::config::xml::visualization_parser::kXMLRoot);
+      support::config::xml::visualization_parser::kXMLRoot);
 }
 
 NS_END(xml, config, support, silicon);

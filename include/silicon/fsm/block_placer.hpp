@@ -64,7 +64,8 @@ class block_placer {
    * nothing if the robot is not currently intending to place a block (e.g. it
    * has not yet reached its desired site).
    */
-  virtual boost::optional<placement_intent> block_placement_intent(void) const = 0;
+  virtual boost::optional<placement_intent>
+  block_placement_intent(void) const = 0;
 };
 
 NS_END(fsm, silicon);

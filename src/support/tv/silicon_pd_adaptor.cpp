@@ -66,11 +66,10 @@ void silicon_pd_adaptor::pre_kill_cleanup(
     ER_INFO("Kill victim robot %s is carrying block%d",
             constructing->GetId().c_str(),
             constructing->block()->id().v());
-    auto it = std::find_if(m_map->blocks().begin(),
-                           m_map->blocks().end(),
-                           [&](const auto& b) {
-                             return constructing->block()->id() == b->id();
-                           });
+    auto it = std::find_if(
+        m_map->blocks().begin(), m_map->blocks().end(), [&](const auto& b) {
+          return constructing->block()->id() == b->id();
+        });
     /*
      * We are not REALLY holding all the arena map locks, but since population
      * dynamics are always applied AFTER all robots have had their control steps
@@ -80,7 +79,8 @@ void silicon_pd_adaptor::pre_kill_cleanup(
         *it,
         rmath::dvec2zvec(constructing->rpos2D(), m_map->grid_resolution().v()),
         m_map->grid_resolution(),
-        carena::arena_map_locking::ekALL_HELD);
+        carena::arena_map_locking::ekALL_HELD,
+        false);
 
     adrop_op.visit(*m_map);
   }

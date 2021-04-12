@@ -104,18 +104,19 @@ class ct_manager : public rer::client<ct_manager> {
   const ds::ct_vectorno& targetsno(void) const { return m_targetsno; }
   const ds::ct_vectorro& targetsro(void) const { return m_targetsro; }
 
-  const support::tv::block_op_penalty_handler* placement_handler(
-      const rtypes::type_uuid& target_id) const {
+  const support::tv::block_op_penalty_handler*
+  placement_handler(const rtypes::type_uuid& target_id) const {
     return m_envd->ct_penalty_handler(sstv::block_op_src::ekCT_BLOCK_MANIP,
                                       target_id);
   }
-  support::tv::block_op_penalty_handler* placement_handler(
-      const rtypes::type_uuid& target_id) {
+  support::tv::block_op_penalty_handler*
+  placement_handler(const rtypes::type_uuid& target_id) {
     return m_envd->ct_penalty_handler(sstv::block_op_src::ekCT_BLOCK_MANIP,
                                       target_id);
   }
 
-  const base_structure3D_builder* builder(const rtypes::type_uuid& target_id) const {
+  const base_structure3D_builder*
+  builder(const rtypes::type_uuid& target_id) const {
     return builder_lookup(target_id);
   }
   base_structure3D_builder* builder(const rtypes::type_uuid& target_id) {
@@ -154,7 +155,8 @@ class ct_manager : public rer::client<ct_manager> {
   using builders_vectoro_type =
       std::vector<std::unique_ptr<structure::base_structure3D_builder>>;
 
-  base_structure3D_builder* builder_lookup(const rtypes::type_uuid& target_id) const;
+  base_structure3D_builder*
+  builder_lookup(const rtypes::type_uuid& target_id) const;
   structure3D* target_lookup(const rtypes::type_uuid& id) const;
 
   /* clang-format off */

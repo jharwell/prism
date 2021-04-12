@@ -76,7 +76,7 @@ class fcrw_bst_fsm final
  public:
   fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
                const scperception::builder_perception_subsystem* perception,
-               crfootbot::footbot_saa_subsystem* saa,
+               csubsystem::saa_subsystemQ3D* saa,
                rmath::rng* rng);
   ~fcrw_bst_fsm(void) override;
 
@@ -91,15 +91,15 @@ class fcrw_bst_fsm final
   rmath::vector3z interference_loc3D(void) const override;
 
   /* goal acquisition metrics */
-  csmetrics::goal_acq_metrics::goal_type acquisition_goal(
-      void) const override RCSW_PURE;
+  csmetrics::goal_acq_metrics::goal_type
+  acquisition_goal(void) const override RCSW_PURE;
   exp_status is_exploring_for_goal(void) const override RCSW_PURE;
   bool is_vectoring_to_goal(void) const override { return false; }
   bool goal_acquired(void) const override RCSW_PURE;
   rmath::vector3z acquisition_loc3D(void) const override;
   rtypes::type_uuid entity_acquired_id(void) const override RCSW_PURE;
-  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector3z, explore_loc3D, const);
-  RCPPSW_WRAP_OVERRIDE_DECL(rmath::vector3z, vector_loc3D, const);
+  RCPPSW_WRAP_DECL_OVERRIDE(rmath::vector3z, explore_loc3D, const);
+  RCPPSW_WRAP_DECL_OVERRIDE(rmath::vector3z, vector_loc3D, const);
 
   /* block transportation */
   construction_transport_goal block_transport_goal(void) const override RCSW_PURE;
@@ -116,12 +116,10 @@ class fcrw_bst_fsm final
   void task_reset(void) override { init(); }
 
   /* block placer overrides */
-  boost::optional<block_placer::placement_intent> block_placement_intent(
-      void) const override;
+  boost::optional<block_placer::placement_intent>
+  block_placement_intent(void) const override;
 
-  const lane_alloc::allocator* lane_allocator(void) const {
-    return &m_allocator;
-  }
+  const lane_alloc::allocator* lane_allocator(void) const { return &m_allocator; }
   lane_alloc::allocator* lane_allocator(void) { return &m_allocator; }
 
   /**
@@ -196,20 +194,24 @@ class fcrw_bst_fsm final
   double ct_bc_radius(void) const;
 
   /* inherited states */
-  HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
+  RCPPSW_HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
 
   /* crw fsm states */
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, start);
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, forage);
-  HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data);
-  HFSM_STATE_DECLARE(fcrw_bst_fsm, wait_for_block_place, rpfsm::event_data);
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, ct_approach);
-  HFSM_STATE_DECLARE(fcrw_bst_fsm, ct_entry, ct_ingress_data);
-  HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_ct_approach);
-  HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_ct_entry);
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_build);
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_egress);
-  HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, finished);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, start);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, forage);
+  RCPPSW_HFSM_STATE_DECLARE(fcrw_bst_fsm,
+                            wait_for_block_pickup,
+                            rpfsm::event_data);
+  RCPPSW_HFSM_STATE_DECLARE(fcrw_bst_fsm,
+                            wait_for_block_place,
+                            rpfsm::event_data);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, ct_approach);
+  RCPPSW_HFSM_STATE_DECLARE(fcrw_bst_fsm, ct_entry, ct_ingress_data);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_ct_approach);
+  RCPPSW_HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_ct_entry);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_build);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_egress);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, finished);
 
   /**
    * \brief Defines the state map for the FSM.
@@ -217,11 +219,11 @@ class fcrw_bst_fsm final
    * Note that the order of the states in the map MUST match the order of the
    * states in \enum fsm_states, or things will not work correctly.
    */
-  HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
+  RCPPSW_HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
     return (&mc_state_map[index]);
   }
 
-  HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
+  RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
   const scperception::builder_perception_subsystem* mc_perception;

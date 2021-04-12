@@ -77,7 +77,8 @@ class base_structure3D_builder : public rer::client<base_structure3D_builder> {
                            cpal::argos_sm_adaptor* sm);
 
   base_structure3D_builder(const base_structure3D_builder&) = default;
-  const base_structure3D_builder& operator=(const base_structure3D_builder&) = delete;
+  const base_structure3D_builder&
+  operator=(const base_structure3D_builder&) = delete;
 
   /**
    * \brief Reset the builder--NOT including the child structure.
@@ -105,29 +106,26 @@ class base_structure3D_builder : public rer::client<base_structure3D_builder> {
    * \param block The block to place.
    * \param coord The \p RELATIVE location of the block within the structure
    *              (i.e. its internal coordinates). A cubical block within the
-   *              structure ocupies \p ONE cell, regardless of its size in the
+   *              structure ocupies \c ONE cell, regardless of its size in the
    *              arena.
    * \param z_rotation The orientation the block should have when placed at the
    *                   specified location.
    */
-  bool place_block(std::unique_ptr<crepr::base_block3D> block,
+  bool place_block(const crepr::base_block3D* block,
                    const ct_coord& coord,
                    const rmath::radians& z_rotation);
 
-  bool block_placement_valid(const crepr::block3D_variant& block,
+  bool block_placement_valid(const crepr::block3D_variantro& block,
                              const ct_coord& coord,
                              const rmath::radians& z_rotation) const;
 
   rtypes::type_uuid target_id(void) const;
-
 
  protected:
   structure3D* target(void) const { return m_target; }
   cpal::argos_sm_adaptor* sm(void) const { return m_sm; }
 
  private:
-  crepr::block3D_variant create_variant(crepr::base_block3D* block) const;
-
   /* clang-format off */
   structure3D*                             m_target;
   cpal::argos_sm_adaptor *                 m_sm;

@@ -31,6 +31,9 @@
 #include "rcppsw/er/client.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
+#include "cosm/pal/embodied_cube_block.hpp"
+#include "cosm/pal/embodied_ramp_block.hpp"
+#include "cosm/pal/embodied_block_variant.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/ct_coord.hpp"
@@ -55,7 +58,7 @@ NS_START(operations);
  * origin of the structure.
  */
 class block_place : public rer::client<block_place>,
-                    public boost::static_visitor<void> {
+                    boost::static_visitor<void> {
  public:
   block_place(const ct_coord& coord,
               const rmath::radians& z_rotation,
@@ -64,43 +67,35 @@ class block_place : public rer::client<block_place>,
         mc_coord(to_vcoord(coord, structure)),
         mc_z_rot(z_rotation),
         m_structure(structure) {}
+  virtual ~block_place(void) = default;
 
-  block_place(const block_place&) = delete;
-  block_place& operator=(const block_place&) = delete;
+  block_place(const block_place& other)
+      : ER_CLIENT_INIT("silicon.structure.operations.block_place"),
+        mc_coord(other.mc_coord),
+        mc_z_rot(other.mc_z_rot),
+        m_structure(other.m_structure) {}
+
+  block_place& operator=(const block_place& other) = delete;
 
   /**
-   * \brief Place a cube block onto the structure. The function argument is an
-   * OWNING reference, rather than non-owning (contrary to usual coding
-   * guidelines), because boost::variant and visitation does not play well with
-   * std::unique_ptr, which is what is used when:
+   * \brief Place a cube block onto the structure. This happens when:
    *
    * - Robots give up ownership of the block they are carrying to place it on
    *   the structure, which takes ownership.
    * - The \ref structure3D builder clones a block in the arena to give to the
    *   structure, which takes ownership.
-   *
-   * We convert the raw pointer back into an OWNING pointer before doing the
-   * actual work of block placement in \ref do_place(), to maintain consistency
-   * with the coding guidelines as much as possible.
    */
-  void operator()(crepr::cube_block3D* block) const;
+  cpal::embodied_block_variantno operator()(std::unique_ptr<cpal::embodied_cube_block> block) const;
 
   /**
-   * \brief Place a ramp block onto the structure. The function argument is an
-   * OWNING reference, rather than non-owning (contrary to usual coding
-   * guidelines), because boost::variant and visitation does not play well with
-   * std::unique_ptr, which is what is used when:
+   * \brief Place a ramp block onto the structure. This happens when:
    *
    * - Robots give up ownership of the block they are carrying to place it on
    *   the structure, which takes ownership.
    * - The \ref structure3D builder clones a block in the arena to give to the
    *   structure, which takes ownership.
-   *
-   * We convert the raw pointer back into an OWNING pointer before doing the
-   * actual work of block placement in \ref do_place(), to maintain consistency
-   * with the coding guidelines as much as possible.
    */
-  void operator()(crepr::ramp_block3D* block) const;
+  cpal::embodied_block_variantno operator()(std::unique_ptr<cpal::embodied_ramp_block> block) const;
 
  private:
   /**
@@ -108,16 +103,11 @@ class block_place : public rer::client<block_place>,
    * structure to where the block's absolute location in the arena needs to be
    * in order to have the 3D embodiment appear in right place in ARGoS.
    *
-   * Due to the structure using lattice indexing (i.e. all locations within the
+   * Due to the structure using lattice indexing (e.g., all locations within the
    * 1 unit area between [4.0,5,0] in X and Y have the same discrete
-   * coordinates), and ARGoS stil needing absolute coordinates within the
-   * arena.
+   * coordinates), and ARGoS still needs absolute coordinates within the arena.
    */
   rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
-
-  void do_place(std::unique_ptr<crepr::ramp_block3D> block) const;
-  void do_place(std::unique_ptr<crepr::cube_block3D> block) const;
-
 
   /* clang-format off */
   const rmath::vector3z          mc_coord;

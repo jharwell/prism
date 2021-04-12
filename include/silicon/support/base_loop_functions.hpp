@@ -27,9 +27,6 @@
 #include <memory>
 #include <string>
 
-#include <argos3/core/simulator/loop_functions.h>
-#include <argos3/plugins/robots/foot-bot/simulator/footbot_entity.h>
-
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/config/rng_config.hpp"
 #include "rcppsw/math/radians.hpp"
@@ -127,10 +124,10 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    * \param target_config Parsed \ref structure::structure3D parameters (one per
    *                      structure).
    */
-  void construction_init(
-      const ssconfig::structure3D_builder_config* builder_config,
-      const ssconfig::construct_targets_config* targets_config,
-      const rct::config::waveform_config* placement_penalty_config);
+  void
+  construction_init(const ssconfig::structure3D_builder_config* builder_config,
+                    const ssconfig::construct_targets_config* targets_config,
+                    const rct::config::waveform_config* placement_penalty_config);
 
   /* clang-format off */
   config::xml::loop_function_repository  m_config{};

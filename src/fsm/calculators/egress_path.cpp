@@ -27,8 +27,8 @@
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,45 +50,42 @@ egress_path::egress_path(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> egress_path::operator()(
-    const srepr::construction_lane* lane) const {
+std::vector<rmath::vector2d>
+egress_path::operator()(const srepr::construction_lane* lane) const {
   auto pos = mc_sensing->rpos2D();
   auto* ct = mc_perception->nearest_ct();
 
   /* 1st point: robot's current position */
-  std::vector<rmath::vector2d> path = {pos};
+  std::vector<rmath::vector2d> path = { pos };
 
   double x, y;
   if (rmath::radians::kZERO == lane->orientation()) {
-    x = m_rng->uniform(ct->xrange().ub() +
-                       ct->block_unit_dim() * kNEST_PADDING,
+    x = m_rng->uniform(ct->xrange().ub() + ct->block_unit_dim() * kNEST_PADDING,
                        mc_perception->arena_xrange().ub() -
-                       ct->block_unit_dim() * kNEST_PADDING);
+                           ct->block_unit_dim() * kNEST_PADDING);
     y = lane->egress().y();
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     x = lane->egress().x();
-    y = m_rng->uniform(ct->yrange().ub() +
-                       ct->block_unit_dim() * kNEST_PADDING,
+    y = m_rng->uniform(ct->yrange().ub() + ct->block_unit_dim() * kNEST_PADDING,
                        mc_perception->arena_yrange().ub() -
-                       ct->block_unit_dim() * kNEST_PADDING);
+                           ct->block_unit_dim() * kNEST_PADDING);
   } else if (rmath::radians::kPI == lane->orientation()) {
     x = m_rng->uniform(mc_perception->arena_xrange().lb() +
-                       ct->block_unit_dim() * kNEST_PADDING,
+                           ct->block_unit_dim() * kNEST_PADDING,
                        ct->xrange().lb() - ct->block_unit_dim() * kNEST_PADDING);
     y = lane->egress().y();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     x = lane->egress().x();
     y = m_rng->uniform(mc_perception->arena_yrange().lb() +
-                       ct->block_unit_dim() * kNEST_PADDING,
-                       ct->yrange().lb() -
-                       ct->block_unit_dim() * kNEST_PADDING);
+                           ct->block_unit_dim() * kNEST_PADDING,
+                       ct->yrange().lb() - ct->block_unit_dim() * kNEST_PADDING);
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
 
   /* 2nd point: just outside structure ingress/egress face boundary  */
-  path.push_back({x, y});
+  path.push_back({ x, y });
   return path;
 } /* operator()() */
 

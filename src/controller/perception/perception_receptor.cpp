@@ -39,8 +39,8 @@ NS_START(silicon, controller, perception);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-const scperception::ct_skel_info* perception_receptor::nearest_ct(
-    const rmath::vector3d& pos) const {
+const scperception::ct_skel_info*
+perception_receptor::nearest_ct(const rmath::vector3d& pos) const {
   auto pred = [&](const auto& target1, const auto& target2) {
     return (target1.roriginr() - pos).length() <
            (target2.roriginr() - pos).length();

@@ -51,8 +51,8 @@ bool operator!=(const construction_acq_goal& goal1,
   return goal2.v() != rcppsw::as_underlying(goal1);
 }
 
-csmetrics::goal_acq_metrics::goal_type to_goal_type(
-    const construction_acq_goal& goal) {
+csmetrics::goal_acq_metrics::goal_type
+to_goal_type(const construction_acq_goal& goal) {
   return csmetrics::goal_acq_metrics::goal_type(rcppsw::as_underlying(goal));
 }
 

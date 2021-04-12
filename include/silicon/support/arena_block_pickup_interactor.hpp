@@ -69,8 +69,8 @@ class arena_block_pickup_interactor final
 
   /* Not copy-constructible/assignable by default. */
   arena_block_pickup_interactor(const arena_block_pickup_interactor&) = delete;
-  arena_block_pickup_interactor& operator=(
-      const arena_block_pickup_interactor&) = delete;
+  arena_block_pickup_interactor&
+  operator=(const arena_block_pickup_interactor&) = delete;
 
   void robot_penalty_init(const TController& controller,
                           const rtypes::timestep& t,

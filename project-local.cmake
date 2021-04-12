@@ -1,12 +1,34 @@
 ################################################################################
 # Configuration Options                                                        #
 ################################################################################
+set(SILICON_WITH_ROBOT_RAB "NO" CACHE STRING "Enable robots to read/write over the RAB medium via sensors/actuators.")
+set(SILICON_WITH_ROBOT_BATTERY "NO" CACHE STRING "Enable robots to use the battery.")
+set(SILICON_WITH_ROBOT_LEDS "NO" CACHE STRING "Enable robots to use their LEDs.")
+set(SILICON_WITH_ROBOT_CAMERA "YES" CACHE STRING "Enable robots to use their camera.")
+
+define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_RAB"
+  BRIEF_DOCS "Enable robots to use the RAB medium."
+  FULL_DOCS "Default=NO.")
+define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_BATTERY"
+  BRIEF_DOCS "Enable robots to use the battery."
+  FULL_DOCS "Default=YES.")
+define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_LEDS"
+  BRIEF_DOCS "Enable robots to use their LEDs."
+  FULL_DOCS "Default=NO.")
+define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_CAMERA"
+  BRIEF_DOCS "Enable robots to use their camera."
+  FULL_DOCS "Default=NO.")
+
+
 # Needed by COSM for population dynamics and swarm iteration
-set(COSM_BUILD_FOR "ARGOS")
-set(COSM_ARGOS_ROBOT_TYPE "foot-bot")
-set(COSM_ARGOS_ROBOT_NAME_PREFIX "fb")
-set(COSM_ARGOS_CONTROLLER_XML_ID "ffc")
-set(COSM_WITH_ARGOS_ROBOT_LEDS "NO")
+if (NOT COSM_BUILD_FOR)
+  set(COSM_BUILD_FOR "ARGOS_EEPUCK3D")
+endif()
+
+# Needed by COSM for population dynamics and swarm iteration
+set(COSM_ARGOS_ROBOT_TYPE "e-puck")
+set(COSM_ARGOS_ROBOT_NAME_PREFIX "ep")
+set(COSM_ARGOS_CONTROLLER_XML_ID "epc")
 
 ################################################################################
 # External Projects                                                            #
@@ -27,7 +49,7 @@ endif()
 # Sources                                                                      #
 ################################################################################
 if (NOT ${COSM_WITH_VIS})
-    list(REMOVE_ITEM ${target}_ROOT_SRC ) # ${${target}_SRC_PATH}/files1.cpp)
+    list(REMOVE_ITEM ${target}_ROOT_SRC)
 endif()
 
 ################################################################################
@@ -48,15 +70,16 @@ set(${target}_LIBRARY_DIRS
   ${rcppsw_LIBRARY_DIRS}
   ${cosm_LIBRARY_DIRS})
 
-if ("${COSM_BUILD_FOR}" MATCHES "ARGOS" OR "${COSM_BUILD_FOR}" MATCHES "MSI")
+if ("${COSM_BUILD_FOR}" MATCHES "ARGOS")
   set(argos3_LIBRARIES
   argos3core_simulator
-  argos3plugin_simulator_footbot
   argos3plugin_simulator_entities
   argos3plugin_simulator_dynamics2d
-  argos3plugin_simulator_genericrobot
   argos3plugin_simulator_qtopengl
   argos3plugin_simulator_media
+  argos3plugin_simulator_genericrobot
+  argos3plugin_simulator_epuck
+  # argos3srocs_simulator_pipuck
   )
 
   set (${target}_LIBRARIES
@@ -68,14 +91,14 @@ if ("${COSM_BUILD_FOR}" MATCHES "ARGOS" OR "${COSM_BUILD_FOR}" MATCHES "MSI")
     ${${target}_LIBRARY_DIRS}
     /usr/lib/argos3
     /usr/local/lib/argos3
-    ${COSM_PROJECT_DEPS_PREFIX}/lib/argos3
+    ${COSM_DEPS_PREFIX}/lib/argos3
     )
-  if ("${COSM_BUILD_FOR}" MATCHES "MSI")
+  if ("${COSM_BUILD_ENV}" MATCHES "MSI")
     # For nlopt
     set(${target}_LIBRARY_DIRS
       ${$target}_LIBRARY_DIRS}
-      ${COSM_PROJECT_DEPS_PREFIX}/lib/argos3
-      ${COSM_PROJECT_DEPS_PREFIX}/lib64)
+      ${COSM_DEPS_PREFIX}/lib/argos3
+      ${COSM_DEPS_PREFIX}/lib64)
   endif()
 endif()
 
@@ -114,7 +137,18 @@ target_link_libraries(${target} ${${target}_LIBRARIES} cosm nlopt)
 # Compile Options/Definitions                                                  #
 ################################################################################
 if ("${COSM_BUILD_FOR}" MATCHES "ARGOS")
-
+  if (SILICON_WITH_ROBOT_RAB)
+    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_RAB)
+  endif()
+  if (SILICON_WITH_ROBOT_BATTERY)
+    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_BATTERY)
+  endif()
+  if (SILICON_WITH_ROBOT_CAMERA)
+    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_CAMERA)
+  endif()
+  if (SILICON_WITH_ROBOT_LEDS)
+    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_LEDS)
+  endif()
 endif()
 
 

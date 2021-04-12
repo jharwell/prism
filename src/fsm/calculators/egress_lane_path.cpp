@@ -27,9 +27,9 @@
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/calculators/lane_alignment.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -39,39 +39,38 @@ NS_START(silicon, fsm, calculators);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-egress_lane_path::egress_lane_path(
-    const csubsystem::sensing_subsystemQ3D* sensing)
+egress_lane_path::egress_lane_path(const csubsystem::sensing_subsystemQ3D* sensing)
     : ER_CLIENT_INIT("silicon.fsm.calculator.egress_lane_path"),
       mc_sensing(sensing) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> egress_lane_path::operator()(
-    const srepr::construction_lane* lane) const {
-    auto rpos = mc_sensing->rpos2D();
-    std::vector<rmath::vector2d> path = {rpos};
+std::vector<rmath::vector2d>
+egress_lane_path::operator()(const srepr::construction_lane* lane) const {
+  auto rpos = mc_sensing->rpos2D();
+  std::vector<rmath::vector2d> path = { rpos };
 
-    auto alignment = calculators::lane_alignment(mc_sensing)(lane);
-    /*
+  auto alignment = calculators::lane_alignment(mc_sensing)(lane);
+  /*
      * We only have a path to the ingress lane if we are not currently in it
      * (i.e., placed our block at the back of the ingress lane).
      */
-    if ((rmath::radians::kZERO == lane->orientation() ||
-         rmath::radians::kPI == lane->orientation())) {
-      if (!alignment.egress_pos) {
-        path.push_back({rpos.x(), lane->egress().y()});
-      }
-    } else if ((rmath::radians::kPI_OVER_TWO == lane->orientation() ||
-                rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation())) {
-      if (!alignment.egress_pos) {
-        path.push_back({lane->egress().x(), rpos.y()});
-      }
-    } else {
-      ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                        rcppsw::to_string(lane->orientation()).c_str());
+  if ((rmath::radians::kZERO == lane->orientation() ||
+       rmath::radians::kPI == lane->orientation())) {
+    if (!alignment.egress_pos) {
+      path.push_back({ rpos.x(), lane->egress().y() });
     }
-    return path;
+  } else if ((rmath::radians::kPI_OVER_TWO == lane->orientation() ||
+              rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation())) {
+    if (!alignment.egress_pos) {
+      path.push_back({ lane->egress().x(), rpos.y() });
+    }
+  } else {
+    ER_FATAL_SENTINEL("Bad orientation: '%s'",
+                      rcppsw::to_string(lane->orientation()).c_str());
+  }
+  return path;
 } /* operator()() */
 
 NS_END(calculators, fsm, silicon);

@@ -31,10 +31,9 @@
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 
-#include "silicon/structure/operations/block_place.hpp"
-#include "silicon/structure/operations/set_block_embodiment.hpp"
-#include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/builder_factory.hpp"
+#include "silicon/structure/operations/block_place.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -62,9 +61,9 @@ void static_structure3D_builder::update(const rtypes::timestep& t,
   }
 } /* update() */
 
-static_build_status static_structure3D_builder::build(
-    const rtypes::timestep& t,
-    const cds::block3D_vectorno& blocks) {
+static_build_status
+static_structure3D_builder::build(const rtypes::timestep& t,
+                                  const cds::block3D_vectorno& blocks) {
   ER_ASSERT(builder_factory::kStatic == mc_config.build_src,
             "Bad build source '%s'",
             mc_config.build_src.c_str());
@@ -78,7 +77,7 @@ static_build_status static_structure3D_builder::build(
    * Nothing to do if it has not been long enough since the last time we placed
    * blocks.
    */
-  if (!(t % mc_config.static_build_interval == 0)) {
+  if (!(t % mc_config.static_build_interval == 0UL)) {
     return static_build_status::ekNO_INTERVAL;
   }
 
@@ -116,7 +115,7 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
   size_t j = index / xsize;
   size_t k = index / (xsize * ysize);
 
-  ct_coord c{rmath::vector3z(i, j, k), coord_relativity::ekRORIGIN};
+  ct_coord c{ rmath::vector3z(i, j, k), coord_relativity::ekRORIGIN };
   ER_DEBUG("Static build for ct cell@%s, abs cell@%s",
            rcppsw::to_string(c.offset).c_str(),
            rcppsw::to_string(target()->rorigind() + c.offset).c_str());
@@ -137,12 +136,14 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
               rcppsw::to_string(c.offset).c_str());
 
     /*
-     * Clone block because the structure is taking ownership of the block, and
-     * you can't share ownership with the arena, which already owns it. This
-     * also makes the # of blocks discoverable by robots in the arena as
+     * Cloning the block is necessary because the structure is taking ownership
+     * of the block, and you can't share ownership with the arena, which already
+     * owns it. This happens inside place_block().
+     *
+     * This also makes the # of blocks discoverable by robots in the arena as
      * construction progresses constant. See SILICON#22.
      */
-    ret = place_block(block->clone(), c, spec->z_rotation);
+    ret = place_block(block, c, spec->z_rotation);
     ER_ASSERT(ret,
               "Failed to build block of type %d for ct cell@%s",
               rcppsw::as_underlying(spec->block_type),
@@ -158,10 +159,10 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
   return ret;
 } /* build_single() */
 
-crepr::base_block3D* static_structure3D_builder::build_block_find(
-    crepr::block_type type,
-    const cds::block3D_vectorno& blocks,
-    size_t start) const {
+crepr::base_block3D*
+static_structure3D_builder::build_block_find(crepr::block_type type,
+                                             const cds::block3D_vectorno& blocks,
+                                             size_t start) const {
   for (size_t i = start; i < blocks.size() + start; ++i) {
     size_t eff_i = i % blocks.size();
     /*
@@ -172,7 +173,8 @@ crepr::base_block3D* static_structure3D_builder::build_block_find(
      *
      * are available for selection.
      */
-    if (!target()->spec_exists(blocks[eff_i]) && !blocks[eff_i]->is_out_of_sight()) {
+    if (!target()->spec_exists(blocks[eff_i]) &&
+        !blocks[eff_i]->is_out_of_sight()) {
       if (crepr::block_type::ekCUBE == type &&
           crepr::block_type::ekCUBE == blocks[eff_i]->md()->type()) {
         ER_TRACE("Found cube build block%d", blocks[eff_i]->id().v());

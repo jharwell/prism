@@ -45,24 +45,24 @@ ingress_lane_path::ingress_lane_path(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> ingress_lane_path::operator()(
-    const srepr::construction_lane* lane) const {
+std::vector<rmath::vector2d>
+ingress_lane_path::operator()(const srepr::construction_lane* lane) const {
   auto pos = mc_sensing->rpos2D();
 
   /* 1st point: robot's current location */
-  std::vector<rmath::vector2d> path{pos};
+  std::vector<rmath::vector2d> path{ pos };
 
   if (rmath::radians::kZERO == lane->orientation() ||
       rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: get aligned with middle of ingress lane */
-    path.push_back({pos.x(), lane->ingress().y()});
+    path.push_back({ pos.x(), lane->ingress().y() });
 
     /* 3rd point: ingress */
     path.push_back(lane->ingress().to_2D());
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: get aligned with ingress lane */
-    path.push_back({lane->ingress().x(), pos.y()});
+    path.push_back({ lane->ingress().x(), pos.y() });
 
     /* 3rd point: ingress */
     path.push_back(lane->ingress().to_2D());

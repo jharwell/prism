@@ -41,8 +41,7 @@ NS_START(silicon, support);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-base_loop_functions::base_loop_functions(void)
-    : ER_CLIENT_INIT("silicon.loop") {}
+base_loop_functions::base_loop_functions(void) : ER_CLIENT_INIT("silicon.loop") {}
 
 base_loop_functions::~base_loop_functions(void) = default;
 
@@ -109,8 +108,7 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
     c->irv_init(m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()
                     ->rda_adaptor());
   };
-  cpal::argos_swarm_iterator::controllers<argos::CFootBotEntity,
-                                          controller::constructing_controller,
+  cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
       this, cb, kARGoSRobotType);
 } /* tv_init() */

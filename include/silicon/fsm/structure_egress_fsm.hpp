@@ -51,7 +51,7 @@ class structure_egress_fsm : public builder_util_fsm,
  public:
   structure_egress_fsm(
       const scperception::builder_perception_subsystem* perception,
-      crfootbot::footbot_saa_subsystem* saa,
+      csubsystem::saa_subsystemQ3D* saa,
       rmath::rng* rng);
 
   ~structure_egress_fsm(void) override = default;
@@ -103,27 +103,29 @@ class structure_egress_fsm : public builder_util_fsm,
   };
 
   /* inherited states */
-  HFSM_ENTRY_INHERIT_ND(util_hfsm, entry_wait_for_signal);
-  HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, const robot_wait_data);
+  RCPPSW_HFSM_ENTRY_INHERIT_ND(util_hfsm, entry_wait_for_signal);
+  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm,
+                            wait_for_robot,
+                            const robot_wait_data);
 
   /* builder states */
-  HFSM_STATE_DECLARE_ND(structure_egress_fsm, start);
-  HFSM_STATE_DECLARE(structure_egress_fsm,
-                     acquire_egress_lane,
-                     csteer2D::ds::path_state);
-  HFSM_STATE_DECLARE(structure_egress_fsm,
-                     structure_egress,
-                     csteer2D::ds::path_state);
-  HFSM_EXIT_DECLARE(structure_egress_fsm, exit_structure_egress);
-  HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_structure_egress);
+  RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, start);
+  RCPPSW_HFSM_STATE_DECLARE(structure_egress_fsm,
+                            acquire_egress_lane,
+                            csteer2D::ds::path_state);
+  RCPPSW_HFSM_STATE_DECLARE(structure_egress_fsm,
+                            structure_egress,
+                            csteer2D::ds::path_state);
+  RCPPSW_HFSM_EXIT_DECLARE(structure_egress_fsm, exit_structure_egress);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_structure_egress);
 
-  HFSM_STATE_DECLARE_ND(structure_egress_fsm, finished);
+  RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, finished);
 
-  HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
+  RCPPSW_HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
     return &mc_state_map[index];
   }
 
-  HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
+  RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
   calculators::lane_alignment m_alignment_calc;

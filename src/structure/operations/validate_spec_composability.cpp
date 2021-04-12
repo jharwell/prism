@@ -23,8 +23,8 @@
  ******************************************************************************/
 #include "silicon/structure/operations/validate_spec_composability.hpp"
 
-#include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -36,9 +36,8 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_spec_composability::operator()() const {
   for (size_t z = 0; z < mc_structure->zdsize() - 1; ++z) {
-    auto lower =
-        slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z),
-                mc_structure);
+    auto lower = slice2D(
+        slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z), mc_structure);
     auto upper =
         slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z + 1),
                 mc_structure);
@@ -67,10 +66,10 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
   }
   for (size_t i = 0; i < lower.d1(); ++i) {
     for (size_t j = 0; j < lower.d2(); ++j) {
-      auto* specl = mc_structure->cell_spec_retrieve({lower.access(i, j).loc(),
-                                                      coord_relativity::ekVORIGIN});
-      auto* specu = mc_structure->cell_spec_retrieve({upper.access(i, j).loc(),
-                                                      coord_relativity::ekVORIGIN});
+      auto* specl = mc_structure->cell_spec_retrieve(
+          { lower.access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto* specu = mc_structure->cell_spec_retrieve(
+          { upper.access(i, j).loc(), coord_relativity::ekVORIGIN });
       /*
        * If the lower layer cell at (i,j) contained a cube, you can have
        * anything in the upper layer cell at (i,j).
@@ -97,16 +96,15 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
          * the layers, regardless of block type/orientation in the upper layer).
          */
         for (size_t m = 1; m < specl->extent; ++m) {
-          auto spec_extent =
-              mc_structure->cell_spec_retrieve({upper.access(i, j).loc(),
-                                                coord_relativity::ekVORIGIN});
+          auto spec_extent = mc_structure->cell_spec_retrieve(
+              { upper.access(i, j).loc(), coord_relativity::ekVORIGIN });
           if (cfsm::cell3D_state::ekST_EMPTY != spec_extent->state) {
             return false;
           }
         } /* for(m..) */
       }
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
   return true;
 } /* is_composable() */
 

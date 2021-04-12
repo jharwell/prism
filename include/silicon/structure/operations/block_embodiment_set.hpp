@@ -1,5 +1,5 @@
 /**
- * \file set_block_embodiment.hpp
+ * \file block_embodiment_set.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,17 +18,19 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_SET_BLOCK_EMBODIMENT_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_SET_BLOCK_EMBODIMENT_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <boost/variant/static_visitor.hpp>
+#include <memory>
+#include <utility>
 
-#include "cosm/repr/embodied_block.hpp"
-#include "cosm/repr/cube_block3D.hpp"
-#include "cosm/repr/ramp_block3D.hpp"
+#include "cosm/pal/block_embodiment_variant.hpp"
+#include "cosm/pal/embodied_cube_block.hpp"
+#include "cosm/pal/embodied_ramp_block.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/structure3D.hpp"
@@ -45,58 +47,57 @@ NS_START(silicon, structure, operations, detail);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-struct set_block_embodiment_impl : public boost::static_visitor<void>,
-                                   public rer::client<set_block_embodiment_impl> {
-  set_block_embodiment_impl(void)
-      : ER_CLIENT_INIT("silicon.structure.builder.block_embodiment") {}
+struct block_embodiment_set_impl : public rer::client<block_embodiment_set_impl>,
+                                   private boost::static_visitor<void> {
+  block_embodiment_set_impl(void)
+      : ER_CLIENT_INIT("silicon.structure.builder.block_embodiment_set") {}
+  virtual ~block_embodiment_set_impl(void) = default;
 
-  void operator()(crepr::cube_block3D* block,
-                  const crepr::embodied_cube_block& embodiment) const {
-    block->embodiment(boost::make_optional(embodiment));
-  }
-  void operator()(crepr::ramp_block3D* block,
-                  const crepr::embodied_ramp_block& embodiment) const {
-    block->embodiment(boost::make_optional(embodiment));
+  template <typename T>
+  void operator()(T* block,
+                  typename T::embodiment_type embodiment) const {
+    block->embodiment(std::move(embodiment));
   }
   /*
-   * Any other combinations of (block type, embodiment type) are bad, and we
-   * should crash and burn if we ever hit them.
+   * Any combinations of (block type, embodiment type) not as defined in each
+   * embodied block class are bad, and we should crash and burn if we ever hit
+   * them.
    */
   template <typename T, typename U>
-  void operator()(T* , const U&) const noexcept {
-  ER_FATAL_SENTINEL("Invalid (block type, embodiment) pair: (%s,%s)",
-                    std::type_index(typeid(T)).name(),
-                    std::type_index(typeid(U)).name());
+  void operator()(T* , U) const noexcept {
+    static_assert("Invalid (block type, embodiment) pair");
   }
 };
 
 NS_END(detail);
 
 /**
- * \struct set_block_embodiment
+ * \struct block_embodiment_set
  * \ingroup structure
  *
  * \brief Functor to set the embodiment for blocks of any type in \ref
  * crepr::block3D_variant to the corresponding embodiment type in \ref
  * crepr::embodied_block_variant.
  */
-struct set_block_embodiment : public boost::static_visitor<void> {
-  void operator()(crepr::ramp_block3D* block,
-                  const crepr::embodied_block_variant& embodiment) const {
-    boost::apply_visitor(std::bind(detail::set_block_embodiment_impl(),
+struct block_embodiment_set : public boost::static_visitor<void> {
+  explicit block_embodiment_set(cpal::block_embodiment_variant&& e)
+      : embodiment(std::move(e)) {}
+
+  void operator()(cpal::embodied_ramp_block* block) {
+    boost::apply_visitor(std::bind(detail::block_embodiment_set_impl(),
                                    block,
                                    std::placeholders::_1),
-                         embodiment);
+                         std::move(embodiment));
   }
-  void operator()(crepr::cube_block3D* block,
-                  const crepr::embodied_block_variant& embodiment) const {
-    boost::apply_visitor(std::bind(detail::set_block_embodiment_impl(),
+  void operator()(cpal::embodied_cube_block* block) {
+    boost::apply_visitor(std::bind(detail::block_embodiment_set_impl(),
                                    block,
                                    std::placeholders::_1),
-                         embodiment);
+                         std::move(embodiment));
   }
+  cpal::block_embodiment_variant embodiment;
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_SET_BLOCK_EMBODIMENT_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_ */

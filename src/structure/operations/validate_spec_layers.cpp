@@ -33,9 +33,8 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_spec_layers::operator()(void) const {
   for (size_t z = 0; z < mc_structure->zdsize(); ++z) {
-    auto slice =
-        slice2D(slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z),
-                mc_structure);
+    auto slice = slice2D(
+        slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z), mc_structure);
     ER_CHECK(layer_validate(slice, mc_structure->orientation(), z),
              "Layer%zu failed validation",
              z);

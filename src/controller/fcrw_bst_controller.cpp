@@ -25,7 +25,7 @@
 
 #include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/repr/base_block3D.hpp"
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
+#include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
 #include "silicon/fsm/fcrw_bst_fsm.hpp"
@@ -98,7 +98,7 @@ void fcrw_bst_controller::control_step(void) {
   ndc_pop();
 } /* control_step() */
 
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller,
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller,
                          block_placement_intent,
                          *m_fsm,
                          const);
@@ -106,20 +106,17 @@ RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller,
 /*******************************************************************************
  * FSM Metrics
  ******************************************************************************/
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, goal_acquired, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, entity_acquired_id, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller,
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, goal_acquired, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, entity_acquired_id, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller,
                          is_exploring_for_goal,
                          *m_fsm,
                          const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, acquisition_goal, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller,
-                         block_transport_goal,
-                         *m_fsm,
-                         const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, acquisition_loc3D, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, vector_loc3D, *m_fsm, const);
-RCPPSW_WRAP_OVERRIDE_DEF(fcrw_bst_controller, explore_loc3D, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, acquisition_goal, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, block_transport_goal, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, acquisition_loc3D, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, vector_loc3D, *m_fsm, const);
+RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller, explore_loc3D, *m_fsm, const);
 
 RCPPSW_WARNING_DISABLE_PUSH()
 RCPPSW_WARNING_DISABLE_MISSING_VAR_DECL()

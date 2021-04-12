@@ -29,14 +29,14 @@
 #include <argos3/core/simulator/entity/floor_entity.h>
 
 #include "cosm/arena/operations/free_block_drop.hpp"
+#include "cosm/arena/operations/nest_block_process.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 #include "cosm/tv/temporal_penalty.hpp"
-#include "cosm/arena/operations/nest_block_process.hpp"
 
 #include "silicon/fsm/construction_acq_goal.hpp"
-#include "silicon/structure/ct_manager.hpp"
 #include "silicon/structure/base_structure3D_builder.hpp"
+#include "silicon/structure/ct_manager.hpp"
 #include "silicon/support/mpl/ct_block_place_spec.hpp"
 
 /*******************************************************************************
@@ -62,8 +62,7 @@ class base_ct_block_place_interactor
  public:
   using controller_spec =
       typename boost::mpl::at<TControllerSpecMap, TController>::type;
-  using interactor_status_type =
-      typename controller_spec::interactor_status_type;
+  using interactor_status_type = typename controller_spec::interactor_status_type;
   using robot_block_place_visitor_type =
       typename controller_spec::robot_block_place_visitor_type;
   using penalty_handler_type = typename controller_spec::penalty_handler_type;
@@ -84,8 +83,8 @@ class base_ct_block_place_interactor
 
   /* Not copy-constructible/assignable by default. */
   base_ct_block_place_interactor(const base_ct_block_place_interactor&) = delete;
-  base_ct_block_place_interactor& operator=(
-      const base_ct_block_place_interactor&) = delete;
+  base_ct_block_place_interactor&
+  operator=(const base_ct_block_place_interactor&) = delete;
 
   /**
    * \brief Determine if the robot has acquired its goal; this cannot be done in
@@ -156,7 +155,7 @@ class base_ct_block_place_interactor
     auto builder = m_ct_manager->builder(ct->id());
     auto target = m_ct_manager->target(ct->id());
 
-    if (builder->block_placement_valid(to_variant(controller.block()),
+    if (builder->block_placement_valid(crepr::make_variant(controller.block()),
                                        intent->site,
                                        intent->orientation)) {
       execute_block_place(controller, p, *intent, t);
@@ -179,10 +178,6 @@ class base_ct_block_place_interactor
                            const ctv::temporal_penalty& penalty,
                            const fsm::block_placer::placement_intent& intent,
                            const rtypes::timestep& t) {
-    robot_block_place_visitor_type rplace_op(controller.entity_id(),
-                                             controller.block()->danchor3D());
-    caops::nest_block_process_visitor aproc_op(controller.block(), t);
-
     auto* ct = controller.perception()->nearest_ct();
     auto builder = m_ct_manager->builder(ct->id());
     auto structure = m_ct_manager->target(ct->id());
@@ -198,15 +193,22 @@ class base_ct_block_place_interactor
     robot_previsit_hook(controller, penalty);
 
     /* place the block! */
-    auto block = controller.block_release();
-    bool res = builder->place_block(std::move(block),
+    bool res = builder->place_block(controller.block(),
                                     intent.site,
                                     intent.orientation);
     ER_ASSERT(res,
-              "Failed to place block on target%s@%s, orientation=%s",
+              "Failed to place block on target%s: intent@%s,orientation=%s",
               rcppsw::to_string(structure->id()).c_str(),
               rcppsw::to_string(intent.site.offset).c_str(),
               rcppsw::to_string(intent.orientation).c_str());
+    auto placed = controller.block_release();
+
+    robot_block_place_visitor_type rplace_op(controller.entity_id(),
+                                             placed->danchor3D());
+    caops::nest_block_process_visitor aproc_op(m_arena_map->blocks()[placed->id().v()],
+                                               t);
+
+
     /*
      * Distribute the block so that the # blocks available to robots in the
      * arena stays the same after the build process "consumes" one.
@@ -220,16 +222,6 @@ class base_ct_block_place_interactor
     rplace_op.visit(controller);
   }
 
-  crepr::block3D_variant to_variant(crepr::base_block3D* block) const {
-    if (crepr::block_type::ekRAMP == block->md()->type()) {
-      return crepr::block3D_variant(static_cast<crepr::ramp_block3D*>(block));
-    } else if (crepr::block_type::ekCUBE == block->md()->type()) {
-      return crepr::block3D_variant(static_cast<crepr::cube_block3D*>(block));
-    }
-    ER_FATAL_SENTINEL("Bad block type %d",
-                      rcppsw::as_underlying(block->md()->type()));
-    return crepr::block3D_variant(static_cast<crepr::cube_block3D*>(nullptr));
-  }
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
   arena_map_type* const        m_arena_map;

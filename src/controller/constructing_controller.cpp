@@ -30,10 +30,9 @@
 #include "rcppsw/math/rngm.hpp"
 
 #include "cosm/fsm/supervisor_fsm.hpp"
+#include "cosm/hal/subsystem/config/saa_xml_names.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/repr/base_block3D.hpp"
-#include "cosm/robots/footbot/config/saa_xml_names.hpp"
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
@@ -97,9 +96,7 @@ double constructing_controller::los_dim(void) const {
   return perception()->los_dim();
 } /* los_dim() */
 
-void constructing_controller::reset(void) {
-  block_carrying_controller::reset();
-}
+void constructing_controller::reset(void) { block_carrying_controller::reset(); }
 
 void constructing_controller::perception_init(
     const cspconfig::perception_config* perceptionp) {
@@ -108,8 +105,8 @@ void constructing_controller::perception_init(
 } /* perception_init() */
 
 void constructing_controller::output_init(const cmconfig::output_config* outputp) {
-  std::string dir = base_controllerQ3D::output_init(outputp->output_root,
-                                                    outputp->output_dir);
+  std::string dir =
+      base_controllerQ3D::output_init(outputp->output_root, outputp->output_dir);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   /*
@@ -130,59 +127,74 @@ void constructing_controller::output_init(const cmconfig::output_config* outputp
 void constructing_controller::saa_init(
     const csubsystem::config::actuation_subsystem2D_config* actuation_p,
     const csubsystem::config::sensing_subsystemQ3D_config* sensing_p) {
-  using saa_names = crfootbot::config::saa_xml_names;
+  using saa_names = chsubsystem::config::saa_xml_names;
 
   auto position = chal::sensors::position_sensor(
-      GetSensor<argos::CCI_PositioningSensor>(saa_names::position_sensor));
+      GetSensor<chal::sensors::position_sensor::impl_type>(
+          saa_names::position_sensor));
   auto proximity = chal::sensors::proximity_sensor(
-      GetSensor<argos::CCI_FootBotProximitySensor>(saa_names::prox_sensor),
+      GetSensor<chal::sensors::proximity_sensor::impl_type>(
+          saa_names::prox_sensor),
       &sensing_p->proximity);
+
+#ifdef SILICON_WITH_ROBOT_CAMERA
   auto blobs = chal::sensors::colored_blob_camera_sensor(
-      GetSensor<argos::CCI_ColoredBlobOmnidirectionalCameraSensor>(
+      GetSensor<chal::sensors::colored_blob_camera_sensor::impl_type>(
           saa_names::camera_sensor));
+#else
+  auto blobs = chal::sensors::colored_blob_camera_sensor(nullptr);
+#endif /* SILICON_WITH_ROBOT_CAMERA */
+
   auto light = chal::sensors::light_sensor(
-      GetSensor<argos::CCI_FootBotLightSensor>(saa_names::light_sensor));
+      GetSensor<chal::sensors::light_sensor::impl_type>(saa_names::light_sensor));
   auto ground = chal::sensors::ground_sensor(
-      GetSensor<argos::CCI_FootBotMotorGroundSensor>(saa_names::ground_sensor),
+      GetSensor<chal::sensors::ground_sensor::impl_type>(
+          saa_names::ground_sensor),
       &sensing_p->ground);
 
   auto diff_drives = chal::sensors::diff_drive_sensor(
-      GetSensor<argos::CCI_DifferentialSteeringSensor>(
+      GetSensor<chal::sensors::diff_drive_sensor::impl_type>(
           saa_names::diff_steering_saa));
 
   auto sensors = csubsystem::sensing_subsystemQ3D::sensor_map{
-      csubsystem::sensing_subsystemQ3D::map_entry_create(proximity),
-      csubsystem::sensing_subsystemQ3D::map_entry_create(blobs),
-      csubsystem::sensing_subsystemQ3D::map_entry_create(light),
-      csubsystem::sensing_subsystemQ3D::map_entry_create(ground),
-      csubsystem::sensing_subsystemQ3D::map_entry_create(diff_drives)};
+    csubsystem::sensing_subsystemQ3D::map_entry_create(proximity),
+    csubsystem::sensing_subsystemQ3D::map_entry_create(position),
+    csubsystem::sensing_subsystemQ3D::map_entry_create(blobs),
+    csubsystem::sensing_subsystemQ3D::map_entry_create(light),
+    csubsystem::sensing_subsystemQ3D::map_entry_create(ground),
+    csubsystem::sensing_subsystemQ3D::map_entry_create(diff_drives)
+  };
 
   auto diff_drivea = ckin2D::governed_diff_drive(
       &actuation_p->diff_drive,
       chal::actuators::diff_drive_actuator(
-          GetActuator<argos::CCI_DifferentialSteeringActuator>(
+          GetActuator<chal::actuators::diff_drive_actuator::impl_type>(
               saa_names::diff_steering_saa)),
       ckin2D::governed_diff_drive::drive_type::ekFSM_DRIVE);
 
-#ifdef COSM_WITH_ARGOS_ROBOT_LEDS
+#ifdef SILICON_WITH_ROBOT_LEDS
   auto leds = chal::actuators::led_actuator(
-      GetActuator<argos::CCI_LEDsActuator>(saa_names::leds_saa));
+      GetActuator<chal::actuators::led_actuator::impl_type>(saa_names::leds_saa));
 #else
   auto leds = chal::actuators::led_actuator(nullptr);
-#endif /* COSM_WITH_ARGOS_ROBOT_LEDS */
+#endif /* SILICON_WITH_ROBOT_LEDS */
 
   auto actuators = csubsystem::actuation_subsystem2D::actuator_map{
-      /*
+    /*
        * We put the governed differential drive in the actuator map twice
        * because some of the reusable components use the base class differential
        * drive instead of the governed version (no robust way to inform that we
        * want to use the governed version).
        */
-      csubsystem::actuation_subsystem2D::map_entry_create(diff_drivea),
-      csubsystem::actuation_subsystem2D::map_entry_create(leds)};
+    csubsystem::actuation_subsystem2D::map_entry_create(chal::actuators::diff_drive_actuator(
+        GetActuator<chal::actuators::diff_drive_actuator::impl_type>(
+            saa_names::diff_steering_saa))),
+    csubsystem::actuation_subsystem2D::map_entry_create(diff_drivea),
+    csubsystem::actuation_subsystem2D::map_entry_create(leds)
+  };
 
-  base_controllerQ3D::saa(std::make_unique<crfootbot::footbot_saa_subsystem>(
-      position, sensors, actuators, &actuation_p->steering));
+  base_controllerQ3D::saa(std::make_unique<csubsystem::saa_subsystemQ3D>(
+      sensors, actuators, &actuation_p->steering));
 } /* saa_init() */
 
 rtypes::type_uuid constructing_controller::entity_id(void) const {
@@ -199,16 +211,6 @@ void constructing_controller::irv_init(const ctv::robot_dynamics_applicator* rda
         rda->motion_throttler(entity_id()));
   }
 } /* irv_init() */
-
-class crfootbot::footbot_saa_subsystem* constructing_controller::saa(void) {
-  return static_cast<crfootbot::footbot_saa_subsystem*>(
-      base_controllerQ3D::saa());
-}
-const class crfootbot::footbot_saa_subsystem* constructing_controller::saa(
-    void) const {
-  return static_cast<const crfootbot::footbot_saa_subsystem*>(
-      base_controllerQ3D::saa());
-}
 
 bool constructing_controller::in_nest(void) const {
   return saa()->sensing()->ground()->detect(
@@ -227,7 +229,8 @@ rtypes::spatial_dist constructing_controller::ts_distance(
   if (csmetrics::movement_category::ekALL == category) {
     return ts_distance_impl();
   } else if (csmetrics::movement_category::ekHOMING == category) {
-    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE == block_transport_goal()) {
+    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE ==
+        block_transport_goal()) {
       return ts_distance_impl();
     }
   }
@@ -239,7 +242,8 @@ rmath::vector3d constructing_controller::ts_velocity(
   if (csmetrics::movement_category::ekALL == category) {
     return ts_velocity_impl();
   } else if (csmetrics::movement_category::ekHOMING == category) {
-    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE == block_transport_goal()) {
+    if (fsm::construction_transport_goal::ekCONSTRUCTION_SITE ==
+        block_transport_goal()) {
       return ts_velocity_impl();
     }
   }

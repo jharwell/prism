@@ -48,8 +48,8 @@ placement_intent::placement_intent(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-block_placer::placement_intent placement_intent::operator()(
-    const srepr::construction_lane* lane) const {
+block_placer::placement_intent
+placement_intent::operator()(const srepr::construction_lane* lane) const {
   auto* ct = mc_perception->nearest_ct();
   auto pos = mc_sensing->dpos3D();
 
@@ -103,8 +103,8 @@ block_placer::placement_intent placement_intent::operator()(
                       rcppsw::to_string(lane->orientation()).c_str());
   }
 
-  structure::ct_coord coord{intent_abs, structure::coord_relativity::ekVORIGIN};
-  ret = {coord, rmath::radians::kZERO};
+  structure::ct_coord coord{ intent_abs, structure::coord_relativity::ekVORIGIN };
+  ret = { coord, rmath::radians::kZERO };
   ER_INFO("Calculated placement intent: %s@%s",
           rcppsw::to_string(ret.site.offset).c_str(),
           rcppsw::to_string(ret.orientation).c_str());

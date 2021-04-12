@@ -44,12 +44,13 @@ class swarm_structure3D_builder : public base_structure3D_builder {
  public:
   swarm_structure3D_builder(const config::structure3D_builder_config* config,
                             structure3D* target,
-                            cpal::argos_sm_adaptor* sm) :
-      base_structure3D_builder(config, target, sm) {}
+                            cpal::argos_sm_adaptor* sm)
+      : base_structure3D_builder(config, target, sm) {}
 
   /* Not copy constructable/assignable by default */
   swarm_structure3D_builder(const swarm_structure3D_builder&) = delete;
-  const swarm_structure3D_builder& operator=(const swarm_structure3D_builder&) = delete;
+  const swarm_structure3D_builder&
+  operator=(const swarm_structure3D_builder&) = delete;
 
   /* parent class overrides */
   void reset(void) override {}

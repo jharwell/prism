@@ -50,15 +50,14 @@ cds::block3D_vectorno builder_los::blocks(void) const {
     for (size_t j = 0; j < ysize(); ++j) {
       const cds::cell3D& cell = access(i, j);
       if (cell.state_has_block()) {
-        ER_ASSERT(
-            nullptr != cell.block(),
-            "Cell at(%zu,%zu) in HAS_BLOCK state, but does not have block",
-            i,
-            j);
+        ER_ASSERT(nullptr != cell.block(),
+                  "Cell at(%zu,%zu) in HAS_BLOCK state, but does not have block",
+                  i,
+                  j);
         blocks.push_back(cell.block());
       }
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
   return blocks;
 } /* blocks() */
 

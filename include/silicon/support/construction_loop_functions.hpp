@@ -27,13 +27,12 @@
 #include <memory>
 #include <vector>
 
-#include <argos3/plugins/robots/foot-bot/simulator/footbot_entity.h>
-
 #include "rcppsw/ds/type_map.hpp"
 #include "rcppsw/mpl/typelist.hpp"
 
 #include "cosm/controller/operations/metrics_extract.hpp"
 #include "cosm/controller/operations/robot_los_update.hpp"
+#include "cosm/hal/robot.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/support/base_loop_functions.hpp"
@@ -141,7 +140,7 @@ class construction_loop_functions
    *
    * \note These operations are done in parallel for all robots (lock free).
    */
-  void robot_pre_step(argos::CFootBotEntity& robot);
+  void robot_pre_step(chal::robot& robot);
 
   /**
    * \brief Process a single robot on a timestep, after running its controller.
@@ -152,7 +151,7 @@ class construction_loop_functions
    * \note These operations are done in parallel for all robots (with mutual
    *       exclusion as needed).
    */
-  void robot_post_step(argos::CFootBotEntity& robot);
+  void robot_post_step(chal::robot& robot);
 
   /**
    * \brief Update the LOS for a robot currently on the structure somewhere and
@@ -167,8 +166,8 @@ class construction_loop_functions
    */
   bool robot_losQ3D_update(controller::constructing_controller* c) const;
 
-  structure::structure3D* robot_target(
-      const controller::constructing_controller* c) const;
+  structure::structure3D*
+  robot_target(const controller::constructing_controller* c) const;
 
   /* clang-format off */
   std::unique_ptr<metrics::silicon_metrics_aggregator> m_metrics_agg;

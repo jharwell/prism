@@ -25,11 +25,11 @@
 
 #include "cosm/arena/base_arena_map.hpp"
 
+#include "silicon/structure/builder_factory.hpp"
 #include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
 #include "silicon/structure/operations/validate_spec.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/structure/builder_factory.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -70,20 +70,17 @@ void ct_manager::init(
               rcppsw::to_string(target->id()).c_str());
       continue;
     }
-    auto name =
-        "structure" + rcppsw::to_string(target->id()) + "_placement_penalty";
+    auto name = "target" + rcppsw::to_string(target->id()) + "_placement_penalty";
     auto handler = std::make_unique<sstv::block_op_penalty_handler>(
         m_arena_map, placement_penalty_config, name);
     m_envd->ct_placement_handler_register(target->id(), std::move(handler));
-    auto builder = factory.create(builder_config->build_src,
-                                  builder_config,
-                                  target.get(),
-                                  m_sm);
+    auto builder = factory.create(
+        builder_config->build_src, builder_config, target.get(), m_sm);
     m_targetsno.push_back(target.get());
     m_targetsro.push_back(target.get());
     m_targetso.push_back(std::move(target));
     m_builderso.push_back(std::move(builder));
-    ER_INFO("Initialized construction target %zu", i);
+    ER_INFO("Initialized construction target%zu", i);
   } /* for(i..) */
 } /* init() */
 
@@ -103,8 +100,8 @@ void ct_manager::reset(void) {
   } /* for(&target..) */
 } /* reset() */
 
-base_structure3D_builder* ct_manager::builder_lookup(
-    const rtypes::type_uuid& target_id) const {
+base_structure3D_builder*
+ct_manager::builder_lookup(const rtypes::type_uuid& target_id) const {
   auto it =
       std::find_if(m_builderso.begin(), m_builderso.end(), [&](auto& builder) {
         return target_id == builder->target_id();
@@ -116,9 +113,9 @@ base_structure3D_builder* ct_manager::builder_lookup(
 } /* builder_lookup() */
 
 structure3D* ct_manager::target_lookup(const rtypes::type_uuid& id) const {
-  auto it = std::find_if(m_targetso.begin(),
-                         m_targetso.end(),
-                         [&](auto& target) { return id == target->id(); });
+  auto it = std::find_if(m_targetso.begin(), m_targetso.end(), [&](auto& target) {
+    return id == target->id();
+  });
   if (m_targetso.end() != it) {
     return it->get();
   }

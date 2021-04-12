@@ -48,12 +48,12 @@ placement_path::placement_path(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::vector<rmath::vector2d> placement_path::operator()(
-    const srepr::construction_lane* lane,
-    const stygmergic_configuration& acq) const {
+std::vector<rmath::vector2d>
+placement_path::operator()(const srepr::construction_lane* lane,
+                           const stygmergic_configuration& acq) const {
   auto rpos = mc_sensing->rpos2D();
   auto* ct = mc_perception->nearest_ct();
-  std::vector<rmath::vector2d> path = {rpos};
+  std::vector<rmath::vector2d> path = { rpos };
   double cell_size = ct->block_unit_dim();
 
   /*

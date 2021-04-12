@@ -43,18 +43,18 @@ structure_progress_metrics_collector::structure_progress_metrics_collector(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> structure_progress_metrics_collector::csv_header_cols(
-    void) const {
+std::list<std::string>
+structure_progress_metrics_collector::csv_header_cols(void) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>{
-      /* clang-format off */
+    /* clang-format off */
     "int_avg_complete_count",
     "cum_avg_complete_count",
     "int_avg_placed_count",
     "cum_avg_placed_count",
     "int_avg_manifest_size",
     "cum_avg_manifest_size",
-      /* clang-format on */
+    /* clang-format on */
   };
 
   merged.splice(merged.end(), cols);
@@ -66,8 +66,8 @@ void structure_progress_metrics_collector::reset(void) {
   reset_after_interval();
 } /* reset() */
 
-boost::optional<std::string> structure_progress_metrics_collector::csv_line_build(
-    void) {
+boost::optional<std::string>
+structure_progress_metrics_collector::csv_line_build(void) {
   if (!(timestep() % interval() == 0)) {
     return boost::none;
   }

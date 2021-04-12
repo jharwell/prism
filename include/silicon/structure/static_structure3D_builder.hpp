@@ -36,10 +36,10 @@
 #include "cosm/repr/block_variant.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/config/structure3D_builder_config.hpp"
-#include "silicon/structure/static_build_status.hpp"
-#include "silicon/structure/ct_coord.hpp"
 #include "silicon/structure/base_structure3D_builder.hpp"
+#include "silicon/structure/config/structure3D_builder_config.hpp"
+#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/static_build_status.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -60,11 +60,12 @@ class static_structure3D_builder : public rer::client<static_structure3D_builder
                                    public base_structure3D_builder {
  public:
   static_structure3D_builder(const config::structure3D_builder_config* config,
-                      structure3D* target,
-                      cpal::argos_sm_adaptor* sm);
+                             structure3D* target,
+                             cpal::argos_sm_adaptor* sm);
 
   static_structure3D_builder(const static_structure3D_builder&) = default;
-  const static_structure3D_builder& operator=(const static_structure3D_builder&) = delete;
+  const static_structure3D_builder&
+  operator=(const static_structure3D_builder&) = delete;
 
   /* parent class overrides */
   void reset(void) override;
@@ -96,8 +97,8 @@ class static_structure3D_builder : public rer::client<static_structure3D_builder
    * structures.
    */
   struct static_build_state {
-    size_t n_cells{0};
-    size_t n_built_interval{0};
+    size_t n_cells{ 0 };
+    size_t n_built_interval{ 0 };
   };
 
   /**
@@ -119,8 +120,7 @@ class static_structure3D_builder : public rer::client<static_structure3D_builder
    * \return \c TRUE if a block was found to be placed AND placed successfully,
    * and \c FALSE otherwise.
    */
-  bool build_single(const cds::block3D_vectorno& blocks,
-                           size_t search_start);
+  bool build_single(const cds::block3D_vectorno& blocks, size_t search_start);
 
   /* clang-format off */
   const config::structure3D_builder_config mc_config;

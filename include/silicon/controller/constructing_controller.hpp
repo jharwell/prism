@@ -35,10 +35,10 @@
 #include "cosm/fsm/block_transporter.hpp"
 #include "cosm/metrics/config/output_config.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
-#include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
 #include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
 #include "cosm/subsystem/perception/config/perception_config.hpp"
+#include "cosm/subsystem/subsystem_fwd.hpp"
 
 #include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/construction_transport_goal.hpp"
@@ -102,10 +102,10 @@ class constructing_controller
   bool block_detected(void) const override;
 
   /* movement metrics */
-  rtypes::spatial_dist ts_distance(
-      const csmetrics::movement_category& category) const override;
-  rmath::vector3d ts_velocity(
-      const csmetrics::movement_category& category) const override;
+  rtypes::spatial_dist
+  ts_distance(const csmetrics::movement_category& category) const override;
+  rmath::vector3d
+  ts_velocity(const csmetrics::movement_category& category) const override;
 
   virtual const perception::builder_perception_subsystem* perception(void) const {
     return m_perception.get();
@@ -128,18 +128,20 @@ class constructing_controller
   const block_manip_recorder_type* block_manip_recorder(void) const {
     return &m_block_manip;
   }
-  block_manip_recorder_type* block_manip_recorder(void) {
-    return &m_block_manip;
+  block_manip_recorder_type* block_manip_recorder(void) { return &m_block_manip; }
+  const class csubsystem::saa_subsystemQ3D* saa(void) const {
+    return cpal::argos_controllerQ3D_adaptor::saa();
   }
-  const class crfootbot::footbot_saa_subsystem* saa(void) const RCSW_PURE;
 
  protected:
-  class crfootbot::footbot_saa_subsystem* saa(void) RCSW_PURE;
+  class csubsystem::saa_subsystemQ3D* saa(void) {
+    return cpal::argos_controllerQ3D_adaptor::saa();
+  }
 
  private:
-  void saa_init(
-      const csubsystem::config::actuation_subsystem2D_config* actuation_p,
-      const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
+  void
+  saa_init(const csubsystem::config::actuation_subsystem2D_config* actuation_p,
+           const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
   void output_init(const cmconfig::output_config* outputp);
 
   void perception_init(const cspconfig::perception_config* perceptionp);

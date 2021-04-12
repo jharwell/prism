@@ -29,8 +29,8 @@
 
 #include "rcppsw/er/client.hpp"
 
-#include "cosm/robots/footbot/footbot_subsystem_fwd.hpp"
 #include "cosm/spatial/fsm/util_hfsm.hpp"
+#include "cosm/subsystem/subsystem_fwd.hpp"
 #include "cosm/ta/taskable.hpp"
 
 #include "silicon/silicon.hpp"
@@ -69,21 +69,21 @@ class builder_util_fsm : public csfsm::util_hfsm,
    * \brief Verify that the robot position is still (mostly) parallel to the
    * vector defining the construction lane.
    */
-  static bool lane_alignment_verify_pos(
-      const csubsystem::sensing_subsystemQ3D* sensing,
-      const rmath::vector2d& lane_point,
-      const rmath::radians& orientation);
+  static bool
+  lane_alignment_verify_pos(const csubsystem::sensing_subsystemQ3D* sensing,
+                            const rmath::vector2d& lane_point,
+                            const rmath::radians& orientation);
 
   /**
    * \brief Verify that the headingposition is still (mostly) parallel to the
    * angle of the vector defining the construction lane.
    */
-  static bool lane_alignment_verify_azimuth(
-      const csubsystem::sensing_subsystemQ3D* sensing,
-      const rmath::radians& orientation);
+  static bool
+  lane_alignment_verify_azimuth(const csubsystem::sensing_subsystemQ3D* sensing,
+                                const rmath::radians& orientation);
 
   builder_util_fsm(const scperception::builder_perception_subsystem* perception,
-                   crfootbot::footbot_saa_subsystem* saa,
+                   csubsystem::saa_subsystemQ3D* saa,
                    rmath::rng* rng,
                    uint8_t max_states);
 
@@ -95,7 +95,6 @@ class builder_util_fsm : public csfsm::util_hfsm,
 
   /* HFSM overrides */
   void init(void) override;
-
 
  protected:
   enum class robot_proximity_type {
@@ -148,7 +147,9 @@ class builder_util_fsm : public csfsm::util_hfsm,
   bool robot_manhattan_proximity(void) const;
 
   /* builder states */
-  HFSM_STATE_DECLARE(builder_util_fsm, wait_for_robot, const robot_wait_data);
+  RCPPSW_HFSM_STATE_DECLARE(builder_util_fsm,
+                            wait_for_robot,
+                            const robot_wait_data);
 
  private:
   /* clang-format off */

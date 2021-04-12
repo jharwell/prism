@@ -56,9 +56,8 @@ NS_START(silicon, metrics);
  * \brief Extends the \ref cmetrics::base_metrics_aggregator for the SILICON
  * project.
  */
-class silicon_metrics_aggregator
-    : public rer::client<silicon_metrics_aggregator>,
-      public cmetrics::base_metrics_aggregator {
+class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator>,
+                                   public cmetrics::base_metrics_aggregator {
  public:
   silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
                              const cdconfig::grid2D_config* gconfig,
@@ -98,9 +97,9 @@ class silicon_metrics_aggregator
    * \brief Register collectors that need extra arguments that pertain to
    * construction targets (# construction lanes and structure ID).
    */
-  void register_with_target_lanes_and_id(
-      const cmconfig::metrics_config* mconfig,
-      const sstructure::structure3D* structure);
+  void
+  register_with_target_lanes_and_id(const cmconfig::metrics_config* mconfig,
+                                    const sstructure::structure3D* structure);
 
   /**
    * \brief Register collectors that need extra arguments that pertain to

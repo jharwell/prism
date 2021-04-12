@@ -26,15 +26,15 @@
 #include "rcppsw/patterns/fsm/event.hpp"
 
 #include "cosm/ds/cell3D.hpp"
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
-#include "cosm/robots/footbot/footbot_sensing_subsystem.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
+#include "cosm/subsystem/saa_subsystemQ3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/fsm/calculators/egress_lane_path.hpp"
+#include "silicon/fsm/calculators/egress_path.hpp"
 #include "silicon/fsm/construction_signal.hpp"
 #include "silicon/repr/construction_lane.hpp"
-#include "silicon/fsm/calculators/egress_path.hpp"
-#include "silicon/fsm/calculators/egress_lane_path.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -46,48 +46,48 @@ NS_START(silicon, fsm);
  ******************************************************************************/
 structure_egress_fsm::structure_egress_fsm(
     const scperception::builder_perception_subsystem* perception,
-    crfootbot::footbot_saa_subsystem* saa,
+    csubsystem::saa_subsystemQ3D* saa,
     rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
       ER_CLIENT_INIT("silicon.fsm.egress"),
-      HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(acquire_egress_lane, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
-      HFSM_DEFINE_STATE_MAP(mc_state_map,
-                            HFSM_STATE_MAP_ENTRY_EX(&start),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_egress_lane,
-                                                        nullptr,
-                                                        nullptr,
-                                                        nullptr),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&structure_egress,
-                                                        nullptr,
-                                                        &entry_structure_egress,
-                                                        &exit_structure_egress),
-                            HFSM_STATE_MAP_ENTRY_EX(&wait_for_robot),
-                            HFSM_STATE_MAP_ENTRY_EX(&finished)),
+      RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(acquire_egress_lane, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
+      RCPPSW_HFSM_DEFINE_STATE_MAP(
+          mc_state_map,
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&start),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_egress_lane,
+                                             nullptr,
+                                             nullptr,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&structure_egress,
+                                             nullptr,
+                                             &entry_structure_egress,
+                                             &exit_structure_egress),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&wait_for_robot),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_alignment_calc(saa->sensing()) {}
 
 /*******************************************************************************
  * States
  ******************************************************************************/
-HFSM_STATE_DEFINE_ND(structure_egress_fsm, start) {
+RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, start) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(structure_egress_fsm,
-                  acquire_egress_lane,
-                  csteer2D::ds::path_state* path) {
+RCPPSW_HFSM_STATE_DEFINE(structure_egress_fsm,
+                         acquire_egress_lane,
+                         csteer2D::ds::path_state* path) {
   if (robot_manhattan_proximity()) {
-    internal_event(ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(
-                       robot_proximity_type::ekMANHATTAN));
+    internal_event(
+        ekST_WAIT_FOR_ROBOT,
+        std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
   } else {
     if (path->is_complete()) {
-      auto egress_path = calculators::egress_path(sensing(),
-                                                 perception(),
-                                                 rng())(allocated_lane());
+      auto egress_path = calculators::egress_path(sensing(), perception(), rng())(
+          allocated_lane());
       event_data_hold(false);
       internal_event(ekST_STRUCTURE_EGRESS,
                      std::make_unique<csteer2D::ds::path_state>(egress_path));
@@ -100,12 +100,11 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(structure_egress_fsm,
-                  structure_egress,
-                  csteer2D::ds::path_state* path) {
+RCPPSW_HFSM_STATE_DEFINE(structure_egress_fsm,
+                         structure_egress,
+                         csteer2D::ds::path_state* path) {
   auto alignment = m_alignment_calc(allocated_lane());
-  ER_ASSERT(alignment.egress_pos,
-            "Bad alignment (position) on structure egress");
+  ER_ASSERT(alignment.egress_pos, "Bad alignment (position) on structure egress");
 
   bool in_ct_zone =
       saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest");
@@ -114,9 +113,9 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
    * continuing.
    */
   if (in_ct_zone && robot_trajectory_proximity()) {
-    internal_event(ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(
-                       robot_proximity_type::ekTRAJECTORY));
+    internal_event(
+        ekST_WAIT_FOR_ROBOT,
+        std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
   } else { /* left construction zone */
     if (path->is_complete()) {
       internal_event(ekST_FINISHED);
@@ -135,7 +134,7 @@ HFSM_STATE_DEFINE(structure_egress_fsm,
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_EXIT_DEFINE(structure_egress_fsm, exit_structure_egress) {
+RCPPSW_HFSM_EXIT_DEFINE(structure_egress_fsm, exit_structure_egress) {
   /*
    * If we have left the structure then disable the camera, as that is
    * computationally expensive to compute readings for in large swarms, and we
@@ -144,7 +143,7 @@ HFSM_EXIT_DEFINE(structure_egress_fsm, exit_structure_egress) {
   saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->disable();
 }
 
-HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_structure_egress) {
+RCPPSW_HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_structure_egress) {
   /*
    * Enable proximity sensor, which is needed as we exit the nest/construction
    * zone and move back into the 2D arena as part of structure egress.
@@ -152,7 +151,7 @@ HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_structure_egress) {
   saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->enable();
 }
 
-HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
+RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
   if (ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
@@ -164,13 +163,13 @@ HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
  ******************************************************************************/
 void structure_egress_fsm::task_start(cta::taskable_argument* c_arg) {
   static const uint8_t kTRANSITIONS[] = {
-      ekST_ACQUIRE_EGRESS_LANE,     /* start */
-      rpfsm::event_signal::ekFATAL, /* acquire egress lane */
-      rpfsm::event_signal::ekFATAL, /* structure egress */
-      rpfsm::event_signal::ekFATAL, /* wait for robot */
-      ekST_ACQUIRE_EGRESS_LANE,     /* finished */
+    ekST_ACQUIRE_EGRESS_LANE, /* start */
+    rpfsm::event_signal::ekFATAL, /* acquire egress lane */
+    rpfsm::event_signal::ekFATAL, /* structure egress */
+    rpfsm::event_signal::ekFATAL, /* wait for robot */
+    ekST_ACQUIRE_EGRESS_LANE, /* finished */
   };
-  FSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, ekST_MAX_STATES);
+  RCPPSW_HFSM_VERIFY_TRANSITION_MAP(kTRANSITIONS, ekST_MAX_STATES);
 
   auto* const a = dynamic_cast<repr::construction_lane*>(c_arg);
   ER_ASSERT(nullptr != a, "Bad construction lane argument");

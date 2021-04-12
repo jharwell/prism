@@ -76,8 +76,8 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
 
  private:
   struct los_lane_cells {
-    const cds::cell3D* ingress{nullptr};
-    const cds::cell3D* egress{nullptr};
+    const cds::cell3D* ingress{ nullptr };
+    const cds::cell3D* egress{ nullptr };
   };
 
   /**
@@ -89,9 +89,9 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
 
   los_lane_cells los_cells_calc(const srepr::construction_lane* lane) const;
 
-  stygmergic_configuration configuration_calc(
-      const los_lane_cells& los_cells,
-      const srepr::construction_lane* lane) const;
+  stygmergic_configuration
+  configuration_calc(const los_lane_cells& los_cells,
+                     const srepr::construction_lane* lane) const;
 
   /* clang-format off */
   const csubsystem::sensing_subsystemQ3D*           mc_sensing;

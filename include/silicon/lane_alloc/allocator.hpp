@@ -74,9 +74,9 @@ class allocator : public rer::client<allocator>,
   size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
   void reset_metrics(void) override;
 
-  std::unique_ptr<repr::construction_lane> operator()(
-      const rmath::vector3d& robot_loc,
-      const scperception::ct_skel_info* target);
+  std::unique_ptr<repr::construction_lane>
+  operator()(const rmath::vector3d& robot_loc,
+             const scperception::ct_skel_info* target);
 
  private:
   struct allocation_history {
@@ -84,15 +84,15 @@ class allocator : public rer::client<allocator>,
         : alloc_counts(n_lanes), prev_lane(prev) {}
 
     std::vector<size_t> alloc_counts{};
-    size_t prev_lane{0};
+    size_t prev_lane{ 0 };
   };
 
   /**
    * \brief Compute the locations of the entry point for each of the
    * construction lanes in the structure.
    */
-  std::vector<lane_geometry> lane_locs_calc(
-      const scperception::ct_skel_info* target) const;
+  std::vector<lane_geometry>
+  lane_locs_calc(const scperception::ct_skel_info* target) const;
 
   /* clang-format off */
   const config::lane_alloc_config                 mc_config;

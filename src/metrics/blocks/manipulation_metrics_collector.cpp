@@ -45,16 +45,16 @@ manipulation_metrics_collector::manipulation_metrics_collector(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> manipulation_metrics_collector::csv_header_cols(
-    void) const {
+std::list<std::string>
+manipulation_metrics_collector::csv_header_cols(void) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>{
-      /* clang-format off */
+    /* clang-format off */
     "int_avg_arena_pickup_events",
     "int_avg_arena_pickup_penalty",
     "int_avg_ct_placement_events",
     "int_avg_ct_placement_penalty",
-      /* clang-format on */
+    /* clang-format on */
   };
   merged.splice(merged.end(), cols);
   return merged;
@@ -65,7 +65,8 @@ void manipulation_metrics_collector::reset(void) {
   reset_after_interval();
 } /* reset() */
 
-boost::optional<std::string> manipulation_metrics_collector::csv_line_build(void) {
+boost::optional<std::string>
+manipulation_metrics_collector::csv_line_build(void) {
   if (!(timestep() % interval() == 0)) {
     return boost::none;
   }

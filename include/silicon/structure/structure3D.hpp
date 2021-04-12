@@ -41,9 +41,9 @@
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
+#include "silicon/structure/ct_coord.hpp"
 #include "silicon/structure/metrics/structure_progress_metrics.hpp"
 #include "silicon/structure/metrics/structure_state_metrics.hpp"
-#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -82,7 +82,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     int state{};
     crepr::block_type block_type{};
     rmath::radians z_rotation{};
-    size_t extent{0};
+    size_t extent{ 0 };
   };
 
   using rds::grid3D_overlay<cds::cell3D>::operator[];
@@ -138,9 +138,8 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * structure.
    */
   rmath::vector3d roriginr(void) const {
-    return voriginr() + rmath::vector3d(vshell_sizer().v(),
-                                        vshell_sizer().v(),
-                                        0.0);
+    return voriginr() +
+           rmath::vector3d(vshell_sizer().v(), vshell_sizer().v(), 0.0);
   }
   /**
    * \brief Get the discrete arena coordinates of the REALL origin of the
@@ -148,9 +147,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * surrounds the structure.
    */
   rmath::vector3z rorigind(void) const {
-    return vorigind() + rmath::vector3z(vshell_sized(),
-                                        vshell_sized(),
-                                        0);
+    return vorigind() + rmath::vector3z(vshell_sized(), vshell_sized(), 0);
   }
 
   /**
@@ -175,17 +172,14 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    * If the orientation is 0, then internal coordinates for the cells comprising
    */
 
-  const rmath::radians& orientation(void) const {
-    return mc_config.orientation;
-  }
+  const rmath::radians& orientation(void) const { return mc_config.orientation; }
 
   size_t volumetric_size(bool include_virtual = false) const {
-    return xranged(include_virtual).span() *
-        yranged(include_virtual).span() *
-        zranged().span();
+    return xranged(include_virtual).span() * yranged(include_virtual).span() *
+           zranged().span();
   }
 
-  bool block_placement_valid(const crepr::block3D_variant& block,
+  bool block_placement_valid(const crepr::block3D_variantro& block,
                              const ct_coord& coord,
                              const rmath::radians& z_rotation);
 
@@ -203,7 +197,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
       return rmath::ranged(voriginr().y(), voriginr().y() + yrsize());
     } else {
       return rmath::ranged(roriginr().y(),
-                           roriginr().y() + yrsize() - vshell_sizer().v()* 2);
+                           roriginr().y() + yrsize() - vshell_sizer().v() * 2);
     }
   }
   rmath::rangez xranged(bool include_virtual = false) const {
@@ -219,7 +213,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
       return rmath::rangez(vorigind().y(), vorigind().y() + ydsize());
     } else {
       return rmath::rangez(rorigind().y(),
-                           rorigind().y() + ydsize() - vshell_sized()* 2);
+                           rorigind().y() + ydsize() - vshell_sized() * 2);
     }
   }
   rmath::rangez zranged(void) const {

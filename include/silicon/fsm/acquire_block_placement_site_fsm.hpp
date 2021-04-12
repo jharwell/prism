@@ -32,8 +32,8 @@
 
 #include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/builder_util_fsm.hpp"
-#include "silicon/fsm/stygmergic_configuration.hpp"
 #include "silicon/fsm/calculators/lane_alignment.hpp"
+#include "silicon/fsm/stygmergic_configuration.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -58,7 +58,7 @@ class acquire_block_placement_site_fsm
  public:
   acquire_block_placement_site_fsm(
       const scperception::builder_perception_subsystem* perception,
-      crfootbot::footbot_saa_subsystem* saa,
+      csubsystem::saa_subsystemQ3D* saa,
       rmath::rng* rng);
 
   ~acquire_block_placement_site_fsm(void) override;
@@ -66,8 +66,8 @@ class acquire_block_placement_site_fsm
   /* not copy constructible or copy assignable by default */
   acquire_block_placement_site_fsm(const acquire_block_placement_site_fsm&) =
       delete;
-  acquire_block_placement_site_fsm& operator=(
-      const acquire_block_placement_site_fsm&) = delete;
+  acquire_block_placement_site_fsm&
+  operator=(const acquire_block_placement_site_fsm&) = delete;
 
   /* taskable overrides */
   void task_reset(void) override { init(); }
@@ -125,23 +125,29 @@ class acquire_block_placement_site_fsm
   };
 
   /* inherited states */
-  HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, const robot_wait_data);
+  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm,
+                            wait_for_robot,
+                            const robot_wait_data);
 
   /* FSM states */
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, acquire_frontier_set);
+  RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
+  RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
+                               acquire_frontier_set);
 
-  HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
-                        entry_acquire_frontier_set);
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, acquire_placement_loc);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
+                               entry_acquire_frontier_set);
+  RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
+                               acquire_placement_loc);
 
-  HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
+  RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
 
-  HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
+  RCPPSW_HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
     return &mc_state_map[index];
   }
 
-  HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, fsm_state::ekST_MAX_STATES);
+  RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex,
+                                mc_state_map,
+                                fsm_state::ekST_MAX_STATES);
 
   /* clang-format off */
   std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};

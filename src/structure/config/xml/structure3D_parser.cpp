@@ -44,13 +44,13 @@ void structure3D_parser::parse(const ticpp::Element& node) {
    * the input file, we round it to the nearest cardinal direction, if it is
    * specified with a reasonable # of decimals and is close enough to one.
    */
-  if (rmath::radians::kZERO.is_equal(m_config->orientation)) {
+  if (rmath::radians::kZERO.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kZERO;
-  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation)) {
+  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kPI_OVER_TWO;
-  } else if (rmath::radians::kPI.is_equal(m_config->orientation)) {
+  } else if (rmath::radians::kPI.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kPI;
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation)) {
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kTHREE_PI_OVER_TWO;
   }
 
@@ -67,7 +67,7 @@ void structure3D_parser::parse(const ticpp::Element& node) {
          ++node_it) {
       rmath::vector3z tmp;
       node_attr_get(*node_it, "cell", tmp);
-      m_config->cube_blocks[tmp] = {tmp};
+      m_config->cube_blocks[tmp] = { tmp };
     } /* for(node_it..) */
   }
 
@@ -79,7 +79,7 @@ void structure3D_parser::parse(const ticpp::Element& node) {
          ++node_it) {
       rmath::vector3z tmp;
       node_attr_get(*node_it, "cell", tmp);
-      m_config->ramp_blocks[tmp] = {tmp, m_config->orientation};
+      m_config->ramp_blocks[tmp] = { tmp, m_config->orientation };
     } /* for(node_it..) */
   }
 } /* parse() */

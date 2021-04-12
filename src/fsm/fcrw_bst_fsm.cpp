@@ -23,19 +23,19 @@
  ******************************************************************************/
 #include "silicon/fsm/fcrw_bst_fsm.hpp"
 
-#include "cosm/robots/footbot/footbot_saa_subsystem.hpp"
-#include "cosm/spatial/expstrat/base_expstrat.hpp"
-#include "cosm/spatial/expstrat/crw.hpp"
+#include "cosm/spatial/strategy/base_strategy.hpp"
+#include "cosm/spatial/strategy/explore/crw.hpp"
+#include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/construction_acq_goal.hpp"
-#include "silicon/fsm/construction_signal.hpp"
 #include "silicon/fsm/calculators/ct_approach.hpp"
 #include "silicon/fsm/calculators/ingress_lane_path.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
+#include "silicon/fsm/construction_acq_goal.hpp"
+#include "silicon/fsm/construction_signal.hpp"
 #include "silicon/lane_alloc/allocator.hpp"
 #include "silicon/repr/construction_lane.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -48,46 +48,47 @@ NS_START(silicon, fsm);
 fcrw_bst_fsm::fcrw_bst_fsm(
     const slaconfig::lane_alloc_config* allocator_config,
     const scperception::builder_perception_subsystem* perception,
-    crfootbot::footbot_saa_subsystem* const saa,
+    csubsystem::saa_subsystemQ3D* const saa,
     rmath::rng* rng)
     : util_hfsm(saa, rng, ekST_MAX_STATES),
       ER_CLIENT_INIT("silicon.fsm.fcrw_bst"),
-      HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(wait_for_block_pickup, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(wait_for_block_place, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(ct_approach, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(ct_entry, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(structure_build, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
-      HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
-      HFSM_DEFINE_STATE_MAP(mc_state_map,
-                            HFSM_STATE_MAP_ENTRY_EX(&start),
-                            HFSM_STATE_MAP_ENTRY_EX(&forage),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_pickup,
-                                                        nullptr,
-                                                        &entry_wait_for_signal,
-                                                        nullptr),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_approach,
-                                                        nullptr,
-                                                        &entry_ct_approach,
-                                                        nullptr),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_entry,
-                                                        nullptr,
-                                                        nullptr,
-                                                        &exit_ct_entry),
-                            HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_place,
-                                                        nullptr,
-                                                        &entry_wait_for_signal,
-                                                        nullptr),
-                            HFSM_STATE_MAP_ENTRY_EX(&structure_build),
-                            HFSM_STATE_MAP_ENTRY_EX(&structure_egress),
-                            HFSM_STATE_MAP_ENTRY_EX(&finished)),
+      RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_block_pickup, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_block_place, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(ct_approach, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(ct_entry, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(structure_build, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
+      RCPPSW_HFSM_DEFINE_STATE_MAP(
+          mc_state_map,
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&start),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&forage),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_pickup,
+                                             nullptr,
+                                             &entry_wait_for_signal,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_approach,
+                                             nullptr,
+                                             &entry_ct_approach,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&ct_entry,
+                                             nullptr,
+                                             nullptr,
+                                             &exit_ct_entry),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_place,
+                                             nullptr,
+                                             &entry_wait_for_signal,
+                                             nullptr),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&structure_build),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&structure_egress),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       mc_perception(perception),
       m_allocator(allocator_config, rng),
       m_allocated_lane(nullptr),
       m_forage_fsm(saa,
-                   std::make_unique<csexpstrat::crw>(saa, rng),
+                   std::make_unique<csstrategy::explore::crw>(saa, rng),
                    rng,
                    std::bind(&fcrw_bst_fsm::block_detected, this)),
       m_block_place_fsm(mc_perception, saa, rng),
@@ -98,7 +99,7 @@ fcrw_bst_fsm::~fcrw_bst_fsm(void) = default;
 /*******************************************************************************
  * States
  ******************************************************************************/
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, start) {
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, start) {
   if (fsm_states::ekST_START != last_state()) {
     ER_DEBUG("Executing ekST_START");
   }
@@ -106,7 +107,7 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, start) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, forage) {
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, forage) {
   if (fsm_states::ekST_FORAGE != last_state()) {
     ER_DEBUG("Executing ekST_FORAGE");
   }
@@ -124,33 +125,33 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, forage) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data* data) {
+RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
+                         wait_for_block_pickup,
+                         rpfsm::event_data* data) {
   if (fsm::construction_signal::ekFORAGING_BLOCK_PICKUP == data->signal()) {
     ER_INFO("Block pickup signal received while foraging");
-    ER_ASSERT(
-        nullptr != mc_perception->nearest_ct(),
-        "Cannot allocate construction lane: No known construction targets");
+    ER_ASSERT(nullptr != mc_perception->nearest_ct(),
+              "Cannot allocate construction lane: No known construction targets");
 
     /* allocate construction lane */
     m_allocated_lane =
         m_allocator(sensing()->rpos3D(), mc_perception->nearest_ct());
 
-    auto calculator =
-        calculators::ct_approach(sensing(),
-                                 calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
+    auto calculator = calculators::ct_approach(
+        sensing(), calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
     auto approach = calculator(m_allocated_lane.get());
 
     if (!(approach.x_ok && approach.y_ok)) {
       ER_INFO("Construction target approach required");
       internal_event(ekST_CT_APPROACH);
     } else {
-      auto path = calculators::ingress_lane_path(sensing())(m_allocated_lane.get());
+      auto path =
+          calculators::ingress_lane_path(sensing())(m_allocated_lane.get());
       ER_INFO("Calculated transport path to lane%zu ingress with %zu waypoints",
               m_allocated_lane->id(),
               path.size());
-      auto entry_data =
-          std::make_unique<ct_ingress_data>(csteer2D::ds::path_state(path),
-                                            m_allocated_lane->ingress());
+      auto entry_data = std::make_unique<ct_ingress_data>(
+          csteer2D::ds::path_state(path), m_allocated_lane->ingress());
 
       internal_event(ekST_CT_ENTRY, std::move(entry_data));
     }
@@ -163,15 +164,20 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_pickup, rpfsm::event_data* data) 
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
-  auto calculator =
-      calculators::ct_approach(sensing(),
-                               calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
+  auto calculator = calculators::ct_approach(
+      sensing(), calculators::lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL);
   auto approach = calculator(m_allocated_lane.get());
 
   if (fsm_states::ekST_CT_APPROACH != last_state()) {
     ER_DEBUG("Beginning construction target approach");
-    m_ct_approach_polar_sign = std::copysign(1.0, approach.ingress_angle.value());
+
+    /*
+     * If the angle is >= 180 degrees, we are BELOW the X-axis for the
+     * structure, and counter-clockwise to the ingress site will be faster. Vice
+     * versa for < 180 degrees. See SILICON#41.
+     */
+    m_ct_approach_polar_sign = (approach.ingress_angle >= rmath::radians::kPI) ? -1 : 1;
   }
 
   if (approach.x_ok && approach.y_ok) {
@@ -195,8 +201,9 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
   auto* light = sensing()->sensor<chal::sensors::light_sensor>();
   auto light_force = saa()->steer_force2D().phototaxis(light->readings());
 
-  auto polar_force = saa()->steer_force2D().polar(m_allocated_lane->ingress().to_2D()) *
-                     m_ct_approach_polar_sign;
+  auto polar_force =
+      saa()->steer_force2D().polar(m_allocated_lane->ingress().to_2D()) *
+      m_ct_approach_polar_sign;
   /*
    * We need the sign of the orthogonal distance to the ingress lane so that we
    * calculate polar force of the appropriate sign (i.e., not going all the way
@@ -224,7 +231,7 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, ct_approach) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(fcrw_bst_fsm, ct_entry, ct_ingress_data* data) {
+RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm, ct_entry, ct_ingress_data* data) {
   if (fsm_states::ekST_CT_ENTRY != last_state()) {
     ER_DEBUG("Beginning construction target entry");
   }
@@ -236,11 +243,11 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, ct_entry, ct_ingress_data* data) {
            (sensing()->rpos3D() - data->ingress).y(),
            (sensing()->rpos3D() - data->ingress).length());
 
-  ER_TRACE("Lane%zu alignment: %s",
-           m_allocated_lane->id(),
-           rcppsw::to_string(sensing()->azimuth() -
-                             m_allocated_lane->orientation())
-               .c_str());
+  ER_TRACE(
+      "Lane%zu alignment: %s",
+      m_allocated_lane->id(),
+      rcppsw::to_string(sensing()->azimuth() - m_allocated_lane->orientation())
+          .c_str());
 
   auto path_force = saa()->steer_force2D().path_following(&data->path);
   saa()->steer_force2D().accum(path_force);
@@ -257,7 +264,7 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, ct_entry, ct_ingress_data* data) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
   if (m_block_place_fsm.task_finished()) {
     internal_event(ekST_WAIT_FOR_BLOCK_PLACE);
   } else {
@@ -271,7 +278,9 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_place, rpfsm::event_data* data) {
+RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
+                         wait_for_block_place,
+                         rpfsm::event_data* data) {
   if (fsm::construction_signal::ekCT_BLOCK_PLACE == data->signal()) {
     ER_INFO("Block placement signal received while building");
     /*
@@ -284,7 +293,7 @@ HFSM_STATE_DEFINE(fcrw_bst_fsm, wait_for_block_place, rpfsm::event_data* data) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_egress) {
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_egress) {
   if (m_structure_egress_fsm.task_finished()) {
     m_structure_egress_fsm.task_reset();
     internal_event(ekST_FINISHED);
@@ -298,7 +307,7 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_egress) {
   return fsm::construction_signal::ekHANDLED;
 }
 
-HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, finished) {
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, finished) {
   if (ekST_FINISHED != last_state()) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
@@ -307,13 +316,14 @@ HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, finished) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-HFSM_ENTRY_DEFINE_ND(fcrw_bst_fsm, entry_ct_approach) {
+RCPPSW_HFSM_ENTRY_DEFINE_ND(fcrw_bst_fsm, entry_ct_approach) {
   /* turn on light sensor to move towards the nest */
   sensing()->sensor<chal::sensors::light_sensor>()->enable();
   actuation()->actuator<chal::actuators::led_actuator>()->set_color(
       -1, rutils::color::kGREEN);
 }
-HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_ct_entry) {
+
+RCPPSW_HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_ct_entry) {
   /* Once we are on the target, we don't need the light sensor anymore. */
   sensing()->sensor<chal::sensors::light_sensor>()->disable();
 }
@@ -322,7 +332,7 @@ HFSM_EXIT_DEFINE(fcrw_bst_fsm, exit_ct_entry) {
  * Goal Metrics
  ******************************************************************************/
 fcrw_bst_fsm::exp_status fcrw_bst_fsm::is_exploring_for_goal(void) const {
-  return exp_status{m_forage_fsm.task_running(), true};
+  return exp_status{ m_forage_fsm.task_running(), true };
 } /* is_exploring_for_goal() */
 
 bool fcrw_bst_fsm::goal_acquired(void) const {
@@ -346,7 +356,8 @@ rtypes::type_uuid fcrw_bst_fsm::entity_acquired_id(void) const {
   return rtypes::constants::kNoUUID;
 } /* entity_acquired_id() */
 
-csmetrics::goal_acq_metrics::goal_type fcrw_bst_fsm::acquisition_goal(void) const {
+csmetrics::goal_acq_metrics::goal_type
+fcrw_bst_fsm::acquisition_goal(void) const {
   if (ekST_FORAGE == current_state() ||
       ekST_WAIT_FOR_BLOCK_PICKUP == current_state()) {
     return fsm::to_goal_type(construction_acq_goal::ekFORAGING_BLOCK);
@@ -421,12 +432,12 @@ void fcrw_bst_fsm::init(void) {
 } /* init() */
 
 bool fcrw_bst_fsm::block_detected(void) const {
-  return saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect(
-      "block");
+  return saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("bloc"
+                                                                          "k");
 } /* block_detected() */
 
-boost::optional<block_placer::placement_intent> fcrw_bst_fsm::block_placement_intent(
-    void) const {
+boost::optional<block_placer::placement_intent>
+fcrw_bst_fsm::block_placement_intent(void) const {
   if (ekST_WAIT_FOR_BLOCK_PLACE == current_state()) {
     return boost::make_optional(m_block_place_fsm.placement_intent_calc());
   }

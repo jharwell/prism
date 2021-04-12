@@ -24,11 +24,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/math/vector3.hpp"
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/vector3.hpp"
 
-#include "silicon/silicon.hpp"
 #include "silicon/controller/perception/ct_skel_info.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -57,12 +57,8 @@ class lane_geometry : public rer::client<lane_geometry> {
   lane_geometry(lane_geometry&&) = default;
   lane_geometry& operator=(lane_geometry&&) = delete;
 
-  const rmath::vector3z& ingress_cell(void) const {
-    return mc_ingress_cell;
-  }
-  const rmath::vector3z& egress_cell(void) const {
-    return mc_egress_cell;
-  }
+  const rmath::vector3z& ingress_cell(void) const { return mc_ingress_cell; }
+  const rmath::vector3z& egress_cell(void) const { return mc_egress_cell; }
 
   const rmath::vector3d& ingress_start(void) const { return m_ingress_start; }
   const rmath::vector3d& egress_start(void) const { return m_egress_start; }

@@ -102,7 +102,7 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
                                                         orig_duration,
                                                         t);
 
-    ER_INFO("%s: block%d start=%u, penalty=%u, adjusted penalty=%u src=%d",
+    ER_INFO("%s: block%d start=%zu, penalty=%zu, adjusted penalty=%zu src=%d",
             controller.GetId().c_str(),
             id.v(),
             t.v(),

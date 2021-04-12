@@ -54,8 +54,8 @@ bool subtarget::contains_cell(const rmath::vector3z& coord) const {
   return mc_entry.contains(coord) || mc_exit.contains(coord);
 } /* contains_cell() */
 
-rmath::vector3z subtarget::slice_axis_calc(
-    const rmath::radians& orientation) const {
+rmath::vector3z
+subtarget::slice_axis_calc(const rmath::radians& orientation) const {
   /* orientated in +X -> slice along Y */
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
@@ -75,11 +75,11 @@ size_t subtarget::manifest_size_calc(const slice2D& slice,
   size_t count = 0;
   for (size_t i = 0; i < slice.d1(); ++i) {
     for (size_t j = 0; j < slice.d2(); ++j) {
-      auto* spec = structure->cell_spec_retrieve({slice.access(i, j).loc(),
-                                                  coord_relativity::ekVORIGIN});
+      auto* spec = structure->cell_spec_retrieve(
+          { slice.access(i, j).loc(), coord_relativity::ekVORIGIN });
       count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
   return count;
 } /* manifest_size_calc() */
 

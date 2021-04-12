@@ -37,9 +37,8 @@ NS_START(silicon, fsm, calculators);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-ct_approach::ct_approach(
-    const csubsystem::sensing_subsystemQ3D* sensing,
-    const rtypes::spatial_dist& lane_alignment_tol)
+ct_approach::ct_approach(const csubsystem::sensing_subsystemQ3D* sensing,
+                         const rtypes::spatial_dist& lane_alignment_tol)
     : ER_CLIENT_INIT("silicon.fsm.calculators.ct_approach"),
       mc_lane_alignment_tol(lane_alignment_tol),
       mc_sensing(sensing) {}
@@ -47,18 +46,13 @@ ct_approach::ct_approach(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-ct_approach::ct_approach_vector ct_approach::operator()(
-    const srepr::construction_lane* lane) const {
+ct_approach::ct_approach_vector
+ct_approach::operator()(const srepr::construction_lane* lane) const {
   ct_approach_vector ret;
-  auto angle_to_ingress = (mc_sensing->rpos2D() -
-                           lane->ingress().to_2D()).angle().unsigned_normalize();
-  /*
-   * Sign of the angle to the ingress lane is used to figure out which
-   * direction the robot should travel around the structure in a circle via
-   * polar force to get to the ingress point, depending on which have the
-   * shorter arc length.
-   */
-  ret.ingress_angle = lane->orientation() - angle_to_ingress;
+  auto angle_to_ingress = (mc_sensing->rpos2D() - lane->ingress().to_2D())
+                              .angle()
+                              .unsigned_normalize();
+  ret.ingress_angle = (lane->orientation() - angle_to_ingress).unsigned_normalize();
 
   if (rmath::radians::kZERO == lane->orientation()) {
     /* We are OK in X if we are on the +X side of the construction target */
@@ -92,7 +86,7 @@ ct_approach::ct_approach_vector ct_approach::operator()(
      * ingress lane.
      */
     ret.orthogonal_dist = rtypes::spatial_dist::make(lane->ingress().y() -
-                                               mc_sensing->rpos2D().y());
+                                                     mc_sensing->rpos2D().y());
     ret.y_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* We are OK in Y if we are on the -Y side of the construction target */

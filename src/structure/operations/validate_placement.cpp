@@ -99,7 +99,7 @@ bool validate_placement::validate_common(void) const {
 
   /* check rotation */
   ER_CHECK(rmath::radians::kZERO == mc_z_rot ||
-           rmath::radians::kPI_OVER_TWO == mc_z_rot,
+               rmath::radians::kPI_OVER_TWO == mc_z_rot,
            "Bad rotation %s: must be %s or %s",
            rcppsw::to_string(mc_z_rot).c_str(),
            rcppsw::to_string(rmath::radians::kZERO).c_str(),

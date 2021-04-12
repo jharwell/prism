@@ -38,10 +38,7 @@ NS_START(silicon, structure);
  * \brief Type tag specifying if the coordinates for a cell within a \ref
  * structure3D are relative to the virtual or real origin of the structure.
  */
-enum coord_relativity {
-  ekVORIGIN,
-  ekRORIGIN
-};
+enum coord_relativity { ekVORIGIN, ekRORIGIN };
 
 NS_END(structure, silicon);
 

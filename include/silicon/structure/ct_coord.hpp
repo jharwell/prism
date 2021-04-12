@@ -26,8 +26,8 @@
  ******************************************************************************/
 #include "rcppsw/math/vector3.hpp"
 
-#include "silicon/silicon.hpp"
 #include "coord_relativity.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

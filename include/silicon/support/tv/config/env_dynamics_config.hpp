@@ -25,8 +25,7 @@
  * Includes
  ******************************************************************************/
 #include "cosm/tv/config/base_env_dynamics_config.hpp"
-
-#include "rcppsw/control/config/waveform_config.hpp"
+#include "cosm/tv/config/temporal_penalty_config.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -45,8 +44,8 @@ NS_START(silicon, support, tv, config);
  * \brief Configuration for the \ref env_dynamics.
  */
 struct env_dynamics_config final : public ctv::config::base_env_dynamics_config {
-  rct::config::waveform_config block_manip_penalty{};
-  rct::config::waveform_config block_carry{};
+  ctv::config::temporal_penalty_config block_manip_penalty{};
+  ctv::config::temporal_penalty_config block_carry{};
   /* open to extension */
 };
 

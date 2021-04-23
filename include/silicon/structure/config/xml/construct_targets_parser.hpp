@@ -54,14 +54,14 @@ class construct_targets_parser final : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all \ref construct_targets parameters should lie
    * under in the XML tree.
    */
-  static constexpr const char kXMLRoot[] = "construct_targets";
+  inline static const std::string kXMLRoot = "construct_targets";
 
-  void parse(const ticpp::Element& node) override RCSW_COLD;
+  void parse(const ticpp::Element& node) override RCPPSW_COLD;
 
-  std::string xml_root(void) const override RCSW_COLD { return kXMLRoot; }
+  std::string xml_root(void) const override RCPPSW_COLD { return kXMLRoot; }
 
  private:
-  const rconfig::base_config* config_get_impl(void) const override RCSW_COLD {
+  const rconfig::base_config* config_get_impl(void) const override RCPPSW_COLD {
     return m_config.get();
   }
   /* clang-format off */

@@ -52,7 +52,7 @@ NS_START(operations);
  * graphical/topological invariants.
  */
 class validate_spec_composability : public rer::client<validate_spec_composability>,
-                      public boost::static_visitor<bool> {
+                                    boost::static_visitor<bool> {
  public:
   explicit validate_spec_composability(const structure3D* structure)
       : ER_CLIENT_INIT("silicon.structure.operations.validate_spec_composability"),

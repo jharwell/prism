@@ -24,6 +24,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <memory>
 #include <vector>
 
 #include "cosm/steer2D/ds/path_state.hpp"
@@ -71,7 +72,6 @@ class structure_egress_fsm : public builder_util_fsm,
     return current_state() == ekST_FINISHED;
   }
 
-  /* HFSM overrides */
   void init(void) override;
 
  private:
@@ -104,19 +104,14 @@ class structure_egress_fsm : public builder_util_fsm,
 
   /* inherited states */
   RCPPSW_HFSM_ENTRY_INHERIT_ND(util_hfsm, entry_wait_for_signal);
-  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm,
-                            wait_for_robot,
-                            const robot_wait_data);
+  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, robot_wait_data);
 
   /* builder states */
   RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, start);
-  RCPPSW_HFSM_STATE_DECLARE(structure_egress_fsm,
-                            acquire_egress_lane,
-                            csteer2D::ds::path_state);
-  RCPPSW_HFSM_STATE_DECLARE(structure_egress_fsm,
-                            structure_egress,
-                            csteer2D::ds::path_state);
-  RCPPSW_HFSM_EXIT_DECLARE(structure_egress_fsm, exit_structure_egress);
+  RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, acquire_egress_lane);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_acquire_egress_lane);
+  RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, structure_egress);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_finished);
   RCPPSW_HFSM_ENTRY_DECLARE_ND(structure_egress_fsm, entry_structure_egress);
 
   RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, finished);
@@ -128,7 +123,8 @@ class structure_egress_fsm : public builder_util_fsm,
   RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
-  calculators::lane_alignment m_alignment_calc;
+  calculators::lane_alignment               m_alignment_calc;
+  std::unique_ptr<csteer2D::ds::path_state> m_egress_state{nullptr};
   /* clang-format on */
 };
 

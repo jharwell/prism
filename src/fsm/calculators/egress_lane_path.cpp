@@ -49,6 +49,7 @@ egress_lane_path::egress_lane_path(const csubsystem::sensing_subsystemQ3D* sensi
 std::vector<rmath::vector2d>
 egress_lane_path::operator()(const srepr::construction_lane* lane) const {
   auto rpos = mc_sensing->rpos2D();
+  auto egress_pt = lane->geometry().egress_pt();
   std::vector<rmath::vector2d> path = { rpos };
 
   auto alignment = calculators::lane_alignment(mc_sensing)(lane);
@@ -59,12 +60,12 @@ egress_lane_path::operator()(const srepr::construction_lane* lane) const {
   if ((rmath::radians::kZERO == lane->orientation() ||
        rmath::radians::kPI == lane->orientation())) {
     if (!alignment.egress_pos) {
-      path.push_back({ rpos.x(), lane->egress().y() });
+      path.push_back({ rpos.x(), egress_pt.y() });
     }
   } else if ((rmath::radians::kPI_OVER_TWO == lane->orientation() ||
               rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation())) {
     if (!alignment.egress_pos) {
-      path.push_back({ lane->egress().x(), rpos.y() });
+      path.push_back({ egress_pt.x(), rpos.y() });
     }
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",

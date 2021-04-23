@@ -67,7 +67,7 @@ void lane_alloc_metrics_collector::reset(void) {
 } /* reset() */
 
 boost::optional<std::string> lane_alloc_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0)) {
+  if (!(timestep() % interval() == 0UL)) {
     return boost::none;
   }
   std::string line;
@@ -81,7 +81,7 @@ boost::optional<std::string> lane_alloc_metrics_collector::csv_line_build(void) 
 } /* csv_line_build() */
 
 void lane_alloc_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
+  const auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].alloc_count += m.alloc_count(mc_target_id, i);
     m_cum[i].alloc_count += m.alloc_count(mc_target_id, i);

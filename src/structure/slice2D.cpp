@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
 #include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
@@ -104,8 +104,10 @@ bool slice2D::is_traversable_d1_neg(void) const {
    */
   for (size_t j = 0; j < d2(); ++j) {
     for (size_t i = 0; i < d1(); ++i) {
-      auto* spec = mc_structure->cell_spec_retrieve(
-          { access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   mc_structure };
+      const auto* spec = mc_structure->cell_spec_retrieve(coord);
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -115,6 +117,10 @@ bool slice2D::is_traversable_d1_neg(void) const {
         continue;
       }
 
+      auto ext_coord = ssds::ct_coord{ access(i + spec->extent, j).loc(),
+                                       ssds::ct_coord::relativity::ekVORIGIN,
+                                       mc_structure };
+
       if (crepr::block_type::ekRAMP == spec->block_type) {
         /*
          * Ramp block extends to the end of the row in X, so no more checking
@@ -123,8 +129,7 @@ bool slice2D::is_traversable_d1_neg(void) const {
         if (i + spec->extent >= d1()) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i + spec->extent, j).loc(), coord_relativity::ekVORIGIN });
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
 
         /*
          * Ramp blocks, if they are oriented along the X axis (in either
@@ -159,8 +164,7 @@ bool slice2D::is_traversable_d1_neg(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i + spec->extent, j).loc(), coord_relativity::ekVORIGIN });
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kZERO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -187,8 +191,10 @@ bool slice2D::is_traversable_d1_pos(void) const {
    */
   for (int j = d2() - 1; j >= 0; --j) {
     for (int i = d1() - 1; i >= 0; --i) {
-      auto* spec = mc_structure->cell_spec_retrieve(
-          { access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   mc_structure };
+      const auto* spec = mc_structure->cell_spec_retrieve(coord);
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -198,6 +204,10 @@ bool slice2D::is_traversable_d1_pos(void) const {
         continue;
       }
 
+      auto ext_coord = ssds::ct_coord{ access(i - spec->extent, j).loc(),
+                                       ssds::ct_coord::relativity::ekVORIGIN,
+                                       mc_structure };
+
       if (crepr::block_type::ekRAMP == spec->block_type) {
         /*
          * Ramp block extends to the end of the row in X, so no more checking
@@ -206,8 +216,7 @@ bool slice2D::is_traversable_d1_pos(void) const {
         if (i - spec->extent <= 0) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i - spec->extent, j).loc(), coord_relativity::ekVORIGIN });
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
 
         /*
          * Ramp blocks, if they are oriented along the X axis (in either
@@ -242,8 +251,7 @@ bool slice2D::is_traversable_d1_pos(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i - spec->extent, j).loc(), coord_relativity::ekVORIGIN });
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kZERO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -270,8 +278,10 @@ bool slice2D::is_traversable_d2_neg(void) const {
    */
   for (size_t i = 0; i < d1(); ++i) {
     for (size_t j = 0; j < d2(); ++j) {
-      auto* spec = mc_structure->cell_spec_retrieve(
-          { access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   mc_structure };
+      const auto* spec = mc_structure->cell_spec_retrieve(coord);
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -287,8 +297,10 @@ bool slice2D::is_traversable_d2_neg(void) const {
         if (j + spec->extent >= d2()) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i, j + spec->extent).loc(), coord_relativity::ekVORIGIN });
+        auto ext_coord = ssds::ct_coord{ access(i, j + spec->extent).loc(),
+                                         ssds::ct_coord::relativity::ekVORIGIN,
+                                         mc_structure };
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
 
         /*
          * Ramp blocks, if they are oriented along the Y axis (in either
@@ -323,8 +335,10 @@ bool slice2D::is_traversable_d2_neg(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i, j + spec->extent).loc(), coord_relativity::ekVORIGIN });
+        auto ext_coord = ssds::ct_coord{ access(i, j + spec->extent).loc(),
+                                         ssds::ct_coord::relativity::ekVORIGIN,
+                                         mc_structure };
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kPI_OVER_TWO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -351,8 +365,11 @@ bool slice2D::is_traversable_d2_pos(void) const {
    */
   for (int i = d1() - 1; i >= 0; --i) {
     for (int j = d2() - 1; j >= 0; --j) {
-      auto* spec = mc_structure->cell_spec_retrieve(
-          { access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   mc_structure };
+      const auto* spec = mc_structure->cell_spec_retrieve(coord);
+
       /*
        * Cells containing cube blocks can never result in discontinuity within
        * the mc_view.
@@ -368,8 +385,10 @@ bool slice2D::is_traversable_d2_pos(void) const {
         if (j - spec->extent <= 0) {
           continue;
         }
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i, j - spec->extent).loc(), coord_relativity::ekVORIGIN });
+        auto ext_coord = ssds::ct_coord{ access(i, j - spec->extent).loc(),
+                                         ssds::ct_coord::relativity::ekVORIGIN,
+                                         mc_structure };
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
 
         /*
          * Ramp blocks, if they are oriented along the Y axis (in either
@@ -404,8 +423,10 @@ bool slice2D::is_traversable_d2_pos(void) const {
        */
       else if (crepr::block_type::ekCUBE == spec->block_type &&
                cell_is_exterior(access(i, j))) {
-        auto* spec2 = mc_structure->cell_spec_retrieve(
-            { access(i, j - spec->extent).loc(), coord_relativity::ekVORIGIN });
+        auto ext_coord = ssds::ct_coord{ access(i, j + spec->extent).loc(),
+                                         ssds::ct_coord::relativity::ekVORIGIN,
+                                         mc_structure };
+        const auto* spec2 = mc_structure->cell_spec_retrieve(ext_coord);
         if ((crepr::block_type::ekRAMP == spec2->block_type &&
              rmath::radians::kPI_OVER_TWO != spec2->z_rotation) ||
             cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec2->state) {
@@ -428,8 +449,10 @@ bool slice2D::is_traversable_d2_pos(void) const {
 bool slice2D::is_feasible(void) const {
   for (size_t i = 0; i < d1(); ++i) {
     for (size_t j = 0; j < d2(); ++j) {
-      auto* spec = mc_structure->cell_spec_retrieve(
-          { access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   mc_structure };
+      const auto* spec = mc_structure->cell_spec_retrieve(coord);
       /*
        * You can't have cube blocks (or any other type of block) specified in
        * the cells that should be occupied by the ramp block extent).
@@ -437,8 +460,10 @@ bool slice2D::is_feasible(void) const {
       if (crepr::block_type::ekRAMP == spec->block_type &&
           rmath::radians::kZERO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(
-              { access(i + m, j).loc(), coord_relativity::ekVORIGIN });
+          auto ext_coord = ssds::ct_coord{ access(i + m, j).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -446,8 +471,10 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(
-              { access(i, j + m).loc(), coord_relativity::ekVORIGIN });
+          auto ext_coord = ssds::ct_coord{ access(i, j + m).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -455,8 +482,10 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kPI == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(
-              { access(i - m, j).loc(), coord_relativity::ekVORIGIN });
+          auto ext_coord = ssds::ct_coord{ access(i - m, j).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -464,8 +493,10 @@ bool slice2D::is_feasible(void) const {
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
                  rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
-          auto* extent_spec = mc_structure->cell_spec_retrieve(
-              { access(i, j - m).loc(), coord_relativity::ekVORIGIN });
+          auto ext_coord = ssds::ct_coord{ access(i, j - m).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
           if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
             return false;
           }
@@ -485,8 +516,10 @@ bool slice2D::cell_is_exterior(const cds::cell3D& cell) const {
 } /* cell_is_hole() */
 
 bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
-  auto* ijkminus1 = mc_structure->cell_spec_retrieve(
-      { cell.loc() - rmath::vector3z::Z, coord_relativity::ekVORIGIN });
+  auto coord = ssds::ct_coord{ cell.loc() - rmath::vector3z::Z,
+                               ssds::ct_coord::relativity::ekVORIGIN,
+                               mc_structure };
+  const auto* ijkminus1 = mc_structure->cell_spec_retrieve(coord);
 
   size_t face_count = 0;
   /*
@@ -503,8 +536,10 @@ bool slice2D::cell_is_simple_hole(const cds::cell3D& cell) const {
                  cfsm::cell3D_state::ekST_HAS_BLOCK == ijkminus1->state &&
                  crepr::block_type::ekCUBE == ijkminus1->block_type);
 
-  auto* spec = mc_structure->cell_spec_retrieve(
-      { cell.loc(), coord_relativity::ekVORIGIN });
+  auto cell_coord = ssds::ct_coord{ cell.loc(),
+                                    ssds::ct_coord::relativity::ekVORIGIN,
+                                    mc_structure };
+  const auto* spec = mc_structure->cell_spec_retrieve(cell_coord);
   return cfsm::cell3D_state::ekST_EMPTY == spec->state && face_count > 0;
 } /* cell_is_simple_hole() */
 
@@ -533,9 +568,9 @@ std::set<slice2D::topological_hole_type> slice2D::topological_holes(void) const 
    * set for the return type, because duplicates will be overwritten, and the
    * unique set of topological holes will be returned.
    */
-  for (auto* shole1 : sholes) {
+  for (const auto* shole1 : sholes) {
     std::set<const cds::cell3D*> thole = { shole1 };
-    for (auto* shole2 : sholes) {
+    for (const auto* shole2 : sholes) {
       if (shole1 != shole2 && cells_are_adjacent(*shole1, *shole2)) {
         thole.insert(shole2);
       }

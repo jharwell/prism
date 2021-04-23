@@ -74,16 +74,16 @@ NS_START(silicon, support);
 class base_loop_functions : public cpal::argos_sm_adaptor,
                             public rer::client<base_loop_functions> {
  public:
-  base_loop_functions(void) RCSW_COLD;
-  ~base_loop_functions(void) override RCSW_COLD;
+  base_loop_functions(void) RCPPSW_COLD;
+  ~base_loop_functions(void) override RCPPSW_COLD;
 
   /* Not copy constructible/assignable by default */
   base_loop_functions(const base_loop_functions&) = delete;
   base_loop_functions& operator=(const base_loop_functions&) = delete;
 
   /* swarm manager overrides */
-  void init(ticpp::Element&) override RCSW_COLD;
-  void reset(void) override RCSW_COLD;
+  void init(ticpp::Element&) override RCPPSW_COLD;
+  void reset(void) override RCPPSW_COLD;
   void pre_step(void) override;
   void post_step(void) override;
 
@@ -108,14 +108,14 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    *
    * \param tvp Parsed TV parameters.
    */
-  void tv_init(const tv::config::tv_manager_config* tvp) RCSW_COLD;
+  void tv_init(const tv::config::tv_manager_config* tvp) RCPPSW_COLD;
 
   /**
    * \brief Initialize logging for all support/loop function code.
    *
    * \param output Parsed output parameters.
    */
-  void output_init(const cmconfig::output_config* output) RCSW_COLD;
+  void output_init(const cmconfig::output_config* output) RCPPSW_COLD;
 
   /**
    * \brief Initialize the \ref structure::ct_manager.
@@ -124,10 +124,10 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    * \param target_config Parsed \ref structure::structure3D parameters (one per
    *                      structure).
    */
-  void
-  construction_init(const ssconfig::structure3D_builder_config* builder_config,
-                    const ssconfig::construct_targets_config* targets_config,
-                    const rct::config::waveform_config* placement_penalty_config);
+  void construction_init(
+      const ssconfig::structure3D_builder_config* builder_config,
+      const ssconfig::construct_targets_config* targets_config,
+      const ctv::config::temporal_penalty_config* placement_penalty_config);
 
   /* clang-format off */
   config::xml::loop_function_repository  m_config{};

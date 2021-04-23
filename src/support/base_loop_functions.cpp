@@ -64,8 +64,8 @@ void base_loop_functions::init(ticpp::Element& node) {
   output_init(m_config.config_get<cmconfig::output_config>());
 
   /* initialize arena map and distribute blocks */
-  auto* aconfig = config()->config_get<caconfig::arena_map_config>();
-  auto* vconfig = config()->config_get<cvconfig::visualization_config>();
+  const auto* aconfig = config()->config_get<caconfig::arena_map_config>();
+  const auto* vconfig = config()->config_get<cvconfig::visualization_config>();
   arena_map_create<carena::base_arena_map>(aconfig);
   arena_map_init(vconfig);
 
@@ -73,7 +73,7 @@ void base_loop_functions::init(ticpp::Element& node) {
   tv_init(config()->config_get<tv::config::tv_manager_config>());
 
   /* initialize construction */
-  auto* tv = config()->config_get<tv::config::tv_manager_config>();
+  const auto* tv = config()->config_get<tv::config::tv_manager_config>();
   construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
                     config()->config_get<ssconfig::construct_targets_config>(),
                     &tv->env_dynamics.block_manip_penalty);
@@ -110,7 +110,7 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
   };
   cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
-      this, cb, kARGoSRobotType);
+      this, cb, cpal::kARGoSRobotType);
 } /* tv_init() */
 
 void base_loop_functions::output_init(const cmconfig::output_config* output) {
@@ -133,7 +133,7 @@ void base_loop_functions::output_init(const cmconfig::output_config* output) {
 void base_loop_functions::construction_init(
     const ssconfig::structure3D_builder_config* const builder_config,
     const ssconfig::construct_targets_config* const targets_config,
-    const rct::config::waveform_config* placement_penalty_config) {
+    const ctv::config::temporal_penalty_config* placement_penalty_config) {
   ER_INFO("Initializing construction targets manager");
   m_ct_manager = std::make_unique<structure::ct_manager>(
       arena_map(),

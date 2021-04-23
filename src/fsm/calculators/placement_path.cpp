@@ -50,9 +50,9 @@ placement_path::placement_path(
  ******************************************************************************/
 std::vector<rmath::vector2d>
 placement_path::operator()(const srepr::construction_lane* lane,
-                           const stygmergic_configuration& acq) const {
+                           const srepr::fs_configuration& acq) const {
   auto rpos = mc_sensing->rpos2D();
-  auto* ct = mc_perception->nearest_ct();
+  const auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = { rpos };
   double cell_size = ct->block_unit_dim();
 
@@ -65,12 +65,12 @@ placement_path::operator()(const srepr::construction_lane* lane,
     rmath::vector2d forward1(rpos.x() - 1 * cell_size * 1.5, rpos.y());
     rmath::vector2d right1(rpos.x() - 1 * cell_size * 1.5,
                            rpos.y() + 1 * cell_size);
-    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
-        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
+        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(forward1);
-    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(forward1);
       path.push_back(right1);
     }
@@ -78,12 +78,12 @@ placement_path::operator()(const srepr::construction_lane* lane,
     rmath::vector2d forward1(rpos.x(), rpos.y() - 1 * cell_size * 1.5);
     rmath::vector2d right1(rpos.x() - 1 * cell_size,
                            rpos.y() - 1 * cell_size * 1.5);
-    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
-        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
+        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(forward1);
-    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(forward1);
       path.push_back(right1);
     }
@@ -91,12 +91,12 @@ placement_path::operator()(const srepr::construction_lane* lane,
     rmath::vector2d forward1(rpos.x() + 1 * cell_size * 1.5, rpos.y());
     rmath::vector2d right1(rpos.x() + 1 * cell_size * 1.5,
                            rpos.y() - 1 * cell_size);
-    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
-        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
+        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(forward1);
-    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(forward1);
       path.push_back(right1);
     }
@@ -104,12 +104,12 @@ placement_path::operator()(const srepr::construction_lane* lane,
     rmath::vector2d forward1(rpos.x(), rpos.y() + 1 * cell_size * 1.5);
     rmath::vector2d right1(rpos.x() + 1 * cell_size,
                            rpos.y() + 1 * cell_size * 1.5);
-    if (stygmergic_configuration::ekLANE_EMPTY == acq ||
-        stygmergic_configuration::ekLANE_GAP_INGRESS == acq) {
+    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
+        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
       path.push_back(forward1);
-    } else if (stygmergic_configuration::ekLANE_FILLED == acq) {
+    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
       /* no further waypoints needed */
-    } else if (stygmergic_configuration::ekLANE_GAP_EGRESS == acq) {
+    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
       path.push_back(forward1);
       path.push_back(right1);
     }

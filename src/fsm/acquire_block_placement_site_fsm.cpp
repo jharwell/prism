@@ -35,6 +35,7 @@
 #include "silicon/fsm/calculators/placement_path.hpp"
 #include "silicon/fsm/construction_signal.hpp"
 #include "silicon/fsm/fs_acq_checker.hpp"
+#include "silicon/repr/colors.hpp"
 #include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -65,8 +66,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot,
                                              nullptr,
-                                             nullptr,
-                                             nullptr),
+                                             &entry_wait_for_robot,
+                                             &exit_wait_for_robot),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_placement_loc,
                                              nullptr,
                                              nullptr,
@@ -87,8 +88,14 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, start) {
 RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
                             entry_acquire_frontier_set) {
   /* disable proximity sensor and enable camera while on the structure */
-  saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->enable();
-  saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->disable();
+  saa()->sensing()->blobs()->enable();
+  saa()->sensing()->proximity()->disable();
+
+  /*
+   * Turn on LEDs so we can be identified by other robots while on the
+   * structure.
+   */
+  saa()->actuation()->leds()->set_color(-1, srepr::colors::builder());
 }
 
 RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
@@ -96,37 +103,42 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   auto alignment = m_alignment_calc(allocated_lane());
   ER_ASSERT(alignment.ingress_pos,
             "Bad alignment (position) during frontier set acqusition");
-  ER_ASSERT(alignment.azimuth,
+  ER_CHECKW(alignment.azimuth,
             "Bad alignment (orientation) during frontier set acquisition");
+
+  auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
+  auto prox = perception()->builder_prox()->operator()(allocated_lane(), acq);
 
   /*
    * A robot in front of us is too close (either on structure or when we are in
    * the nest moving towards the structure)--wait for it to move before
    * continuing.
    */
-  if (robot_trajectory_proximity()) {
-    internal_event(
-        fsm_state::ekST_WAIT_FOR_ROBOT,
-        std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
+  if (scperception::builder_prox_type::ekNONE != prox) {
+    ER_DEBUG("Wait@%s/%s while acquiring frontier set: robot proximity=%d",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(sensing()->dpos2D()).c_str(),
+             rcppsw::as_underlying(prox));
+    internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
+                   std::make_unique<robot_wait_data>(prox, acq));
     return rpfsm::event_signal::ekHANDLED;
   }
-  /* No robots in front, but not in nest yet */
-  else if (nullptr == perception()->los()) {
+
+  /* In nest, but not on structure yet */
+  if (nullptr == perception()->los()) {
     ER_TRACE("Robot=%s/%s: No robots detected, in nest",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str());
     saa()->steer_force2D().accum(
         saa()->steer_force2D().path_following(m_path.get()));
-    return rpfsm::event_signal::ekHANDLED;
   } else {
-    /* somewhere in nest or on structure */
-    auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
+    /* somewhere on structure */
     ER_TRACE("Robot=%s/%s: On structure, acq=%d",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
              rcppsw::as_underlying(acq));
 
-    if (stygmergic_configuration::ekNONE == acq) {
+    if (srepr::fs_configuration::ekNONE == acq) {
       /* no robots in front, but not there yet */
       saa()->steer_force2D().accum(
           saa()->steer_force2D().path_following(m_path.get()));
@@ -136,23 +148,22 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
           calculator(allocated_lane(), acq));
       internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
     }
-    return rpfsm::event_signal::ekHANDLED;
   }
+  return rpfsm::event_signal::ekHANDLED;
 }
 
 RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
                             acquire_placement_loc) {
-  /*
-   * We don't check for trajectory proximity to other robots while acquiring the
-   * placement location, because when we get to this part, we are guaranteed to
-   * be the only robot in this state in THIS construction lane. We DO, however,
-   * need to check for manhattan proximity in order to avoid potential
-   * deadlocks.
-   */
-  if (robot_manhattan_proximity()) {
-    internal_event(
-        fsm_state::ekST_WAIT_FOR_ROBOT,
-        std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
+  auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
+  auto prox = perception()->builder_prox()->operator()(allocated_lane(), acq);
+
+  if (scperception::builder_prox_type::ekNONE != prox) {
+    ER_DEBUG("Wait@%s/%s while acquiring frontier set: robot proximity=%d",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(sensing()->dpos2D()).c_str(),
+             rcppsw::as_underlying(prox));
+    internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
+                   std::make_unique<robot_wait_data>(prox, acq));
   } else {
     if (!m_path->is_complete()) {
       auto force = saa()->steer_force2D().path_following(m_path.get());
@@ -172,11 +183,20 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
+RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
+                            entry_wait_for_robot) {
+  inta_tracker()->inta_enter();
+}
+
+RCPPSW_HFSM_EXIT_DEFINE(acquire_block_placement_site_fsm, exit_wait_for_robot) {
+  inta_tracker()->inta_exit();
+}
+
 /*******************************************************************************
  * Taskable Interface
  ******************************************************************************/
 void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg) {
-  static const uint8_t kTRANSITIONS[] = {
+  static const std::array<uint8_t, fsm_state::ekST_MAX_STATES> kTRANSITIONS = {
     fsm_state::ekST_ACQUIRE_FRONTIER_SET, /* start */
     rpfsm::event_signal::ekFATAL, /* acquire_frontier_set */
     rpfsm::event_signal::ekFATAL, /* wait_for_robot */
@@ -196,18 +216,20 @@ void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg)
 } /* task_start() */
 
 void acquire_block_placement_site_fsm::task_execute(void) {
-  inject_event(rpfsm::event_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  if (event_data_hold()) {
+    auto event = event_data_release();
+    event->signal(fsm::construction_signal::ekRUN);
+    event->type(rpfsm::event_type::ekNORMAL);
+    inject_event(std::move(event));
+  } else {
+    inject_event(fsm::construction_signal::ekRUN, rpfsm::event_type::ekNORMAL);
+  }
 } /* task_execute() */
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void acquire_block_placement_site_fsm::init(void) {
-  actuation()->reset();
-  util_hfsm::init();
-} /* init() */
-
-block_placer::placement_intent
+repr::placement_intent
 acquire_block_placement_site_fsm::placement_intent_calc(void) const {
   ER_ASSERT(fsm_state::ekST_FINISHED == current_state(),
             "Placement cell can only be calculated once the FSM finishes");

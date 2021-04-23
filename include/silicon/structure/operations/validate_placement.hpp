@@ -30,7 +30,8 @@
 #include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/repr/placement_intent.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -58,15 +59,13 @@ NS_START(silicon, structure, operations);
  * graphical invariants or other such restrictions.
  */
 class validate_placement : public rer::client<validate_placement>,
-                           public boost::static_visitor<bool> {
+                           boost::static_visitor<bool> {
  public:
   validate_placement(const structure3D* structure,
-                     const ct_coord& coord,
-                     const rmath::radians& z_rotation)
+                     const repr::placement_intent& intent)
       : ER_CLIENT_INIT("silicon.structure.validate_placement"),
         mc_structure(structure),
-        mc_coord(coord),
-        mc_z_rot(z_rotation) {}
+        mc_intent(intent) {}
 
   /* Not copy constructible or copy assignment by default  */
   validate_placement(const validate_placement&) = delete;
@@ -82,9 +81,8 @@ class validate_placement : public rer::client<validate_placement>,
   bool validate_common(void) const;
 
   /* clang-format off */
-  const structure3D*    mc_structure;
-  const ct_coord        mc_coord;
-  const rmath::radians  mc_z_rot;
+  const structure3D*           mc_structure;
+  const repr::placement_intent mc_intent;
   /* clang-format on */
 };
 

@@ -46,11 +46,13 @@ void structure3D_parser::parse(const ticpp::Element& node) {
    */
   if (rmath::radians::kZERO.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kZERO;
-  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation, 0.001)) {
+  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation,
+                                                   0.001)) {
     m_config->orientation = rmath::radians::kPI_OVER_TWO;
   } else if (rmath::radians::kPI.is_equal(m_config->orientation, 0.001)) {
     m_config->orientation = rmath::radians::kPI;
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation, 0.001)) {
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation,
+                                                         0.001)) {
     m_config->orientation = rmath::radians::kTHREE_PI_OVER_TWO;
   }
 

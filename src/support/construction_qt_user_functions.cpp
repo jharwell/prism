@@ -54,8 +54,9 @@ construction_qt_user_functions::construction_qt_user_functions(void) {
  * Member Functions
  ******************************************************************************/
 void construction_qt_user_functions::Draw(chal::robot& c_entity) {
-  auto* controller = dynamic_cast<const controller::constructing_controller*>(
-      &c_entity.GetControllableEntity().GetController());
+  const auto* controller =
+      dynamic_cast<const controller::constructing_controller*>(
+          &c_entity.GetControllableEntity().GetController());
 
   if (controller->display_id()) {
     DrawText(argos::CVector3(0.0, 0.0, 0.5), c_entity.GetId());
@@ -86,8 +87,8 @@ void construction_qt_user_functions::Draw(chal::robot& c_entity) {
 void construction_qt_user_functions::los_render(
     const controller::constructing_controller* controller,
     const argos::CQuaternion& orientation) {
-  auto* los = controller->perception()->los();
-  auto* ct = controller->perception()->nearest_ct();
+  const auto* los = controller->perception()->los();
+  const auto* ct = controller->perception()->nearest_ct();
 
   /*
      * ARGos Qt user functions draw things relative to the robot's current
@@ -108,13 +109,13 @@ void construction_qt_user_functions::los_render(
     ct->cell_loc_abs(los->abs_lr()).to_2D() + rmath::vector2d(correction, 0.0)
   };
   cvis::polygon2D_visualizer(this).abs_draw(
-      controller->rpos3D(), orientation, points, rutils::color::kBLUE);
+      controller->rpos3D(), orientation, points, rutils::color::kYELLOW);
 } /* los_render() */
 
 void construction_qt_user_functions::nearest_ct_render(
     const controller::constructing_controller* controller,
     const argos::CQuaternion& orientation) {
-  auto* ct = controller->perception()->nearest_ct();
+  const auto* ct = controller->perception()->nearest_ct();
   auto bbd = ct->bbd(true);
   size_t shell_size = ct->vshell_sized();
   double correction = ct->block_unit_dim();

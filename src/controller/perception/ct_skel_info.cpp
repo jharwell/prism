@@ -69,6 +69,30 @@ rmath::vector3d ct_skel_info::bbr(void) const {
            m_target->zrsize() };
 } /* bbr() */
 
+ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3z& arena_coord) const {
+  auto raw = ssds::ct_coord::from_arena(arena_coord, m_target);
+  return raw.to_virtual();
+} /* to_vcoord() */
+
+ssds::ct_coord ct_skel_info::as_vcoord(const rmath::vector3z& coord) const {
+  return { coord, ssds::ct_coord::relativity::ekVORIGIN, m_target };
+} /* to_vcoord() */
+
+ssds::ct_coord
+ct_skel_info::to_vcoord2D(const rmath::vector2z& arena_coord) const {
+  return to_vcoord(rmath::vector3z(arena_coord.x(), arena_coord.y(), 0));
+} /* to_vcoord() */
+
+ssds::ct_coord ct_skel_info::to_rcoord(const rmath::vector3z& arena_coord) const {
+  auto raw = ssds::ct_coord::from_arena(arena_coord, m_target);
+  return raw.to_real();
+} /* to_rcoord() */
+
+ssds::ct_coord
+ct_skel_info::to_rcoord2D(const rmath::vector2z& arena_coord) const {
+  return to_rcoord(rmath::vector3z(arena_coord.x(), arena_coord.y(), 0));
+} /* to_rcoord() */
+
 rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
   /*
    * Targets are surrounded by layers of virtual cells, which we don't care

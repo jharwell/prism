@@ -28,11 +28,15 @@
 #include <vector>
 
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/radians.hpp"
 
 #include "cosm/spatial/fsm/util_hfsm.hpp"
 #include "cosm/subsystem/subsystem_fwd.hpp"
 #include "cosm/ta/taskable.hpp"
 
+#include "silicon/controller/perception/builder_prox_type.hpp"
+#include "silicon/fsm/calculators/lane_alignment.hpp"
+#include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -97,25 +101,14 @@ class builder_util_fsm : public csfsm::util_hfsm,
   void init(void) override;
 
  protected:
-  enum class robot_proximity_type {
-    /**
-     * Consider robot proximity via Euclidean distance, but ONLY along the
-     * current robot's trajectory (i.e., a robot passing this one in the other
-     * lane of the construction lane would not be considered within proximity,
-     * regardless of distance).
-     */
-    ekTRAJECTORY,
-
-    /**
-     * Consider robot proximity via Manhattan distance, in which any robot a
-     * distance of 3 units or less will be considered within proximity.
-     */
-    ekMANHATTAN
-  };
-
   struct robot_wait_data final : public rpfsm::event_data {
-    explicit robot_wait_data(robot_proximity_type in) : prox_type(in) {}
-    robot_proximity_type prox_type;
+    robot_wait_data(
+        const scperception::builder_prox_type& prox_in,
+        srepr::fs_configuration fs_in = srepr::fs_configuration::ekNONE)
+        : prox_type(prox_in), fs(fs_in) {}
+
+    scperception::builder_prox_type prox_type;
+    srepr::fs_configuration fs;
   };
 
   const scperception::builder_perception_subsystem* perception(void) const {
@@ -127,29 +120,8 @@ class builder_util_fsm : public csfsm::util_hfsm,
   }
   void allocated_lane(const repr::construction_lane* l) { mc_alloc_lane = l; }
 
-  /**
-   * \brief Return \c TRUE if there is another robot too close to the current
-   * robot's position, given the direction it is heading (i.e. if it is close to
-   * another robot that is orthogonal to where it is traveling, that is
-   * ignored), and \c FALSE otherwise.
-   */
-
-  bool robot_trajectory_proximity(void) const;
-
-  /**
-   * \brief Return \c TRUE if there is another robot too close to the current
-   * robot's position, according to the L-shaped motion patterns of chess
-   * knights.
-   *
-   * This is only needed when acquiring a block placement location in order to
-   * avoid (more) special cases in the builder algorithm.
-   */
-  bool robot_manhattan_proximity(void) const;
-
   /* builder states */
-  RCPPSW_HFSM_STATE_DECLARE(builder_util_fsm,
-                            wait_for_robot,
-                            const robot_wait_data);
+  RCPPSW_HFSM_STATE_DECLARE(builder_util_fsm, wait_for_robot, robot_wait_data);
 
  private:
   /* clang-format off */

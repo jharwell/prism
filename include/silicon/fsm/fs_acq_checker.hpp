@@ -26,7 +26,7 @@
  ******************************************************************************/
 #include "rcppsw/er/client.hpp"
 
-#include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -66,7 +66,7 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
   fs_acq_checker(const csubsystem::sensing_subsystemQ3D* sensing,
                  const scperception::builder_perception_subsystem* perception);
 
-  stygmergic_configuration operator()(const srepr::construction_lane* lane) const;
+  srepr::fs_configuration operator()(const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
   fs_acq_checker(const fs_acq_checker&) = delete;
@@ -89,7 +89,7 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
 
   los_lane_cells los_cells_calc(const srepr::construction_lane* lane) const;
 
-  stygmergic_configuration
+  srepr::fs_configuration
   configuration_calc(const los_lane_cells& los_cells,
                      const srepr::construction_lane* lane) const;
 

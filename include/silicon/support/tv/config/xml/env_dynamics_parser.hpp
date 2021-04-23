@@ -27,9 +27,11 @@
 #include <string>
 #include <memory>
 
-#include "silicon/support/tv/config/env_dynamics_config.hpp"
-#include "rcppsw/control/config/xml/waveform_parser.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
+
+#include "cosm/tv/config/xml/temporal_penalty_parser.hpp"
+
+#include "silicon/support/tv/config/env_dynamics_config.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -54,7 +56,9 @@ class env_dynamics_parser final : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all temporal variance parameters should lie under
    * in the XML tree.
    */
-  static constexpr const char kXMLRoot[] = "env_dynamics";
+  inline static const std::string kXMLRoot = "env_dynamics";
+
+  env_dynamics_parser(void);
 
   void parse(const ticpp::Element& node) override;
   bool validate(void) const override RCSW_CONST;
@@ -67,9 +71,9 @@ class env_dynamics_parser final : public rconfig::xml::xml_config_parser {
   }
 
   /* clang-format off */
-  std::unique_ptr<config_type>      m_config{nullptr};
-  rct::config::xml::waveform_parser m_block_manip{};
-  rct::config::xml::waveform_parser m_block_carry{};
+  std::unique_ptr<config_type>              m_config{nullptr};
+  ctv::config::xml::temporal_penalty_parser m_block_manip{};
+  ctv::config::xml::temporal_penalty_parser m_block_carry{};
   /* clang-format on */
 };
 

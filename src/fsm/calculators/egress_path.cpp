@@ -53,7 +53,8 @@ egress_path::egress_path(
 std::vector<rmath::vector2d>
 egress_path::operator()(const srepr::construction_lane* lane) const {
   auto pos = mc_sensing->rpos2D();
-  auto* ct = mc_perception->nearest_ct();
+  const auto* ct = mc_perception->nearest_ct();
+  auto egress_pt = lane->geometry().egress_pt();
 
   /* 1st point: robot's current position */
   std::vector<rmath::vector2d> path = { pos };
@@ -63,9 +64,9 @@ egress_path::operator()(const srepr::construction_lane* lane) const {
     x = m_rng->uniform(ct->xrange().ub() + ct->block_unit_dim() * kNEST_PADDING,
                        mc_perception->arena_xrange().ub() -
                            ct->block_unit_dim() * kNEST_PADDING);
-    y = lane->egress().y();
+    y = egress_pt.y();
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    x = lane->egress().x();
+    x = egress_pt.x();
     y = m_rng->uniform(ct->yrange().ub() + ct->block_unit_dim() * kNEST_PADDING,
                        mc_perception->arena_yrange().ub() -
                            ct->block_unit_dim() * kNEST_PADDING);
@@ -73,9 +74,9 @@ egress_path::operator()(const srepr::construction_lane* lane) const {
     x = m_rng->uniform(mc_perception->arena_xrange().lb() +
                            ct->block_unit_dim() * kNEST_PADDING,
                        ct->xrange().lb() - ct->block_unit_dim() * kNEST_PADDING);
-    y = lane->egress().y();
+    y = egress_pt.y();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    x = lane->egress().x();
+    x = egress_pt.x();
     y = m_rng->uniform(mc_perception->arena_yrange().lb() +
                            ct->block_unit_dim() * kNEST_PADDING,
                        ct->yrange().lb() - ct->block_unit_dim() * kNEST_PADDING);

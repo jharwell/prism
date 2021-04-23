@@ -48,19 +48,17 @@ placement_intent::placement_intent(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-block_placer::placement_intent
+repr::placement_intent
 placement_intent::operator()(const srepr::construction_lane* lane) const {
-  auto* ct = mc_perception->nearest_ct();
+  const auto* ct = mc_perception->nearest_ct();
   auto pos = mc_sensing->dpos3D();
 
   /**
    * The CT cell the robot is in is calculated relative to the origin of the
    * nest (which is where their LOS kicks in), NOT relative to the real origin
-   * of the structure.
+   * of the structure, so we want virtual CT coordinates.
    */
-  auto robot_ct_cell = (pos - ct->vorigind()) / ct->unit_dim_factor();
-
-  block_placer::placement_intent ret;
+  auto robot_ct_cell = ct->to_vcoord(pos);
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
@@ -85,29 +83,28 @@ placement_intent::operator()(const srepr::construction_lane* lane) const {
    *    construction target, again accounting for the fact that the structure
    *    grid resolution may be greater than that of the arena.
    */
-  rmath::vector3z intent_abs;
+
+  ssds::ct_coord coord;
   if (rmath::radians::kZERO == lane->orientation()) {
     /* intent is one cell -X from robot's current position  */
-    intent_abs = robot_ct_cell - rmath::vector3z::X;
+    coord = robot_ct_cell - rmath::vector3z::X;
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* intent is one cell -Y from robot's current position  */
-    intent_abs = robot_ct_cell - rmath::vector3z::Y;
+    coord = robot_ct_cell - rmath::vector3z::Y;
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* intent is one cell +X from robot's current position  */
-    intent_abs = robot_ct_cell + rmath::vector3z::X;
+    coord = robot_ct_cell + rmath::vector3z::X;
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* intent is one cell +Y from robot's current position  */
-    intent_abs = robot_ct_cell + rmath::vector3z::Y;
+    coord = robot_ct_cell + rmath::vector3z::Y;
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
-
-  structure::ct_coord coord{ intent_abs, structure::coord_relativity::ekVORIGIN };
-  ret = { coord, rmath::radians::kZERO };
+  repr::placement_intent ret(coord, lane->orientation());
   ER_INFO("Calculated placement intent: %s@%s",
-          rcppsw::to_string(ret.site.offset).c_str(),
-          rcppsw::to_string(ret.orientation).c_str());
+          rcppsw::to_string(ret.site().offset()).c_str(),
+          rcppsw::to_string(ret.z_rot()).c_str());
   return ret;
 } /* operator()() */
 

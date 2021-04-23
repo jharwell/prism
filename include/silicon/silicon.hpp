@@ -37,7 +37,10 @@ namespace repr {}
 namespace structure {
 namespace config {}
 namespace operations {}
+namespace ds {}
 } /* namespace structure */
+
+namespace fsm {}
 
 namespace support {
 namespace tv {}
@@ -60,6 +63,8 @@ namespace metrics {}
 
 namespace sds = silicon::ds;
 
+namespace sfsm = silicon::fsm;
+
 namespace srepr = silicon::repr;
 
 namespace smetrics = silicon::metrics;
@@ -67,6 +72,7 @@ namespace smetrics = silicon::metrics;
 namespace sstructure = silicon::structure;
 namespace ssops = sstructure::operations;
 namespace ssconfig = sstructure::config;
+namespace ssds = sstructure::ds;
 
 namespace ssupport = silicon::support;
 namespace sstv = ssupport::tv;

@@ -28,6 +28,7 @@
 #include "rcppsw/types/type_uuid.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -70,6 +71,11 @@ class ct_skel_info {
 
   rmath::vector3d cell_loc_abs(const rmath::vector3z& coord) const;
   rtypes::type_uuid id(void) const;
+  ssds::ct_coord to_vcoord(const rmath::vector3z& arena_coord) const;
+  ssds::ct_coord to_vcoord2D(const rmath::vector2z& arena_coord) const;
+  ssds::ct_coord as_vcoord(const rmath::vector3z& coord) const;
+  ssds::ct_coord to_rcoord(const rmath::vector3z& arena_coord) const;
+  ssds::ct_coord to_rcoord2D(const rmath::vector2z& arena_coord) const;
 
  private:
   /* clang-format off */

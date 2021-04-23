@@ -115,17 +115,20 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
   size_t j = index / xsize;
   size_t k = index / (xsize * ysize);
 
-  ct_coord c{ rmath::vector3z(i, j, k), coord_relativity::ekRORIGIN };
+  ssds::ct_coord c{ rmath::vector3z(i, j, k),
+                    ssds::ct_coord::relativity::ekRORIGIN,
+                    target() };
+
   ER_DEBUG("Static build for ct cell@%s, abs cell@%s",
-           rcppsw::to_string(c.offset).c_str(),
-           rcppsw::to_string(target()->rorigind() + c.offset).c_str());
+           rcppsw::to_string(c.offset()).c_str(),
+           rcppsw::to_string(target()->rorigind() + c.offset()).c_str());
 
   bool ret = false;
-  auto* spec = target()->cell_spec_retrieve(c);
+  const auto* spec = target()->cell_spec_retrieve(c);
 
   if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
     ER_DEBUG("Build for block ct cell@%s (%zu/%zu for interval)",
-             rcppsw::to_string(c.offset).c_str(),
+             rcppsw::to_string(c.offset()).c_str(),
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
@@ -133,27 +136,21 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
     ER_ASSERT(block,
               "Could not find a block of type %d for ct cell@%s",
               rcppsw::as_underlying(spec->block_type),
-              rcppsw::to_string(c.offset).c_str());
+              rcppsw::to_string(c.offset()).c_str());
 
-    /*
-     * Cloning the block is necessary because the structure is taking ownership
-     * of the block, and you can't share ownership with the arena, which already
-     * owns it. This happens inside place_block().
-     *
-     * This also makes the # of blocks discoverable by robots in the arena as
-     * construction progresses constant. See SILICON#22.
-     */
-    ret = place_block(block, c, spec->z_rotation);
+    repr::placement_intent intent(c.to_virtual(), spec->z_rotation);
+
+    ret = place_block(block, intent);
     ER_ASSERT(ret,
               "Failed to build block of type %d for ct cell@%s",
               rcppsw::as_underlying(spec->block_type),
-              rcppsw::to_string(c.offset).c_str());
+              rcppsw::to_string(c.offset()).c_str());
     ++m_static_state.n_built_interval;
 
     /* The floor texture must be updated */
     sm()->floor()->SetChanged();
   } else {
-    ER_TRACE("Cell@%s contains no block", rcppsw::to_string(c.offset).c_str());
+    ER_TRACE("Cell@%s contains no block", rcppsw::to_string(c.offset()).c_str());
   }
   ++m_static_state.n_cells;
   return ret;

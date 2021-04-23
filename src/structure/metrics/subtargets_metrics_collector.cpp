@@ -70,7 +70,7 @@ void subtargets_metrics_collector::reset(void) {
 } /* reset() */
 
 boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0)) {
+  if (!(timestep() % interval() == 0UL)) {
     return boost::none;
   }
   std::string line;
@@ -90,7 +90,7 @@ boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) 
 } /* csv_line_build() */
 
 void subtargets_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
+  const auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
   for (size_t i = 0; i < m_interval.size(); ++i) {
     m_interval[i].complete_count += m.is_complete();
     m_interval[i].placed_count += m.n_interval_placed();

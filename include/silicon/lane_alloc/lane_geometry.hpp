@@ -48,34 +48,53 @@ NS_START(silicon, lane_alloc);
 class lane_geometry : public rer::client<lane_geometry> {
  public:
   lane_geometry(const scperception::ct_skel_info* target,
-                const rmath::vector3z& ingress_nearest_cell,
-                const rmath::vector3z& egress_nearest_cell);
+                const ssds::ct_coord& ingress_cell,
+                const ssds::ct_coord& egress_cell);
 
   lane_geometry(const lane_geometry&) = default;
-  lane_geometry& operator=(const lane_geometry&) = default;
+  lane_geometry& operator=(const lane_geometry&) = delete;
 
   lane_geometry(lane_geometry&&) = default;
   lane_geometry& operator=(lane_geometry&&) = delete;
 
-  const rmath::vector3z& ingress_cell(void) const { return mc_ingress_cell; }
-  const rmath::vector3z& egress_cell(void) const { return mc_egress_cell; }
+  const ssds::ct_coord& ingress_virt(void) const { return mc_ingress_virt; }
+  const ssds::ct_coord& egress_virt(void) const { return mc_egress_virt; }
 
-  const rmath::vector3d& ingress_start(void) const { return m_ingress_start; }
-  const rmath::vector3d& egress_start(void) const { return m_egress_start; }
+  /**
+   * \brief Range in X INCLUDING virtual cells if the lane is parallel to the
+   * X-axis; lane width otherwise.
+   */
+  const rmath::rangez& xrange(void) const { return m_xrange; }
 
-  const rmath::vector3d& ingress_center(void) const { return m_ingress_center; }
-  const rmath::vector3d& egress_center(void) const { return m_egress_center; }
+  /**
+   * \brief Range in Y INCLUDING virtual cells if the lane is parallel to the
+   * Y-axis; lane width otherwise.
+   */
+  const rmath::rangez& yrange(void) const { return m_yrange; }
+
+  /**
+   * \brief Start point of the ingress lane, which is centered in the CT cell at
+   * the edge of the target.
+   */
+  const rmath::vector3d& ingress_pt(void) const { return m_ingress_pt; }
+
+  /**
+   * \brief Start point of the egress lane, which is centered in the CT cell at
+   * the edge of the target.
+   */
+  const rmath::vector3d& egress_pt(void) const { return m_egress_pt; }
 
  private:
   /* clang-format off */
-  const rmath::vector3z mc_ingress_cell;
-  const rmath::vector3z mc_egress_cell;
+  const ssds::ct_coord  mc_ingress_virt;
+  const ssds::ct_coord  mc_egress_virt;
   const rmath::vector3d mc_cell_corr;
 
-  rmath::vector3d m_ingress_start{};
-  rmath::vector3d m_egress_start{};
-  rmath::vector3d m_ingress_center{};
-  rmath::vector3d m_egress_center{};
+  rmath::vector2z       m_dims2D{};
+  rmath::rangez         m_xrange{};
+  rmath::rangez         m_yrange{};
+  rmath::vector3d       m_ingress_pt{};
+  rmath::vector3d       m_egress_pt{};
   /* clang-format on */
 };
 

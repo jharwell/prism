@@ -53,7 +53,7 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
                                        public rer::client<block_op_penalty_handler> {
  public:
   block_op_penalty_handler(carena::base_arena_map* const map,
-                           const rct::config::waveform_config* const config,
+                           const ctv::config::temporal_penalty_config* const config,
                            const std::string& name)
       : temporal_penalty_handler(config, name),
         ER_CLIENT_INIT("silicon.support.tv.block_op_penalty_handler"),
@@ -62,8 +62,8 @@ class block_op_penalty_handler final : public ctv::temporal_penalty_handler,
         m_id_calc(mc_map) {}
 
   ~block_op_penalty_handler(void) override = default;
-  block_op_penalty_handler(block_op_penalty_handler&&) = default;
-  block_op_penalty_handler& operator=(block_op_penalty_handler&&) = default;
+  block_op_penalty_handler(block_op_penalty_handler&&) = delete;
+  block_op_penalty_handler& operator=(block_op_penalty_handler&&) = delete;
 
   /* Not copy assignable/copy constructible by default */
   block_op_penalty_handler& operator=(const block_op_penalty_handler&) = delete;

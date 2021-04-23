@@ -46,7 +46,7 @@ NS_START(silicon, controller, config);
 class constructing_controller_repository
     : public rconfig::xml::xml_config_repository {
  public:
-  constructing_controller_repository(void) RCSW_COLD;
+  constructing_controller_repository(void) RCPPSW_COLD;
 };
 
 NS_END(config, controller, silicon);

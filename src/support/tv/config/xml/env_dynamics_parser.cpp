@@ -27,6 +27,16 @@
  * Namespaces
  ******************************************************************************/
 NS_START(silicon, support, tv, config, xml);
+using temporal_config_type =
+    ctv::config::xml::temporal_penalty_parser::config_type;
+
+/*******************************************************************************
+ * Constructors/Destructor
+ ******************************************************************************/
+env_dynamics_parser::env_dynamics_parser(void) {
+  m_block_manip.xml_root("manipulation_penalty");
+  m_block_carry.xml_root("carry_throttle");
+}
 
 /*******************************************************************************
  * Member Functions
@@ -44,18 +54,16 @@ void env_dynamics_parser::parse(const ticpp::Element& node) {
   if (nullptr != tvnode.FirstChild("blocks", false)) {
     ticpp::Element bnode = node_get(tvnode, "blocks");
 
-    if (nullptr != bnode.FirstChild("manipulation_penalty", false)) {
-      m_block_manip.parse(node_get(bnode, "manipulation_penalty"));
+    m_block_manip.parse(bnode);
+    if (m_block_manip.is_parsed()) {
       m_config->block_manip_penalty =
-          *m_block_manip
-               .config_get<rct::config::xml::waveform_parser::config_type>();
+          *m_block_manip.config_get<temporal_config_type>();
     }
-    if (nullptr != bnode.FirstChild("carry_throttle", false)) {
-      m_block_carry.parse(node_get(bnode, "carry_throttle"));
-      auto config =
-          m_block_carry
-              .config_get<rct::config::xml::waveform_parser::config_type>();
-      m_config->rda.motion_throttle = *config;
+
+    m_block_carry.parse(bnode);
+    if (m_block_carry.is_parsed()) {
+      m_config->rda.motion_throttle =
+          m_block_carry.config_get<temporal_config_type>()->waveform;
     }
   }
 } /* parse() */

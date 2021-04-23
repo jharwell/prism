@@ -66,12 +66,12 @@ using configurer_map_type = rds::type_map<
  * initialization and simulation.
  */
 struct functor_maps_initializer {
-  RCSW_COLD functor_maps_initializer(configurer_map_type* const cmap,
-                                     construction_loop_functions* const lf_in)
+  RCPPSW_COLD functor_maps_initializer(configurer_map_type* const cmap,
+                                       construction_loop_functions* const lf_in)
 
       : lf(lf_in), config_map(cmap) {}
   template <typename T>
-  RCSW_COLD void operator()(const T& controller) const {
+  RCPPSW_COLD void operator()(const T& controller) const {
     lf->m_interactor_map->emplace(
         typeid(controller),
         robot_arena_interactor<T>(
@@ -115,7 +115,8 @@ NS_END(detail);
  * Constructors/Destructor
  ******************************************************************************/
 construction_loop_functions::construction_loop_functions(void)
-    : ER_CLIENT_INIT("silicon.loop.construction"),
+    : base_loop_functions(),
+      ER_CLIENT_INIT("silicon.loop.construction"),
       m_metrics_agg(nullptr),
       m_interactor_map(nullptr),
       m_metrics_map(nullptr) {}
@@ -150,7 +151,7 @@ void construction_loop_functions::private_init(void) {
   auto padded_size =
       rmath::vector2d(arena_map()->xrsize(), arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
-  auto* output = config()->config_get<cmconfig::output_config>();
+  const auto* output = config()->config_get<cmconfig::output_config>();
   arena.grid.dims = padded_size;
   m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
       &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
@@ -198,7 +199,7 @@ void construction_loop_functions::private_init(void) {
    */
   cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
-      this, cb, kARGoSRobotType);
+      this, cb, cpal::kARGoSRobotType);
 } /* private_init() */
 
 /*******************************************************************************
@@ -233,7 +234,7 @@ void construction_loop_functions::post_step(void) {
 
   ndc_push();
   /* Update block distribution status */
-  auto* collector =
+  const auto* collector =
       m_metrics_agg->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
                                                                          ":transp"
                                                                          "ortee");
@@ -280,7 +281,7 @@ void construction_loop_functions::reset(void) {
  * General Member Functions
  ******************************************************************************/
 void construction_loop_functions::robot_pre_step(chal::robot& robot) {
-  auto controller = static_cast<controller::constructing_controller*>(
+  auto* controller = static_cast<controller::constructing_controller*>(
       &robot.GetControllableEntity().GetController());
 
   /*
@@ -296,7 +297,7 @@ void construction_loop_functions::robot_pre_step(chal::robot& robot) {
 } /* robot_pre_step() */
 
 void construction_loop_functions::robot_post_step(chal::robot& robot) {
-  auto controller = static_cast<controller::constructing_controller*>(
+  auto* controller = static_cast<controller::constructing_controller*>(
       &robot.GetControllableEntity().GetController());
 
   /*

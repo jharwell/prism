@@ -56,38 +56,33 @@ allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
   if (rmath::radians::kZERO == target->orientation()) {
     for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
          j += 2) {
-      rmath::vector3z ingress_nearest(bbd.x() - 1, j, 0);
-      rmath::vector3z egress_nearest(bbd.x() - 1, j + 1, 0);
+      auto ingress_virt = target->as_vcoord({ bbd.x() - 1, j, 0 });
+      auto egress_virt = target->as_vcoord({ bbd.x() - 1, j + 1, 0 });
 
-      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
-      ret.push_back(std::move(geometry));
+      ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
     for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
          i += 2) {
-      rmath::vector3z ingress_nearest(i + 1, bbd.y() - 1, 0);
-      rmath::vector3z egress_nearest(i, bbd.y() - 1, 0);
+      auto ingress_virt = target->as_vcoord({ i + 1, bbd.y() - 1, 0 });
+      auto egress_virt = target->as_vcoord({ i, bbd.y() - 1, 0 });
 
-      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
-      ret.push_back(std::move(geometry));
+      ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(i..) */
   } else if (rmath::radians::kPI == target->orientation()) {
     for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
          j += 2) {
-      rmath::vector3z ingress_nearest(0, j + 1, 0);
-      rmath::vector3z egress_nearest(0, j, 0);
-
-      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
-      ret.push_back(std::move(geometry));
+      auto ingress_virt = target->as_vcoord({ 0, j + 1, 0 });
+      auto egress_virt = target->as_vcoord({ 0, j, 0 });
+      ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(j..) */
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
     for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
          i += 2) {
-      rmath::vector3z ingress_nearest(i, 0, 0);
-      rmath::vector3z egress_nearest(i + 1, 0, 0);
+      auto ingress_virt = target->as_vcoord({ i, 0, 0 });
+      auto egress_virt = target->as_vcoord({ i + 1, 0, 0 });
 
-      auto geometry = lane_geometry(target, ingress_nearest, egress_nearest);
-      ret.push_back(std::move(geometry));
+      ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(i..) */
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
@@ -120,8 +115,8 @@ allocator::operator()(const rmath::vector3d& robot_loc,
     hist.prev_lane = id;
   } else if (kPolicyClosest == mc_config.policy) {
     auto pred = [&](const auto& loc1, const auto& loc2) {
-      return (robot_loc - loc1.ingress_start()).length() <
-             (robot_loc - loc2.ingress_start()).length();
+      return (robot_loc - loc1.ingress_pt()).length() <
+             (robot_loc - loc2.ingress_pt()).length();
     };
     auto it = std::min_element(locs.begin(), locs.end(), pred);
     id = std::distance(locs.begin(), it);
@@ -134,14 +129,10 @@ allocator::operator()(const rmath::vector3d& robot_loc,
   ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
           id,
           rcppsw::to_string(target->orientation()).c_str(),
-          rcppsw::to_string(locs[id].ingress_start()).c_str(),
-          rcppsw::to_string(locs[id].egress_start()).c_str());
-  return std::make_unique<repr::construction_lane>(id,
-                                                   target->orientation(),
-                                                   locs[id].ingress_start(),
-                                                   locs[id].egress_start(),
-                                                   locs[id].ingress_cell(),
-                                                   locs[id].egress_cell());
+          rcppsw::to_string(locs[id].ingress_pt()).c_str(),
+          rcppsw::to_string(locs[id].egress_pt()).c_str());
+  return std::make_unique<repr::construction_lane>(
+      id, target->orientation(), locs[id]);
 } /* operator()() */
 
 /*******************************************************************************

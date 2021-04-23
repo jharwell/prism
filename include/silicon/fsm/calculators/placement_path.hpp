@@ -29,7 +29,7 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector2.hpp"
 
-#include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -70,7 +70,7 @@ class placement_path : public rer::client<placement_path> {
 
   std::vector<rmath::vector2d> operator()(
       const srepr::construction_lane* lane,
-      const stygmergic_configuration& acq) const;
+      const srepr::fs_configuration& acq) const;
 
   /* Not move/copy constructable/assignable by default */
   placement_path(const placement_path&) = delete;

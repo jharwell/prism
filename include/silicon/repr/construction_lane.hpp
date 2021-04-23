@@ -24,16 +24,23 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <boost/optional.hpp>
+
+#include "rcppsw/er/client.hpp"
 #include "rcppsw/math/vector3.hpp"
 
 #include "cosm/ta/taskable_argument.hpp"
 
+#include "silicon/lane_alloc/lane_geometry.hpp"
+#include "silicon/repr/frontier_coord.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, repr);
+
+class builder_los;
 
 /*******************************************************************************
  * Class Definitions
@@ -45,48 +52,35 @@ NS_START(silicon, repr);
  * \brief Representation of a construction lane, as returned by \ref
  * lane_alloc::allocator.
  */
-class construction_lane : public cta::taskable_argument {
+class construction_lane : public cta::taskable_argument,
+                          public rer::client<construction_lane> {
  public:
-  construction_lane(void) = default;
   construction_lane(size_t id,
                     const rmath::radians& orientation,
-                    const rmath::vector3d& ingress,
-                    const rmath::vector3d& egress,
-                    const rmath::vector3z& ingress_nearest_cell,
-                    const rmath::vector3z& egress_nearest_cell)
-      : m_id(id),
-        m_orientation(orientation),
-        m_ingress(ingress),
-        m_egress(egress),
-        m_ingress_nearest_cell(ingress_nearest_cell),
-        m_egress_nearest_cell(egress_nearest_cell) {}
+                    const lane_alloc::lane_geometry& geometry);
 
-  construction_lane& operator=(construction_lane&&) = default;
-
-  /* Not copy constructable/assignable by default */
+  /* Not copy/move constructable/assignable by default */
   construction_lane(const construction_lane&) = delete;
   const construction_lane& operator=(const construction_lane&) = delete;
 
+  construction_lane& operator=(construction_lane&&) = delete;
+  construction_lane(const construction_lane&&) = delete;
+
   size_t id(void) const { return m_id; }
 
+  bool contains(const ssds::ct_coord& coord) const;
   const rmath::radians& orientation(void) const { return m_orientation; }
-  const rmath::vector3d& ingress(void) const { return m_ingress; }
-  const rmath::vector3d& egress(void) const { return m_egress; }
-  const rmath::vector3z& ingress_nearest_cell(void) const {
-    return m_ingress_nearest_cell;
-  }
-  const rmath::vector3z& egress_nearest_cell(void) const {
-    return m_egress_nearest_cell;
-  }
+  const lane_alloc::lane_geometry& geometry(void) const { return m_geometry; }
+
+  boost::optional<frontier_coord> frontier(const scperception::ct_skel_info* ct,
+                                           const srepr::builder_los* los) const;
 
  private:
   /* clang-format off */
-  size_t          m_id;
-  rmath::radians  m_orientation;
-  rmath::vector3d m_ingress;
-  rmath::vector3d m_egress;
-  rmath::vector3z m_ingress_nearest_cell;
-  rmath::vector3z m_egress_nearest_cell;
+  size_t                    m_id;
+  rmath::radians            m_orientation;
+
+  lane_alloc::lane_geometry m_geometry;
   /* clang-format on */
 };
 

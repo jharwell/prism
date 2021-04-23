@@ -29,8 +29,8 @@
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/types/type_uuid.hpp"
 
+#include "silicon/repr/placement_intent.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,12 +50,6 @@ NS_START(silicon, fsm);
  */
 class block_placer {
  public:
-  struct placement_intent {
-    structure::ct_coord site{};
-
-    /** orientation in specified cell */
-    rmath::radians orientation{};
-  };
   block_placer(void) = default;
   virtual ~block_placer(void) = default;
 
@@ -64,7 +58,7 @@ class block_placer {
    * nothing if the robot is not currently intending to place a block (e.g. it
    * has not yet reached its desired site).
    */
-  virtual boost::optional<placement_intent>
+  virtual boost::optional<repr::placement_intent>
   block_placement_intent(void) const = 0;
 };
 

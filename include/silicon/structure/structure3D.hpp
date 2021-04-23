@@ -39,9 +39,10 @@
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
 
+#include "silicon/repr/placement_intent.hpp"
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
 #include "silicon/structure/metrics/structure_progress_metrics.hpp"
 #include "silicon/structure/metrics/structure_state_metrics.hpp"
 
@@ -180,8 +181,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   }
 
   bool block_placement_valid(const crepr::block3D_variantro& block,
-                             const ct_coord& coord,
-                             const rmath::radians& z_rotation);
+                             const srepr::placement_intent& intent);
 
   rtypes::type_uuid id(void) const { return mc_id; }
   rmath::ranged xranger(bool include_virtual = false) const {
@@ -257,7 +257,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    *
    * \param coord Coordinates of the desired cell
    */
-  const cell_spec* cell_spec_retrieve(const ct_coord& coord) const;
+  const cell_spec* cell_spec_retrieve(const ssds::ct_coord& coord) const;
 
   /**
    * \brief Verify cell state for block addition.
@@ -277,7 +277,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    *
    * \param cell The coordinates of the cell to check.
    */
-  subtarget* parent_subtarget(const ct_coord& coord);
+  subtarget* parent_subtarget(const ssds::ct_coord& coord);
 
   const subtarget_vectorno& subtargets(void) const { return m_subtargetsno; }
   rtypes::type_uuid placement_id(void) {
@@ -285,6 +285,11 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   }
 
   void reset(void);
+
+  /* Add this back in when I switch representations */
+  /* cds::cell3D& access(const ssds::ct_coord& c)  { */
+  /*   return access(c.to_virtual().offset()); */
+  /* } */
 
  private:
   /* force usage of the origin functions defined in this class */
@@ -315,6 +320,8 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    */
 
   bool orientation_valid(const rmath::radians& orientation) const;
+
+  bool post_completion_check(void) const;
 
   /* clang-format off */
   const rtypes::type_uuid          mc_id;

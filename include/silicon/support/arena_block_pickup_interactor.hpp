@@ -30,6 +30,7 @@
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/metrics/blocks/block_manip_events.hpp"
 #include "silicon/support/tv/block_op_src.hpp"
+#include "silicon/support/tv/op_filter_status.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -72,10 +73,11 @@ class arena_block_pickup_interactor final
   arena_block_pickup_interactor&
   operator=(const arena_block_pickup_interactor&) = delete;
 
-  void robot_penalty_init(const TController& controller,
-                          const rtypes::timestep& t,
-                          penalty_handler_type* handler) override {
-    handler->penalty_init(controller, t, tv::block_op_src::ekARENA_PICKUP);
+  tv::op_filter_status
+  robot_penalty_init(const TController& controller,
+                     const rtypes::timestep& t,
+                     penalty_handler_type* handler) override {
+    return handler->penalty_init(controller, t, tv::block_op_src::ekARENA_PICKUP);
   }
 
   bool robot_goal_acquired(const TController& controller) const override {

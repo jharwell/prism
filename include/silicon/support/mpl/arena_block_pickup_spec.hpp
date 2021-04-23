@@ -50,6 +50,7 @@ struct arena_pickup_spec_value {
   using interactor_status_type = interactor_status;
   using robot_block_vanished_visitor_type = scops::block_vanished_visitor;
   using robot_block_pickup_visitor_type = scops::block_pickup_visitor;
+  using penalty_init_status_type = sstv::op_filter_status;
 };
 
 /*

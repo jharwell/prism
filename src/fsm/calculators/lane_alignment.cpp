@@ -46,8 +46,8 @@ const rtypes::spatial_dist lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL =
  ******************************************************************************/
 lane_alignment::ret_type
 lane_alignment::operator()(const srepr::construction_lane* lane) const {
-  return { verify_pos(lane->ingress().to_2D(), lane->orientation()),
-           verify_pos(lane->egress().to_2D(), lane->orientation()),
+  return { verify_pos(lane->geometry().ingress_pt().to_2D(), lane->orientation()),
+           verify_pos(lane->geometry().egress_pt().to_2D(), lane->orientation()),
            verify_azimuth(lane->orientation()) };
 } /* operator()() */
 

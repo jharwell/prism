@@ -55,7 +55,7 @@ ct_manager::~ct_manager(void) = default;
 void ct_manager::init(
     const ssconfig::structure3D_builder_config* builder_config,
     const ssconfig::construct_targets_config* targets_config,
-    const rct::config::waveform_config* const placement_penalty_config) {
+    const ctv::config::temporal_penalty_config* placement_penalty_config) {
   ER_INFO("Initializing %zu construction targets",
           targets_config->targets.size());
 
@@ -128,7 +128,7 @@ bool ct_manager::construction_feasible(const structure3D* target) const {
             rcppsw::to_string(target->id()).c_str());
     return false;
   }
-  for (auto& existing_t : m_targetso) {
+  for (const auto& existing_t : m_targetso) {
     if (existing_t->xranger().overlaps_with(target->xranger()) &&
         existing_t->yranger().overlaps_with(target->yranger())) {
       ER_WARN("Construction target%s overlaps with target%s",

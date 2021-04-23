@@ -50,13 +50,13 @@ NS_START(silicon, controller);
 class fcrw_bst_controller : public constructing_controller,
                             public rer::client<fcrw_bst_controller> {
  public:
-  fcrw_bst_controller(void) RCSW_COLD;
-  ~fcrw_bst_controller(void) override RCSW_COLD;
+  fcrw_bst_controller(void) RCPPSW_COLD;
+  ~fcrw_bst_controller(void) override RCPPSW_COLD;
 
   /* constructing_controller overrides */
-  void init(ticpp::Element& node) override RCSW_COLD;
+  void init(ticpp::Element& node) override RCPPSW_COLD;
   void control_step(void) override;
-  void reset(void) override RCSW_COLD;
+  void reset(void) override RCPPSW_COLD;
   std::type_index type_index(void) const override { return typeid(*this); }
 
   /* Foraging goal acquisition metrics */
@@ -77,7 +77,7 @@ class fcrw_bst_controller : public constructing_controller,
                             const);
 
   /* block placement */
-  RCPPSW_WRAP_DECL_OVERRIDE(boost::optional<block_placer::placement_intent>,
+  RCPPSW_WRAP_DECL_OVERRIDE(boost::optional<repr::placement_intent>,
                             block_placement_intent,
                             const);
 

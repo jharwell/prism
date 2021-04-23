@@ -67,7 +67,7 @@ void manipulation_metrics_collector::reset(void) {
 
 boost::optional<std::string>
 manipulation_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0)) {
+  if (!(timestep() % interval() == 0UL)) {
     return boost::none;
   }
   std::string line;
@@ -85,7 +85,7 @@ manipulation_metrics_collector::csv_line_build(void) {
 
 void manipulation_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const ccmetrics::manipulation_metrics&>(metrics);
+  const auto& m = dynamic_cast<const ccmetrics::manipulation_metrics&>(metrics);
   m_interval.arena_pickup_events +=
       m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
   m_interval.arena_pickup_penalty +=

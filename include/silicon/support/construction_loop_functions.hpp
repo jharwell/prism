@@ -78,15 +78,15 @@ class construction_loop_functions
     : public base_loop_functions,
       public rer::client<construction_loop_functions> {
  public:
-  construction_loop_functions(void) RCSW_COLD;
-  ~construction_loop_functions(void) override RCSW_COLD;
+  construction_loop_functions(void) RCPPSW_COLD;
+  ~construction_loop_functions(void) override RCPPSW_COLD;
 
   /* swarm manager overrides */
-  void init(ticpp::Element& node) override RCSW_COLD;
+  void init(ticpp::Element& node) override RCPPSW_COLD;
   void pre_step(void) override;
   void post_step(void) override;
-  void reset(void) override RCSW_COLD;
-  void destroy(void) override RCSW_COLD;
+  void reset(void) override RCPPSW_COLD;
+  void destroy(void) override RCPPSW_COLD;
 
  protected:
   /**
@@ -94,7 +94,7 @@ class construction_loop_functions
    *
    * - Construction metric collection
    */
-  void shared_init(ticpp::Element& node) RCSW_COLD;
+  void shared_init(ticpp::Element& node) RCPPSW_COLD;
 
  private:
   using interactor_map_type =
@@ -131,7 +131,7 @@ class construction_loop_functions
    * - Various maps mapping controller types to metric collection, controller
    *   initialization, and arena interaction maps (reflection basically).
    */
-  void private_init(void) RCSW_COLD;
+  void private_init(void) RCPPSW_COLD;
 
   /**
    * \brief Process a single robot on a timestep, before running its controller:

@@ -26,6 +26,7 @@
  ******************************************************************************/
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -60,9 +61,9 @@ NS_START(silicon, lane_alloc);
 class allocator : public rer::client<allocator>,
                   public slametrics::lane_alloc_metrics {
  public:
-  static constexpr const char kPolicyRandom[] = "random";
-  static constexpr const char kPolicyLRU[] = "lru";
-  static constexpr const char kPolicyClosest[] = "closest";
+  inline static const std::string kPolicyRandom = "random";
+  inline static const std::string kPolicyLRU = "lru";
+  inline static const std::string kPolicyClosest = "closest";
 
   allocator(const config::lane_alloc_config* config, rmath::rng* rng);
 

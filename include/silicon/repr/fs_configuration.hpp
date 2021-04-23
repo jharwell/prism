@@ -1,5 +1,5 @@
 /**
- * \file coord_relativity.hpp
+ * \file fs_configuration.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_COORD_RELATIVITY_HPP_
-#define INCLUDE_SILICON_STRUCTURE_COORD_RELATIVITY_HPP_
+#ifndef INCLUDE_SILICON_REPR_FS_CONFIGURATION_HPP_
+#define INCLUDE_SILICON_REPR_FS_CONFIGURATION_HPP_
 
 /*******************************************************************************
  * Includes
@@ -29,17 +29,51 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure);
+NS_START(silicon, repr);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \brief Type tag specifying if the coordinates for a cell within a \ref
- * structure3D are relative to the virtual or real origin of the structure.
+ * \brief Represents the various types of stimulating fs configurations
+ * that robots can encounter in the environment as they proceed down their
+ * construction lane.
+ *
+ * \ingroup repr
  */
-enum coord_relativity { ekVORIGIN, ekRORIGIN };
+enum class fs_configuration {
+  /**
+   * No configuration has been encountred.
+   */
+  ekNONE,
 
-NS_END(structure, silicon);
+  /**
+   * A configuration in which the robot has made it close enough to the back of
+   * a construction lane to determine that it is in fact empty.
+   */
+  ekLANE_EMPTY,
 
-#endif /* INCLUDE_SILICON_STRUCTURE_COORD_RELATIVITY_HPP_ */
+  /**
+   * A configuration in which BOTH the ingress and egress lanes in the
+   * construction lanes have blocks placed up to the same location in X or Y
+   * (depending on structure orientation).
+   */
+  ekLANE_FILLED,
+
+  /**
+   * A configuration in which the ingress lane is missing a block, and there is
+   * one in the egress lane.
+   */
+  ekLANE_GAP_INGRESS,
+
+  /**
+   * A configuration in which the egress lane is missing a block, and there is
+   * one in the ingress lane.
+   *
+   */
+  ekLANE_GAP_EGRESS
+};
+
+NS_END(repr, silicon);
+
+#endif /* INCLUDE_SILICON_REPR_FS_CONFIGURATION_HPP_ */

@@ -68,7 +68,7 @@ void structure_progress_metrics_collector::reset(void) {
 
 boost::optional<std::string>
 structure_progress_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0)) {
+  if (!(timestep() % interval() == 0UL)) {
     return boost::none;
   }
   std::string line;
@@ -90,7 +90,8 @@ structure_progress_metrics_collector::csv_line_build(void) {
 
 void structure_progress_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const metrics::structure_progress_metrics&>(metrics);
+  const auto& m =
+      dynamic_cast<const metrics::structure_progress_metrics&>(metrics);
   m_interval.complete_count += m.is_complete();
   m_interval.placed_count += m.n_interval_placed();
   m_interval.manifest_size = m.manifest_size();

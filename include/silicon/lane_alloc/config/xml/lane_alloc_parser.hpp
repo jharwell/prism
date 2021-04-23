@@ -26,6 +26,7 @@
  ******************************************************************************/
 #include <string>
 #include <memory>
+#include <array>
 
 #include "silicon/lane_alloc/config/lane_alloc_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
@@ -52,14 +53,16 @@ class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all \ref construction_lane_allocator parameters
    * should lie under in the XML tree.
    */
-  static constexpr const char kXMLRoot[] = "lane_alloc";
+  inline static const std::string kXMLRoot = "lane_alloc";
 
-  void parse(const ticpp::Element& node) override RCSW_COLD;
+  void parse(const ticpp::Element& node) override RCPPSW_COLD;
 
-  std::string xml_root(void) const override RCSW_COLD { return kXMLRoot; }
+  RCPPSW_NODISCARD std::string xml_root(void) const override RCPPSW_COLD {
+    return kXMLRoot;
+  }
 
  private:
-  const rconfig::base_config* config_get_impl(void) const override RCSW_COLD {
+  const rconfig::base_config* config_get_impl(void) const override RCPPSW_COLD {
     return m_config.get();
   }
   /* clang-format off */

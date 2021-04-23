@@ -36,10 +36,11 @@
 #include "cosm/pal/embodied_block_variant.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/repr/placement_intent.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, structure);
 class structure3D;
@@ -60,19 +61,17 @@ NS_START(operations);
 class block_place : public rer::client<block_place>,
                     boost::static_visitor<void> {
  public:
-  block_place(const ct_coord& coord,
-              const rmath::radians& z_rotation,
+  block_place(const repr::placement_intent& intent,
               structure3D* structure)
       : ER_CLIENT_INIT("silicon.structure.operations.block_place"),
-        mc_coord(to_vcoord(coord, structure)),
-        mc_z_rot(z_rotation),
+        mc_intent(intent),
         m_structure(structure) {}
+
   virtual ~block_place(void) = default;
 
   block_place(const block_place& other)
       : ER_CLIENT_INIT("silicon.structure.operations.block_place"),
-        mc_coord(other.mc_coord),
-        mc_z_rot(other.mc_z_rot),
+        mc_intent(other.mc_intent),
         m_structure(other.m_structure) {}
 
   block_place& operator=(const block_place& other) = delete;
@@ -110,8 +109,7 @@ class block_place : public rer::client<block_place>,
   rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
 
   /* clang-format off */
-  const rmath::vector3z          mc_coord;
-  const rmath::radians           mc_z_rot;
+  const repr::placement_intent   mc_intent;
 
   structure3D*                   m_structure;
   /* clang-format on */

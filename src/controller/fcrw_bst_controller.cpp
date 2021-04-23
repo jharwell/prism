@@ -54,7 +54,7 @@ void fcrw_bst_controller::init(ticpp::Element& node) {
   config::constructing_controller_repository repo;
   repo.parse_all(node);
 
-  auto* allocator_config = repo.config_get<slaconfig::lane_alloc_config>();
+  const auto* allocator_config = repo.config_get<slaconfig::lane_alloc_config>();
 
   m_fsm = std::make_unique<fsm::fcrw_bst_fsm>(
       allocator_config, perception(), saa(), rng());

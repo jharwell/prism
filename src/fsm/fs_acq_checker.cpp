@@ -49,13 +49,15 @@ fs_acq_checker::fs_acq_checker(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-stygmergic_configuration
+srepr::fs_configuration
 fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
-  auto* los = mc_perception->los();
-  ER_ASSERT(nullptr != los,
-            "Frontier set acquisition checker called without LOS");
+  const auto* los = mc_perception->los();
 
-  ER_TRACE("robot position: %s/%s LOS LL origin: %s",
+  if (nullptr == los) {
+    return srepr::fs_configuration::ekNONE;
+  }
+
+  ER_TRACE("Robot position: %s/%s LOS LL origin: %s",
            rcppsw::to_string(mc_sensing->rpos3D()).c_str(),
            rcppsw::to_string(mc_sensing->dpos3D()).c_str(),
            rcppsw::to_string(los->abs_ll()).c_str());
@@ -74,17 +76,21 @@ fs_acq_checker::los_cells_calc(const srepr::construction_lane* lane) const {
   rmath::vector2z ingress_fs_cell;
   rmath::vector2z egress_fs_cell;
   los_lane_cells ret;
-  auto* los = mc_perception->los();
 
   /*
    * Calculate which cell in the target the robot is currently in, then use
    * that to figure out the robot's relative location within the LOS.
+   *
+   * The CT cell the robot is in is calculated relative to the origin of the
+   * nest (which is where their LOS kicks in), NOT relative to the real origin
+   * of the structure, so we want virtual CT coordinates.
    */
-  auto* ct = mc_perception->nearest_ct();
-  auto robot_ct_cell =
-      (mc_sensing->dpos3D() - ct->vorigind()) / ct->unit_dim_factor();
-  ER_ASSERT(robot_ct_cell >= los->abs_ll(), "Robot CT cell not in LOS");
-  auto robot_los_rel = (robot_ct_cell - los->abs_ll()).to_2D();
+  const auto* ct = mc_perception->nearest_ct();
+  auto robot_ct_cell = ct->to_vcoord(mc_sensing->dpos3D());
+  const auto* los = mc_perception->los();
+
+  ER_ASSERT(robot_ct_cell.offset() >= los->abs_ll(), "Robot CT cell not in LOS");
+  auto robot_los_rel = (robot_ct_cell.offset() - los->abs_ll()).to_2D();
 
   /*
    * For all targets, the origin of the structure is ALWAYS in the lower left
@@ -113,7 +119,8 @@ fs_acq_checker::los_cells_calc(const srepr::construction_lane* lane) const {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
-  ER_TRACE("ingress_fs_cell: %s egress_fs_cell: %s",
+  ER_TRACE("robot_los_cell: %s ingress_fs_cell: %s egress_fs_cell: %s",
+           rcppsw::to_string(robot_los_rel).c_str(),
            rcppsw::to_string(ingress_fs_cell).c_str(),
            rcppsw::to_string(egress_fs_cell).c_str());
 
@@ -129,7 +136,7 @@ fs_acq_checker::los_cells_calc(const srepr::construction_lane* lane) const {
   return ret;
 } /* los_cells_calc() */
 
-stygmergic_configuration
+srepr::fs_configuration
 fs_acq_checker::configuration_calc(const los_lane_cells& los_cells,
                                    const srepr::construction_lane* lane) const {
   bool ingress_has_block = los_cells.ingress->state_has_block();
@@ -139,22 +146,22 @@ fs_acq_checker::configuration_calc(const los_lane_cells& los_cells,
     ER_INFO("LANE_FILLED configuration encountered: ingress=%s,egress=%s",
             rcppsw::to_string(los_cells.ingress->loc()).c_str(),
             rcppsw::to_string(los_cells.egress->loc()).c_str());
-    return stygmergic_configuration::ekLANE_FILLED;
+    return srepr::fs_configuration::ekLANE_FILLED;
   } else if (ingress_has_block && !egress_has_block) {
     ER_INFO("LANE_GAP_EGRESS configuration encountered: ingress=%s,egress=%s",
             rcppsw::to_string(los_cells.ingress->loc()).c_str(),
             rcppsw::to_string(los_cells.egress->loc()).c_str());
-    return stygmergic_configuration::ekLANE_GAP_EGRESS;
+    return srepr::fs_configuration::ekLANE_GAP_EGRESS;
   } else if (!ingress_has_block && egress_has_block) {
     ER_INFO("LANE_GAP_INGRESS configuration encountered: ingress=%s,egress=%s",
             rcppsw::to_string(los_cells.ingress->loc()).c_str(),
             rcppsw::to_string(los_cells.egress->loc()).c_str());
-    return stygmergic_configuration::ekLANE_GAP_INGRESS;
+    return srepr::fs_configuration::ekLANE_GAP_INGRESS;
   }
 
   /* possibly empty lane encountered--need to check to see for sure */
   bool empty = false;
-  auto* ct = mc_perception->nearest_ct();
+  const auto* ct = mc_perception->nearest_ct();
   if (rmath::radians::kZERO == lane->orientation()) {
     empty = (ct->vshell_sized() == los_cells.ingress->loc().x() &&
              ct->vshell_sized() == los_cells.egress->loc().x());
@@ -177,9 +184,9 @@ fs_acq_checker::configuration_calc(const los_lane_cells& los_cells,
     ER_INFO("LANE_EMPTY configuration encountered: ingress=%s,egress=%s",
             rcppsw::to_string(los_cells.ingress->loc()).c_str(),
             rcppsw::to_string(los_cells.egress->loc()).c_str());
-    return stygmergic_configuration::ekLANE_EMPTY;
+    return srepr::fs_configuration::ekLANE_EMPTY;
   }
-  return stygmergic_configuration::ekNONE;
+  return srepr::fs_configuration::ekNONE;
 } /* configuration_calc() */
 
 NS_END(fsm, silicon);

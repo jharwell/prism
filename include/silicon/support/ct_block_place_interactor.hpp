@@ -36,11 +36,9 @@ NS_START(silicon, support);
  ******************************************************************************/
 /**
  * \class ct_block_place_interactor
- * \ingroup support depth2
+ * \ingroup support
  *
- * \brief Handles a robot's (possible) placement of a block onto a structure, if
- * the conditions necessary for the event are met, updating the robot and the
- * target structure as needed.
+ * \brief TODO
  */
 template <typename TController, typename TControllerSpecMap>
 class ct_block_place_interactor

@@ -38,49 +38,53 @@ NS_START(silicon, structure, operations);
  ******************************************************************************/
 bool validate_placement::operator()(const crepr::cube_block3D* block) const {
   ER_CHECK(validate_common(),
-           "Common validation for cube block%d placement@ %s,z_rot=%s failed",
+           "Common validation for cube block%d with intent %s failed",
            block->id().v(),
-           rcppsw::to_string(mc_coord.offset).c_str(),
-           rcppsw::to_string(mc_z_rot).c_str());
+           rcppsw::to_string(mc_intent).c_str());
 
   /* @todo check if structure invariants are violated by adding this block */
   return true;
 
 error:
-  ER_ERR("Cube block%d placement at %s,z_rot=%s failed validation",
+  ER_ERR("Cube block%d placement with intent %s failed validation",
          block->id().v(),
-         rcppsw::to_string(mc_coord.offset).c_str(),
-         rcppsw::to_string(mc_z_rot).c_str());
+         rcppsw::to_string(mc_intent).c_str());
   return false;
 } /* operator() */
 
 bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
   ER_CHECK(validate_common(),
-           "Common validation for ramp block%d placement@ %s,z_rot=%s failed",
+           "Common validation for ramp block%d with intent %s failed",
            block->id().v(),
-           rcppsw::to_string(mc_coord.offset).c_str(),
-           rcppsw::to_string(mc_z_rot).c_str());
+           rcppsw::to_string(mc_intent).c_str());
 
-  if (rmath::radians::kZERO == mc_z_rot) {
+  if (rmath::radians::kZERO == mc_intent.z_rot()) {
     /* @todo check if structure invariants are violated by adding this block */
-  } else if (rmath::radians::kPI == mc_z_rot) {
+  } else if (rmath::radians::kPI == mc_intent.z_rot()) {
     /* @todo check if structure invariants are violated by adding this block */
     return validate_common();
   } else {
-    ER_FATAL_SENTINEL("Bad orientation: %s", rcppsw::to_string(mc_z_rot).c_str());
+    ER_FATAL_SENTINEL("Bad orientation: %s",
+                      rcppsw::to_string(mc_intent.z_rot()).c_str());
   }
 error:
-  ER_ERR("Ramp block%d placement at %s,z_rot=%s failed validation",
+  ER_ERR("Ramp block%d placement with intent %s failed validation",
          block->id().v(),
-         rcppsw::to_string(mc_coord.offset).c_str(),
-         rcppsw::to_string(mc_z_rot).c_str());
+         rcppsw::to_string(mc_intent).c_str());
   return false;
 } /* operator() */
 
 bool validate_placement::validate_common(void) const {
   /* all accesses into 3D array must be relative to virtual origin */
-  auto coord = to_vcoord(mc_coord, mc_structure);
-  auto& cell = mc_structure->access(coord);
+  ER_ASSERT(ssds::ct_coord::relativity::ekVORIGIN ==
+                mc_intent.site().relative_to(),
+            "Placement coordinates not relative to virtual origin");
+
+  auto vcoord = mc_intent.site();
+  const auto& cell = mc_structure->access(vcoord.offset());
+
+  /* all cell spec requests must be relative to real origin */
+  auto rcoord = mc_intent.site().to_real();
 
   /* Cell can't already have block */
   ER_CHECK(!cell.fsm().state_has_block(),
@@ -92,16 +96,16 @@ bool validate_placement::validate_common(void) const {
            "Cell@%s already in ekST_BLOCK_EXTENT",
            rcppsw::to_string(cell.loc()).c_str());
 
-  /* All validate placements must correspond to a cell spec */
-  ER_CHECK(nullptr != mc_structure->cell_spec_retrieve(mc_coord),
+  /* All valid placements must correspond to a cell spec */
+  ER_CHECK(nullptr != mc_structure->cell_spec_retrieve(rcoord),
            "Cell@%s has no spec",
-           rcppsw::to_string(coord).c_str());
+           rcppsw::to_string(rcoord).c_str());
 
   /* check rotation */
-  ER_CHECK(rmath::radians::kZERO == mc_z_rot ||
-               rmath::radians::kPI_OVER_TWO == mc_z_rot,
+  ER_CHECK(rmath::radians::kZERO == mc_intent.z_rot() ||
+               rmath::radians::kPI_OVER_TWO == mc_intent.z_rot(),
            "Bad rotation %s: must be %s or %s",
-           rcppsw::to_string(mc_z_rot).c_str(),
+           rcppsw::to_string(mc_intent.z_rot()).c_str(),
            rcppsw::to_string(rmath::radians::kZERO).c_str(),
            rcppsw::to_string(rmath::radians::kPI_OVER_TWO).c_str());
 

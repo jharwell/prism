@@ -184,9 +184,9 @@ structure3D::cell_spec_calc(const rmath::vector3z& coord) const {
   auto ramp_extent_it = std::find_if(
       mc_config.ramp_blocks.begin(), mc_config.ramp_blocks.end(), extent_pred);
 
-  uint count = (mc_config.ramp_blocks.end() != ramp_host_it) +
-               (mc_config.ramp_blocks.end() != ramp_extent_it) +
-               (mc_config.cube_blocks.end() != cube_it);
+  size_t count = (mc_config.ramp_blocks.end() != ramp_host_it) +
+                 (mc_config.ramp_blocks.end() != ramp_extent_it) +
+                 (mc_config.cube_blocks.end() != cube_it);
   ER_ASSERT(count <= 1,
             "Cell@%s config error: found in more than one block spec map",
             rcppsw::to_string(coord).c_str());
@@ -250,15 +250,16 @@ structure3D::subtarget_vectorno structure3D::subtargetsno_init(void) const {
  * Member Functions
  ******************************************************************************/
 bool structure3D::block_placement_valid(const crepr::block3D_variantro& block,
-                                        const ct_coord& coord,
-                                        const rmath::radians& z_rotation) {
-  auto validator = operations::validate_placement(this, coord, z_rotation);
+                                        const srepr::placement_intent& intent) {
+  auto validator = operations::validate_placement(this, intent);
   return boost::apply_visitor(validator, block);
 } /* block_placement_valid() */
 
 bool structure3D::spec_exists(const crepr::base_block3D* const query) const {
-  return nullptr !=
-         cell_spec_retrieve({ query->danchor3D(), coord_relativity::ekVORIGIN });
+  auto coord = ssds::ct_coord{ query->danchor3D(),
+                               ssds::ct_coord::relativity::ekVORIGIN,
+                               this };
+  return nullptr != cell_spec_retrieve(coord);
 } /* spec_exists() */
 
 bool structure3D::contains(const rmath::vector2d& loc,
@@ -269,7 +270,7 @@ bool structure3D::contains(const rmath::vector2d& loc,
 
 void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
   RCSW_UNUSED rtypes::type_uuid id = block->id();
-  m_occupied_cells.push_back((block->danchor3D() - origind()) /
+  m_occupied_cells.push_back((block->danchor3D() - vorigind()) /
                              mc_unit_dim_factor);
   m_placed.push_back(std::move(block));
   ++m_placed_since_reset;
@@ -277,15 +278,15 @@ void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
 } /* block_add() */
 
 const structure3D::cell_spec*
-structure3D::cell_spec_retrieve(const ct_coord& coord) const {
+structure3D::cell_spec_retrieve(const ssds::ct_coord& coord) const {
   /*
    * If the coordinates are relative to the virtual origin, we have to translate
    * them to be relative to the REAL origin, as only cells that are ACTUALLY
    * part of the structure's bounding box will have had specs calculated for
    * them.
    */
-  auto rcoord = to_rcoord(coord, this);
-  auto it = m_cell_spec_map.find(rcoord);
+  auto rcoord = coord.to_real();
+  auto it = m_cell_spec_map.find(rcoord.offset());
   if (m_cell_spec_map.end() != it) {
     return &it->second;
   }
@@ -308,18 +309,16 @@ structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
   return static_cast<size_t>(mc_block_unit_dim / map->grid_resolution().v());
 } /* unit_dim_factor_calc() */
 
-subtarget* structure3D::parent_subtarget(const ct_coord& coord) {
+subtarget* structure3D::parent_subtarget(const ssds::ct_coord& coord) {
   size_t index = 0;
-  size_t offset = 0;
-  if (coord_relativity::ekVORIGIN == coord.relative_to) {
-    offset = vshell_sized();
-  }
+
+  auto rcoord = coord.to_real();
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    index = (coord.offset.y() - offset) / kSUBTARGET_CELL_WIDTH;
+    index = rcoord.offset().y() / kSUBTARGET_CELL_WIDTH;
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    index = (coord.offset.x() - offset) / kSUBTARGET_CELL_WIDTH;
+    index = rcoord.offset().x() / kSUBTARGET_CELL_WIDTH;
   } else {
     ER_FATAL_SENTINEL("Bad orientation: %s",
                       rcppsw::to_string(orientation()).c_str());
@@ -334,9 +333,9 @@ void structure3D::reset(void) {
   m_placement_id = 0;
   reset_metrics();
 
-  for (uint i = 0; i < xdsize(); ++i) {
-    for (uint j = 0; j < ydsize(); ++j) {
-      for (uint k = 0; k < zdsize(); ++k) {
+  for (size_t i = 0; i < xdsize(); ++i) {
+    for (size_t j = 0; j < ydsize(); ++j) {
+      for (size_t k = 0; k < zdsize(); ++k) {
         rmath::vector3z coord(i, j, k);
         cdops::cell3D_empty op(coord);
         op.visit(access(coord));
@@ -368,11 +367,58 @@ size_t structure3D::n_interval_placed(void) const { return m_placed_since_reset;
 size_t structure3D::manifest_size(void) const { return m_cell_spec_map.size(); }
 
 bool structure3D::is_complete(void) const {
-  /*
-   * @todo This is horribly simplistic and almost assuredly will need to be
-   * updated substantially in the near future.
-   */
+  /* basic sanity checks */
   return n_total_placed() == manifest_size();
 } /* is_complete() */
+
+bool structure3D::post_completion_check(void) const {
+  ER_CHECK(n_total_placed() == manifest_size(),
+           "Not all blocks placed: %zu != %zu",
+           n_total_placed(),
+           manifest_size());
+
+  for (size_t i = 0; i < xdsize(); ++i) {
+    for (size_t j = 0; j < ydsize(); ++j) {
+      for (size_t k = 0; k < zdsize(); ++k) {
+        auto coord = ssds::ct_coord{ rmath::vector3z{ i, j, k },
+                                     ssds::ct_coord::relativity::ekVORIGIN,
+                                     this };
+        const auto* spec = cell_spec_retrieve(coord);
+
+        if (nullptr == spec) {
+          continue;
+        }
+        auto& cell = access(coord.to_real().offset());
+        if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
+          ER_CHECK(cell.fsm().state_has_block(),
+                   "Cell@%s should not in HAS_BLOCK (%d)",
+                   rcppsw::to_string(cell.loc()).c_str(),
+                   cell.fsm().current_state());
+
+          ER_CHECK(spec->block_type == cell.block()->md()->type(),
+                   "Cell@%s spec block type mismatch: %d vs %d",
+                   rcppsw::to_string(cell.loc()).c_str(),
+                   rcppsw::as_underlying(spec->block_type),
+                   rcppsw::as_underlying(cell.block()->md()->type()));
+        } else if (cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec->state) {
+          ER_CHECK(cell.fsm().state_in_block_extent(),
+                   "Cell@%s should not in BLOCK_EXTENT (%d)",
+                   rcppsw::to_string(cell.loc()).c_str(),
+                   cell.fsm().current_state());
+        } else if (cfsm::cell3D_state::ekST_EMPTY == spec->state) {
+          ER_CHECK(cell.fsm().state_is_empty(),
+                   "Cell@%s should be EMPTY (%d)",
+                   rcppsw::to_string(cell.loc()).c_str(),
+                   cell.fsm().current_state());
+        }
+      } /* for(k..) */
+    } /* for(j..) */
+  } /* for(i..) */
+
+  return true;
+
+error:
+  return false;
+} /* post_completion_check() */
 
 NS_END(structure, silicon);

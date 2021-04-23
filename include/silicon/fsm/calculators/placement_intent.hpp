@@ -68,8 +68,7 @@ class placement_intent : public rer::client<placement_intent> {
       const csubsystem::sensing_subsystemQ3D* sensing,
       const scperception::builder_perception_subsystem* perception);
 
-  block_placer::placement_intent operator()(
-      const srepr::construction_lane* lane) const;
+  repr::placement_intent operator()(const srepr::construction_lane* lane) const;
 
   /* Not move/copy constructable/assignable by default */
   placement_intent(const placement_intent&) = delete;

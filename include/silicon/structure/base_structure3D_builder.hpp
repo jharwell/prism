@@ -35,8 +35,9 @@
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
 
+#include "silicon/repr/placement_intent.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ct_coord.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -112,12 +113,10 @@ class base_structure3D_builder : public rer::client<base_structure3D_builder> {
    *                   specified location.
    */
   bool place_block(const crepr::base_block3D* block,
-                   const ct_coord& coord,
-                   const rmath::radians& z_rotation);
+                   const srepr::placement_intent& intent);
 
   bool block_placement_valid(const crepr::block3D_variantro& block,
-                             const ct_coord& coord,
-                             const rmath::radians& z_rotation) const;
+                             const srepr::placement_intent& intent) const;
 
   rtypes::type_uuid target_id(void) const;
 

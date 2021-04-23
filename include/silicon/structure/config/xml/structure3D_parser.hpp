@@ -56,14 +56,14 @@ class structure3D_parser final : public rconfig::xml::xml_config_parser {
    * \brief The root tag that all \ref structure3D parameters should lie under
    * in the XML tree.
    */
-  static constexpr const char kXMLRoot[] = "structure3D";
+  inline static const std::string kXMLRoot = "structure3D";
 
-  void parse(const ticpp::Element& node) override RCSW_COLD;
+  void parse(const ticpp::Element& node) override RCPPSW_COLD;
 
-  std::string xml_root(void) const override RCSW_COLD { return kXMLRoot; }
+  std::string xml_root(void) const override RCPPSW_COLD { return kXMLRoot; }
 
  private:
-  const rconfig::base_config* config_get_impl(void) const override RCSW_COLD {
+  const rconfig::base_config* config_get_impl(void) const override RCPPSW_COLD {
     return m_config.get();
   }
   /* clang-format off */

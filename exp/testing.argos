@@ -16,7 +16,7 @@
   <!-- *************** -->
   <controllers>
 
-    <fcrw_bst_controller id="epc"
+    <fcrw_bst_controller id="fbc"
                     library="libsilicon">
       <!-- <actuators> -->
       <!--   <pipuck_differential_drive implementation="default" /> -->
@@ -27,18 +27,33 @@
       <!--   <pipuck_ground implementation="default" /> -->
       <!-- </sensors> -->
 
+      <!-- <actuators> -->
+      <!--   <differential_steering implementation="default" /> -->
+      <!--   <leds implementation="default" medium="leds" /> -->
+      <!-- </actuators> -->
+      <!-- <sensors> -->
+      <!--   <differential_steering implementation="default" /> -->
+      <!--   <epuck_proximity implementation="default" show_rays="true"> -->
+      <!--   </epuck_proximity> -->
+      <!--   <positioning implementation="default"/> -->
+      <!--   <epuck_light implementation="default" show_rays="false"> -->
+      <!--   </epuck_light> -->
+      <!--   <epuck_ground implementation="rot_z_only" /> -->
+
       <actuators>
         <differential_steering implementation="default" />
-        <!-- <leds implementation="default" medium="leds" /> -->
+        <leds implementation="default" medium="leds" />
       </actuators>
       <sensors>
         <differential_steering implementation="default" />
-        <epuck_proximity implementation="default" show_rays="true">
-        </epuck_proximity>
+        <footbot_proximity implementation="default" show_rays="true">
+        </footbot_proximity>
         <positioning implementation="default"/>
-        <epuck_light implementation="default" show_rays="false">
-        </epuck_light>
-        <epuck_ground implementation="rot_z_only" />
+
+        <footbot_light implementation="rot_z_only" show_rays="false">
+        </footbot_light>
+        <footbot_motor_ground implementation="rot_z_only" />
+
         <colored_blob_omnidirectional_camera implementation="rot_z_only"
                                              medium="leds" />
       </sensors>
@@ -53,7 +68,7 @@
         </block_sel_matrix>
         <perception
             los_dim="0.8">
-          <grid2D resolution="0.2"
+          <grid2D resolution="0.4"
                   dims="12, 6"/>
         </perception>
         <sensing_subsystemQ3D>
@@ -78,7 +93,7 @@
                            slowing_speed_min="1.0"
                            max="4"/>
             <path_following_force max="4"
-                                  radius="0.05"/>
+                                  radius="0.10"/>
             <wander_force circle_distance="4.0"
                           circle_radius="100.0"
                           max_angle_delta="5"
@@ -134,7 +149,7 @@
         <blocks>
           <manipulation_penalty>
             <waveform
-                type="Null"
+                type="Constant"
                 frequency="0.01"
                 amplitude="50"
                 offset="50"
@@ -157,9 +172,9 @@
         static_build_interval="1"
         static_build_interval_count="1"/>
     <construct_targets>
-      <ramp anchor="4.0,4.0,0.0" id="ramp0" orientation="4.7123">
+      <ramp anchor="3.6,3.6,0.0" id="ramp0" orientation="0">
         <grid3D resolution="0.4"
-                dims="0.8, 1.6,0.4"/>
+                dims="3.2,0.8, 0.4"/>
           <!-- <ramp_blocks> -->
           <!--   <ramp_block cell="0,0,3" /> -->
           <!--   <ramp_block cell="1,0,3" /> -->
@@ -170,28 +185,64 @@
           <!--   <ramp_block cell="2,2,2" /> -->
           <!--   <ramp_block cell="3,2,2" /> -->
           <!-- </ramp_blocks> -->
-          <cube_blocks>
-            <!-- <!-\- test for orientation=0 -\-> -->
-            <!-- <cube_block cell="0,0,0" /> -->
-            <!-- <cube_block cell="1,0,0" /> -->
-            <!-- <cube_block cell="2,0,0" /> -->
-            <!-- <cube_block cell="3,0,0" /> -->
 
-            <!-- <cube_block cell="0,1,0" /> -->
-            <!-- <cube_block cell="1,1,0" /> -->
-            <!-- <cube_block cell="2,1,0" /> -->
-            <!-- <cube_block cell="3,1,0" /> -->
+          <cube_blocks>
+
+            <!-- test for orientation=0 -->
+            <cube_block cell="0,0,0" />
+            <cube_block cell="1,0,0" />
+            <cube_block cell="2,0,0" />
+            <cube_block cell="3,0,0" />
+            <cube_block cell="4,0,0" />
+            <cube_block cell="5,0,0" />
+            <cube_block cell="6,0,0" />
+            <cube_block cell="7,0,0" />
+
+            <cube_block cell="0,1,0" />
+            <cube_block cell="1,1,0" />
+            <cube_block cell="2,1,0" />
+            <cube_block cell="3,1,0" />
+            <cube_block cell="4,1,0" />
+            <cube_block cell="5,1,0" />
+            <cube_block cell="6,1,0" />
+            <cube_block cell="7,1,0" />
+
+            <!-- <cube_block cell="0,2,0" /> -->
+            <!-- <cube_block cell="1,2,0" /> -->
+            <!-- <cube_block cell="2,2,0" /> -->
+            <!-- <cube_block cell="3,2,0" /> -->
+            <!-- <cube_block cell="4,2,0" /> -->
+            <!-- <cube_block cell="5,2,0" /> -->
+            <!-- <cube_block cell="6,2,0" /> -->
+            <!-- <cube_block cell="7,2,0" /> -->
+
+            <!-- <cube_block cell="0,3,0" /> -->
+            <!-- <cube_block cell="1,3,0" /> -->
+            <!-- <cube_block cell="2,3,0" /> -->
+            <!-- <cube_block cell="3,3,0" /> -->
+            <!-- <cube_block cell="4,3,0" /> -->
+            <!-- <cube_block cell="5,3,0" /> -->
+            <!-- <cube_block cell="6,3,0" /> -->
+            <!-- <cube_block cell="7,3,0" /> -->
 
             <!-- <!-\- test for orientation=pi/2 -\-> -->
             <!-- <cube_block cell="0,0,0" /> -->
             <!-- <cube_block cell="0,1,0" /> -->
             <!-- <cube_block cell="0,2,0" /> -->
             <!-- <cube_block cell="0,3,0" /> -->
+            <!-- <cube_block cell="0,4,0" /> -->
+            <!-- <cube_block cell="0,5,0" /> -->
+            <!-- <cube_block cell="0,6,0" /> -->
+            <!-- <cube_block cell="0,7,0" /> -->
 
             <!-- <cube_block cell="1,0,0" /> -->
             <!-- <cube_block cell="1,1,0" /> -->
             <!-- <cube_block cell="1,2,0" /> -->
             <!-- <cube_block cell="1,3,0" /> -->
+            <!-- <cube_block cell="1,4,0" /> -->
+            <!-- <cube_block cell="1,5,0" /> -->
+            <!-- <cube_block cell="1,6,0" /> -->
+            <!-- <cube_block cell="1,7,0" /> -->
 
             <!-- <!-\- test for orientation=pi -\-> -->
             <!-- <cube_block cell="0,0,0" /> -->
@@ -204,37 +255,38 @@
             <!-- <cube_block cell="2,1,0" /> -->
             <!-- <cube_block cell="3,1,0" /> -->
 
-            <!-- test for orientation=3pi/2 -->
-            <cube_block cell="0,0,0" />
-            <cube_block cell="0,1,0" />
-            <cube_block cell="0,2,0" />
-            <cube_block cell="0,3,0" />
+            <!-- <!-\- test for orientation=3pi/2 -\-> -->
+            <!-- <cube_block cell="0,0,0" /> -->
+            <!-- <cube_block cell="0,1,0" /> -->
+            <!-- <cube_block cell="0,2,0" /> -->
+            <!-- <cube_block cell="0,3,0" /> -->
 
-            <cube_block cell="1,0,0" />
-            <cube_block cell="1,1,0" />
-            <cube_block cell="1,2,0" />
-            <cube_block cell="1,3,0" />
+            <!-- <cube_block cell="1,0,0" /> -->
+            <!-- <cube_block cell="1,1,0" /> -->
+            <!-- <cube_block cell="1,2,0" /> -->
+            <!-- <cube_block cell="1,3,0" /> -->
 
           </cube_blocks>
         </ramp>
     </construct_targets>
 
     <arena_map>
-    <grid2D resolution="0.2"
+    <grid2D resolution="0.4"
             dims="12.0, 12.0"/>
       <blocks>
         <distribution
-            dist_type="dual_source">
+            strict_success="false"
+            dist_type="random">
           <manifest
-              n_cube="32"
+              n_cube="64"
               n_ramp="0"
               unit_dim="0.4"
               />
         </distribution>
       </blocks>
       <nests>
-        <nest dims="3.2,3.2"
-              center="4.9, 4.9"
+        <nest dims="6.9,3.2"
+              center="5.2, 4.6"
               light_height="5.0"
               light_intensity="5.0"/>
       </nests>
@@ -249,7 +301,7 @@
   <!-- *********************** -->
   <!-- * Arena configuration * -->
   <!-- *********************** -->
-  <arena size="12, 12, 10" center="6,6,5">
+  <arena size="12.1, 12.1, 10" center="6,6,5">
 
     <floor id="floor"
            source="loop_functions"
@@ -274,12 +326,20 @@
        <position method="uniform" min="1,1,0" max="10,10,0" />
        <orientation method="uniform" min="0,0,0" max="360,0,0" />
 
-      <!-- <position method="constant" values="7,8,0.1" max="7,8,0.1" /> -->
+      <!-- <position method="constant" values="7,8,0" max="7,8,0" /> -->
       <!-- <orientation method="uniform" min="0,0,0" max="0,0,0" /> -->
-      <entity quantity="1" max_trials="1000">
-        <e-puck id="ep" omnidirectional_camera_aperture="89">
-          <controller config="epc" />
-        </e-puck>
+      <entity quantity="8" max_trials="1000">
+        <!-- <e-puck id="ep" omnidirectional_camera_aperture="89"> -->
+        <!--   <controller config="epc" /> -->
+        <!-- </e-puck> -->
+
+        <foot-bot id="fb" omnidirectional_camera_aperture="89">
+          <controller config="fbc" />
+        </foot-bot>
+
+        <!-- <pipuck id="ep" omnidirectional_camera_aperture="89"> -->
+        <!--   <controller config="epc" /> -->
+        <!-- </pipuck> -->
       </entity>
     </distribute>
 
@@ -306,7 +366,7 @@
   <!-- * Visualization * -->
   <!-- ****************** -->
   <visualization>
-    <qt-opengl autoplay="false">
+    <qt-opengl autoplay="true">
       <!--  <frame_grabbing directory="frames" -->
       <!--                  base_name="frame_" -->
       <!--                  format="png" -->

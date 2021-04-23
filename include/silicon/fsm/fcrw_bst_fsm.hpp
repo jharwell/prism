@@ -29,15 +29,15 @@
 
 #include "cosm/fsm/block_transporter.hpp"
 #include "cosm/spatial/fsm/explore_for_goal_fsm.hpp"
-#include "cosm/spatial/fsm/util_hfsm.hpp"
 #include "cosm/spatial/metrics/goal_acq_metrics.hpp"
 
 #include "silicon/fsm/acquire_block_placement_site_fsm.hpp"
 #include "silicon/fsm/block_placer.hpp"
+#include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/construction_transport_goal.hpp"
 #include "silicon/fsm/structure_egress_fsm.hpp"
+#include "silicon/fsm/structure_ingress_fsm.hpp"
 #include "silicon/lane_alloc/allocator.hpp"
-#include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -67,11 +67,10 @@ NS_START(silicon, fsm);
  * After these steps have been done, it signals it has completed its task.
  */
 class fcrw_bst_fsm final
-    : public csfsm::util_hfsm,
+    : public builder_util_fsm,
       public rer::client<fcrw_bst_fsm>,
       public csmetrics::goal_acq_metrics,
       public cfsm::block_transporter<construction_transport_goal>,
-      public cta::taskable,
       public block_placer {
  public:
   fcrw_bst_fsm(const slaconfig::lane_alloc_config* allocator_config,
@@ -111,12 +110,12 @@ class fcrw_bst_fsm final
     return ekST_FINISHED == current_state();
   }
   bool task_running(void) const override {
-    return ekST_FINISHED == current_state();
+    return ekST_FINISHED != current_state() && ekST_START != current_state();
   }
   void task_reset(void) override { init(); }
 
   /* block placer overrides */
-  boost::optional<block_placer::placement_intent>
+  boost::optional<repr::placement_intent>
   block_placement_intent(void) const override;
 
   const lane_alloc::allocator* lane_allocator(void) const { return &m_allocator; }
@@ -128,7 +127,7 @@ class fcrw_bst_fsm final
   void init(void) override;
 
  private:
-  enum fsm_states {
+  enum fsm_state {
     ekST_START,
 
     /**
@@ -142,19 +141,13 @@ class fcrw_bst_fsm final
     ekST_WAIT_FOR_BLOCK_PICKUP,
 
     /**
-     * The robot is moving from the block pickup location to the face of the
-     * construction target which has the ingress/egress lanes.
+     * The robot is moving from the block pickup location to the start of its
+     * allocated construction lane.
      */
-    ekST_CT_APPROACH,
+    ekST_STRUCTURE_INGRESS,
 
     /**
-     * The block is being returned to the nest; gradual alignment with the
-     * chosen construction lane as the robot nears the nest.
-     */
-    ekST_CT_ENTRY,
-
-    /**
-     * A block has been placed on the structure, wait to get the placement
+     * A block has been placed on the structure; wait to get the placement
      * signal.
      */
     ekST_WAIT_FOR_BLOCK_PLACE,
@@ -172,26 +165,7 @@ class fcrw_bst_fsm final
     ekST_MAX_STATES
   };
 
-  struct ct_ingress_data final : public rpfsm::event_data {
-    ct_ingress_data(const csteer2D::ds::path_state& path_in,
-                    const rmath::vector3d& ingress_in)
-        : path(path_in), ingress(ingress_in) {}
-
-    csteer2D::ds::path_state path;
-    rmath::vector3d ingress;
-  };
-
-  /**
-   * When transporting a block to the construction site via polar forces, this
-   * is the minimum distance the robot must maintain from the center of the
-   * structure.
-   */
-
-  static constexpr const double kCT_TRANSPORT_BC_DIST_MIN = 5.0;
-
   bool block_detected(void) const;
-
-  double ct_bc_radius(void) const;
 
   /* inherited states */
   RCPPSW_HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
@@ -205,10 +179,7 @@ class fcrw_bst_fsm final
   RCPPSW_HFSM_STATE_DECLARE(fcrw_bst_fsm,
                             wait_for_block_place,
                             rpfsm::event_data);
-  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, ct_approach);
-  RCPPSW_HFSM_STATE_DECLARE(fcrw_bst_fsm, ct_entry, ct_ingress_data);
-  RCPPSW_HFSM_ENTRY_DECLARE_ND(fcrw_bst_fsm, entry_ct_approach);
-  RCPPSW_HFSM_EXIT_DECLARE(fcrw_bst_fsm, exit_ct_entry);
+  RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_ingress);
   RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_build);
   RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, structure_egress);
   RCPPSW_HFSM_STATE_DECLARE_ND(fcrw_bst_fsm, finished);
@@ -226,14 +197,12 @@ class fcrw_bst_fsm final
   RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
-  const scperception::builder_perception_subsystem* mc_perception;
-
   lane_alloc::allocator                             m_allocator;
   std::unique_ptr<srepr::construction_lane>         m_allocated_lane;
   csfsm::explore_for_goal_fsm                       m_forage_fsm;
   acquire_block_placement_site_fsm                  m_block_place_fsm;
+  structure_ingress_fsm                             m_structure_ingress_fsm;
   structure_egress_fsm                              m_structure_egress_fsm;
-  double                                            m_ct_approach_polar_sign{-1};
   /* clang-format on */
 };
 

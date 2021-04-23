@@ -55,27 +55,31 @@ base_structure3D_builder::base_structure3D_builder(
  * Member Functions
  ******************************************************************************/
 bool base_structure3D_builder::place_block(const crepr::base_block3D* block,
-                                           const ct_coord& coord,
-                                           const rmath::radians& z_rotation) {
+                                           const srepr::placement_intent& intent) {
   /* verify block addition to structure is OK */
   auto variantno = crepr::make_variant(block);
-  if (!m_target->block_placement_valid(variantno, coord, z_rotation)) {
-    ER_WARN("Block placement in cell@%s,z_rot=%s failed validation: abort "
-            "placement",
-            rcppsw::to_string(coord.offset).c_str(),
-            rcppsw::to_string(z_rotation).c_str());
+  if (!m_target->block_placement_valid(variantno, intent)) {
+    ER_WARN("Block placement with intent %s failed validation: abort placement",
+            rcppsw::to_string(intent).c_str());
     return false;
   }
 
   /*
    * Create embodied block from the foraged block. It does not yet have its
-   * embodiment attached.
+   * embodiment attached. Clones the block internally.
+   *
+   * Cloning the block is necessary because the structure is taking ownership
+   * of the block, and you can't share ownership with the arena, which already
+   * owns it.
+   *
+   * This also makes the # of blocks discoverable by robots in the arena as
+   * construction progresses constant. See SILICON#22.
    */
   auto embodiedo =
       boost::apply_visitor(cpal::embodied_block_creator(m_sm), variantno);
 
   /* Add block to structure. */
-  auto placement_op = operations::block_place(coord, z_rotation, m_target);
+  auto placement_op = operations::block_place(intent, m_target);
   cpal::embodied_block_variantno embodiedno =
       boost::apply_visitor(placement_op, std::move(embodiedo));
 
@@ -84,8 +88,8 @@ bool base_structure3D_builder::place_block(const crepr::base_block3D* block,
    * placed on the structure so that the embodiment is placed at its updated
    * location.
    */
-  auto creator =
-      cpal::block_embodiment_creator(z_rotation, m_target->placement_id(), m_sm);
+  auto creator = cpal::block_embodiment_creator(
+      intent.z_rot(), m_target->placement_id(), m_sm);
   auto embodiment = boost::apply_visitor(creator, embodiedno);
 
   auto setter = operations::block_embodiment_set(std::move(embodiment));
@@ -95,9 +99,8 @@ bool base_structure3D_builder::place_block(const crepr::base_block3D* block,
 
 bool base_structure3D_builder::block_placement_valid(
     const crepr::block3D_variantro& block,
-    const ct_coord& coord,
-    const rmath::radians& z_rotation) const {
-  return m_target->block_placement_valid(block, coord, z_rotation);
+    const srepr::placement_intent& intent) const {
+  return m_target->block_placement_valid(block, intent);
 } /* block_placement_valid() */
 
 rtypes::type_uuid base_structure3D_builder::target_id(void) const {

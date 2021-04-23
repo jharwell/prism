@@ -68,7 +68,7 @@ class robot_configurer : public boost::static_visitor<void> {
       c->display_nearest_ct(mc_vis_config->robot_nearest_ct);
     }
     scperception::perception_receptor::ct_info_vector infos;
-    for (auto* t : mc_targets) {
+    for (const auto* t : mc_targets) {
       infos.push_back(scperception::ct_skel_info(t));
     } /* for(&t..) */
 

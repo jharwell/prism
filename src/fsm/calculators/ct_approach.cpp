@@ -49,55 +49,57 @@ ct_approach::ct_approach(const csubsystem::sensing_subsystemQ3D* sensing,
 ct_approach::ct_approach_vector
 ct_approach::operator()(const srepr::construction_lane* lane) const {
   ct_approach_vector ret;
-  auto angle_to_ingress = (mc_sensing->rpos2D() - lane->ingress().to_2D())
-                              .angle()
-                              .unsigned_normalize();
-  ret.ingress_angle = (lane->orientation() - angle_to_ingress).unsigned_normalize();
+  auto ingress_pt = lane->geometry().ingress_pt();
+
+  auto angle_to_ingress =
+      (mc_sensing->rpos2D() - ingress_pt.to_2D()).angle().unsigned_normalize();
+  ret.ingress_angle =
+      (lane->orientation() - angle_to_ingress).unsigned_normalize();
 
   if (rmath::radians::kZERO == lane->orientation()) {
     /* We are OK in X if we are on the +X side of the construction target */
-    ret.x_ok = mc_sensing->rpos2D().x() >= lane->ingress().x();
+    ret.x_ok = mc_sensing->rpos2D().x() >= ingress_pt.x();
 
     /*
      * We are OK in Y if we are (reasonably) close to the Y coordinate of the
      * ingress lane.
      */
-    ret.orthogonal_dist = rtypes::spatial_dist::make(lane->ingress().y() -
-                                                     mc_sensing->rpos2D().y());
+    ret.orthogonal_dist =
+        rtypes::spatial_dist::make(ingress_pt.y() - mc_sensing->rpos2D().y());
     ret.y_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
 
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* We are OK in Y if we are on the +Y side of the construction target */
-    ret.y_ok = mc_sensing->rpos2D().y() >= lane->ingress().y();
+    ret.y_ok = mc_sensing->rpos2D().y() >= ingress_pt.y();
 
     /*
      * We are OK in X if we are (reasonably) close to the X coordinate of the
      * ingress lane.
      */
-    ret.orthogonal_dist = rtypes::spatial_dist::make(lane->ingress().x() -
-                                                     mc_sensing->rpos2D().x());
+    ret.orthogonal_dist =
+        rtypes::spatial_dist::make(ingress_pt.x() - mc_sensing->rpos2D().x());
     ret.x_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* We are OK in X if we are on the -X side of the construction target */
-    ret.x_ok = mc_sensing->rpos2D().x() <= lane->ingress().x();
+    ret.x_ok = mc_sensing->rpos2D().x() <= ingress_pt.x();
 
     /*
      * We are OK in Y if we are (reasonably) close to the Y coordinate of the
      * ingress lane.
      */
-    ret.orthogonal_dist = rtypes::spatial_dist::make(lane->ingress().y() -
-                                                     mc_sensing->rpos2D().y());
+    ret.orthogonal_dist =
+        rtypes::spatial_dist::make(ingress_pt.y() - mc_sensing->rpos2D().y());
     ret.y_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* We are OK in Y if we are on the -Y side of the construction target */
-    ret.y_ok = mc_sensing->rpos2D().y() <= lane->ingress().y();
+    ret.y_ok = mc_sensing->rpos2D().y() <= ingress_pt.y();
 
     /*
      * We are OK in X if we are (reasonably) close to the X coordinate of the
      * ingress lane.
      */
-    ret.orthogonal_dist = rtypes::spatial_dist::make(lane->ingress().x() -
-                                                     mc_sensing->rpos2D().x());
+    ret.orthogonal_dist =
+        rtypes::spatial_dist::make(ingress_pt.x() - mc_sensing->rpos2D().x());
     ret.x_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",

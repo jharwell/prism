@@ -83,15 +83,15 @@ class constructing_controller
   using block_manip_recorder_type = ccontroller::manip_event_recorder<
       metrics::blocks::block_manip_events::ekMAX_EVENTS>;
 
-  constructing_controller(void) RCSW_COLD;
-  ~constructing_controller(void) override RCSW_COLD;
+  constructing_controller(void) RCPPSW_COLD;
+  ~constructing_controller(void) override RCPPSW_COLD;
 
   constructing_controller(const constructing_controller&) = delete;
   constructing_controller& operator=(const constructing_controller&) = delete;
 
   /* constructing_controllerQ3D overrides */
-  void init(ticpp::Element& node) override RCSW_COLD;
-  void reset(void) override RCSW_COLD;
+  void init(ticpp::Element& node) override RCPPSW_COLD;
+  void reset(void) override RCPPSW_COLD;
   rtypes::type_uuid entity_id(void) const override final;
 
   /* rda_recipient_controller overrides */

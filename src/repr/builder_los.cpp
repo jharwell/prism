@@ -25,6 +25,7 @@
 
 #include "cosm/ds/cell3D.hpp"
 
+#include "silicon/repr/construction_lane.hpp"
 #include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************

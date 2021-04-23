@@ -43,10 +43,6 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::foraging::ds {
-class base_arena_map;
-} /* namespace cosm::foraging::ds */
-
 namespace silicon::support::tv::config { struct env_dynamics_config; }
 namespace cosm::pal {
 class argos_controllerQ3D_adaptor;
@@ -155,7 +151,7 @@ class env_dynamics final : public rer::client<env_dynamics>,
   const_penalty_handlers all_penalty_handlers(void) const {
     const_penalty_handlers ret;
     ret.push_back(penalty_handler(block_op_src::ekARENA_PICKUP));
-    for (auto &pair : m_ct_placement) {
+    for (const auto &pair : m_ct_placement) {
       ret.push_back(pair.second.get());
     } /* for(&pair..) */
     return ret;

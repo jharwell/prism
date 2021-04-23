@@ -34,11 +34,11 @@ NS_START(silicon, lane_alloc);
  * Constructors/Destructors
  ******************************************************************************/
 lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
-                             const rmath::vector3z& ingress_nearest_cell,
-                             const rmath::vector3z& egress_nearest_cell)
+                             const ssds::ct_coord& ingress_virt,
+                             const ssds::ct_coord& egress_virt)
     : ER_CLIENT_INIT("silicon.lane_alloc.lane_geometry"),
-      mc_ingress_cell(ingress_nearest_cell),
-      mc_egress_cell(egress_nearest_cell),
+      mc_ingress_virt{ ingress_virt.to_virtual() },
+      mc_egress_virt{ egress_virt.to_virtual() },
       /*
        * Need to account for block width so we calculate the CENTER of the
        * ingress/egress lanes, because the \ref ct->cell_loc_abs() function
@@ -48,45 +48,35 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
       mc_cell_corr{ target->block_unit_dim() / 2.0,
                     target->block_unit_dim() / 2.0,
                     0.0 } {
+  auto l1 =
+      rmath::vector3z::l1norm(mc_egress_virt.offset(), mc_ingress_virt.offset());
   if (rmath::radians::kZERO == target->orientation()) {
-    m_ingress_start = target->cell_loc_abs(mc_ingress_cell) + mc_cell_corr;
-    m_egress_start = target->cell_loc_abs(mc_egress_cell) + mc_cell_corr;
-    m_ingress_center =
-        rmath::vector3d(target->xrange().center(), m_ingress_start.y(), 0.0) +
-        mc_cell_corr;
-    m_egress_center =
-        rmath::vector3d(target->xrange().center(), m_egress_start.y(), 0.0) +
-        mc_cell_corr;
+    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
+    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+
+    m_xrange = { 0, target->bbd(true).x() };
+    m_yrange = { mc_ingress_virt.offset().y(),
+                 mc_ingress_virt.offset().y() + l1 };
 
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
-    m_ingress_start = target->cell_loc_abs(mc_ingress_cell) + mc_cell_corr;
-    m_egress_start = target->cell_loc_abs(mc_egress_cell) + mc_cell_corr;
-    m_ingress_center =
-        rmath::vector3d(m_ingress_start.x(), target->yrange().center(), 0.0) +
-        mc_cell_corr;
-    m_egress_center =
-        rmath::vector3d(m_egress_start.x(), target->yrange().center(), 0.0) +
-        mc_cell_corr;
+    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
+    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
+    m_xrange = { mc_egress_virt.offset().x(), mc_egress_virt.offset().x() + l1 };
+    m_yrange = { 0, target->bbd(true).y() };
   } else if (rmath::radians::kPI == target->orientation()) {
-    m_ingress_start = target->cell_loc_abs(mc_ingress_cell) + mc_cell_corr;
-    m_egress_start = target->cell_loc_abs(mc_egress_cell) + mc_cell_corr;
-    m_ingress_center =
-        rmath::vector3d(target->xrange().center(), m_ingress_start.y(), 0.0) +
-        mc_cell_corr;
-    m_egress_center =
-        rmath::vector3d(target->xrange().center(), m_egress_start.y(), 0.0) +
-        mc_cell_corr;
+    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
+    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
+    m_xrange = { 0, target->bbd(true).x() };
+    m_yrange = { mc_egress_virt.offset().y(), mc_egress_virt.offset().y() + l1 };
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
-    m_ingress_start = target->cell_loc_abs(mc_ingress_cell) + mc_cell_corr;
-    m_egress_start = target->cell_loc_abs(mc_egress_cell) + mc_cell_corr;
-    m_ingress_center =
-        rmath::vector3d(m_ingress_start.x(), target->yrange().center(), 0.0) +
-        mc_cell_corr;
-    m_egress_center =
-        rmath::vector3d(m_egress_start.x(), target->yrange().center(), 0.0) +
-        mc_cell_corr;
+    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
+    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+
+    m_xrange = { mc_ingress_virt.offset().x(),
+                 mc_ingress_virt.offset().x() + l1 };
+    m_yrange = { 0, target->bbd(true).y() };
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(target->orientation()).c_str());

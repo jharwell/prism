@@ -95,14 +95,14 @@ class ct_manager : public rer::client<ct_manager> {
    */
   void init(const ssconfig::structure3D_builder_config* builder_config,
             const ssconfig::construct_targets_config* targets_config,
-            const rct::config::waveform_config* const placement_penalty_config);
+            const ctv::config::temporal_penalty_config* placement_penalty_config);
 
   /**
    * \brief The vector of all targets to be built in the arena.
    */
 
-  const ds::ct_vectorno& targetsno(void) const { return m_targetsno; }
-  const ds::ct_vectorro& targetsro(void) const { return m_targetsro; }
+  const sds::ct_vectorno& targetsno(void) const { return m_targetsno; }
+  const sds::ct_vectorro& targetsro(void) const { return m_targetsro; }
 
   const support::tv::block_op_penalty_handler*
   placement_handler(const rtypes::type_uuid& target_id) const {
@@ -163,9 +163,9 @@ class ct_manager : public rer::client<ct_manager> {
   carena::base_arena_map*    m_arena_map;
   cpal::argos_sm_adaptor*    m_sm;
   support::tv::env_dynamics* m_envd;
-  ds::ct_vectoro             m_targetso{};
-  ds::ct_vectorno            m_targetsno{};
-  ds::ct_vectorro            m_targetsro{};
+  sds::ct_vectoro            m_targetso{};
+  sds::ct_vectorno           m_targetsno{};
+  sds::ct_vectorro           m_targetsro{};
   builders_vectoro_type      m_builderso{};
   /* clang-format on */
 };

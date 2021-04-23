@@ -1,7 +1,7 @@
 /**
- * \file ct_coord.hpp
+ * \file frontier_coord.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,42 +18,33 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_CT_COORD_HPP_
-#define INCLUDE_SILICON_STRUCTURE_CT_COORD_HPP_
+#ifndef INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_
+#define INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/math/vector3.hpp"
-
-#include "coord_relativity.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ds/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure);
-
-class structure3D;
+NS_START(silicon, repr);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \brief Representation of the location of a cell within a \ref
- * structure3D. Because of the real/virtual origin, offsets within the 3D grid
- * need to be tagged with what they are relative to, to make it VERY clear what
- * the \a implied origin is when an offset is passed to a different
- * function/class/etc.*
+ * \brief Representation of how far into a construction lane construction has
+ * progressed so far.
  */
-struct ct_coord {
-  rmath::vector3z offset;
-  coord_relativity relative_to;
+
+struct frontier_coord {
+  ssds::ct_coord ingress;
+  ssds::ct_coord egress;
 };
 
-rmath::vector3z to_vcoord(const ct_coord& coord, const structure3D* ct);
-rmath::vector3z to_rcoord(const ct_coord& coord, const structure3D* ct);
+NS_END(repr, silicon);
 
-NS_END(structure, silicon);
-
-#endif /* INCLUDE_SILICON_STRUCTURE_CT_COORD_HPP_ */
+#endif /* INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_ */

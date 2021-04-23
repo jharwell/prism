@@ -1,7 +1,7 @@
 /**
- * \file stygmergic_configuration.hpp
+ * \file builder_prox_type.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_
-#define INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_
+#ifndef INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PROX_TYPE_HPP_
+#define INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PROX_TYPE_HPP_
 
 /*******************************************************************************
  * Includes
@@ -29,49 +29,40 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(silicon, controller, perception);
 
 /*******************************************************************************
- * Class Definitions
+ * Type Definitions
  ******************************************************************************/
 /**
- * \brief Represents the various types of stimulating stygmergic configurations
- * that robots can encounter in the environment as they proceed down their
- * construction lane.
+ * \brief The type of proximity to check and/or the type of proximity
+ * detected. Different types of proximities are relevant at different stages of
+ * the \ref sfsm::builder_fsm.
+ *
+ * \ingroup controller perception
  */
-enum class stygmergic_configuration {
+enum class builder_prox_type {
   /**
-   * No configuration has been encountred.
+   * No robots nearby that we need to worry about while on the structure.
    */
-  ekNONE,
+  ekNONE = 0,
 
   /**
-   * A configuration in which the robot has made it close enough to the back of
-   * a construction lane to determine that it is in fact empty.
+   * Consider robot proximity via Euclidean distance, but ONLY along the
+   * current robot's trajectory (i.e., a robot passing this one in the other
+   * half of the construction lane would not be considered within proximity,
+   * regardless of distance).
    */
-  ekLANE_EMPTY,
+  ekTRAJECTORY = 1 << 0,
 
   /**
-   * A configuration in which BOTH the ingress and egress lanes in the
-   * construction lanes have blocks placed up to the same location in X or Y
-   * (depending on structure orientation).
+   * Consider builder robots in front of the current one which are in the
+   * frontier set; both the current and other robots must be in the frontier
+   * set for this type of proximity to trigger.
    */
-  ekLANE_FILLED,
-
-  /**
-   * A configuration in which the ingress lane is missing a block, and there is
-   * one in the egress lane.
-   */
-  ekLANE_GAP_INGRESS,
-
-  /**
-   * A configuration in which the egress lane is missing a block, and there is
-   * one in the ingress lane.
-   *
-   */
-  ekLANE_GAP_EGRESS
+  ekFRONTIER_SET = 1 << 1
 };
 
-NS_END(fsm, silicon);
+NS_END(perception, controller, silicon);
 
-#endif /* INCLUDE_SILICON_FSM_STYGMERGIC_CONFIGURATION_HPP_ */
+#endif /* INCLUDE_SILICON_CONTROLLER_PERCEPTION_BUILDER_PROX_TYPE_HPP_ */

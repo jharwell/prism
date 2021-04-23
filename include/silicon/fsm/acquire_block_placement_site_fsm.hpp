@@ -33,7 +33,7 @@
 #include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/calculators/lane_alignment.hpp"
-#include "silicon/fsm/stygmergic_configuration.hpp"
+#include "silicon/repr/fs_configuration.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -81,9 +81,6 @@ class acquire_block_placement_site_fsm
     return current_state() == fsm_state::ekST_FINISHED;
   }
 
-  /* HFSM overrides */
-  void init(void) override;
-
   /**
    * \brief Once the robot has reached the end of the path from which it should
    * be able to place its block, calculate (1) the cell within the construction
@@ -92,7 +89,7 @@ class acquire_block_placement_site_fsm
    *
    * Can only be called if the FSM is in the finished state.
    */
-  block_placer::placement_intent placement_intent_calc(void) const;
+  repr::placement_intent placement_intent_calc(void) const;
 
  private:
   enum fsm_state {
@@ -125,9 +122,7 @@ class acquire_block_placement_site_fsm
   };
 
   /* inherited states */
-  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm,
-                            wait_for_robot,
-                            const robot_wait_data);
+  RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, robot_wait_data);
 
   /* FSM states */
   RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
@@ -141,6 +136,10 @@ class acquire_block_placement_site_fsm
 
   RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
 
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
+                               entry_wait_for_robot);
+  RCPPSW_HFSM_EXIT_DECLARE(acquire_block_placement_site_fsm, exit_wait_for_robot);
+
   RCPPSW_HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
     return &mc_state_map[index];
   }
@@ -151,7 +150,7 @@ class acquire_block_placement_site_fsm
 
   /* clang-format off */
   std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};
-  calculators::lane_alignment                m_alignment_calc;
+  calculators::lane_alignment               m_alignment_calc;
   /* clang-format on */
 };
 

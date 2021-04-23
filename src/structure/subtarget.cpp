@@ -75,8 +75,11 @@ size_t subtarget::manifest_size_calc(const slice2D& slice,
   size_t count = 0;
   for (size_t i = 0; i < slice.d1(); ++i) {
     for (size_t j = 0; j < slice.d2(); ++j) {
-      auto* spec = structure->cell_spec_retrieve(
-          { slice.access(i, j).loc(), coord_relativity::ekVORIGIN });
+      auto coord = ssds::ct_coord{ slice.access(i, j).loc(),
+                                   ssds::ct_coord::relativity::ekVORIGIN,
+                                   structure };
+      const auto* spec = structure->cell_spec_retrieve(coord);
+
       count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
     } /* for(j..) */
   } /* for(i..) */

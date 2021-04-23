@@ -37,7 +37,7 @@ NS_START(silicon, structure, metrics);
  ******************************************************************************/
 void structure_state_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
-  auto& m = dynamic_cast<const structure_state_metrics&>(metrics);
+  const auto& m = dynamic_cast<const structure_state_metrics&>(metrics);
   inc_total_count(m.occupied_cells().size());
 
   for (auto& cell : m.occupied_cells()) {

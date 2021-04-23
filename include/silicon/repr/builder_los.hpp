@@ -29,6 +29,8 @@
 #include "cosm/ds/block3D_vector.hpp"
 #include "cosm/repr/losQ3D.hpp"
 
+#include "silicon/silicon.hpp"
+
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/

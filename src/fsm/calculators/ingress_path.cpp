@@ -50,23 +50,24 @@ ingress_path::ingress_path(
  ******************************************************************************/
 std::vector<rmath::vector2d>
 ingress_path::operator()(const srepr::construction_lane* lane) const {
+  const auto* ct = mc_perception->nearest_ct();
+  auto ingress_pt = lane->geometry().ingress_pt();
+
   /* 1st point: robot's current position */
   std::vector<rmath::vector2d> path = { mc_sensing->rpos2D() };
 
-  auto* ct = mc_perception->nearest_ct();
-
   if (rmath::radians::kZERO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.push_back({ ct->xrange().lb(), lane->ingress().y() });
+    path.emplace_back(ct->xrange().lb(), ingress_pt.y());
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.push_back({ lane->ingress().x(), ct->yrange().lb() });
+    path.emplace_back(ingress_pt.x(), ct->yrange().lb());
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.push_back({ ct->xrange().ub(), lane->ingress().y() });
+    path.emplace_back(ct->xrange().ub(), ingress_pt.y());
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.push_back({ lane->ingress().x(), ct->yrange().ub() });
+    path.emplace_back(ingress_pt.x(), ct->yrange().ub());
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());

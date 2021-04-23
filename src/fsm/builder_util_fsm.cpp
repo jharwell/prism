@@ -24,11 +24,11 @@
 #include "silicon/fsm/builder_util_fsm.hpp"
 
 #include "rcppsw/patterns/fsm/event.hpp"
+#include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/calculators/lane_alignment.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -55,15 +55,18 @@ builder_util_fsm::~builder_util_fsm(void) = default;
  ******************************************************************************/
 RCPPSW_HFSM_STATE_DEFINE(builder_util_fsm,
                          wait_for_robot,
-                         const robot_wait_data* data) {
-  saa()->actuation()->actuator<ckin2D::governed_diff_drive>()->reset();
+                         robot_wait_data* data) {
+  saa()->actuation()->governed_diff_drive()->reset();
 
-  if (robot_proximity_type::ekTRAJECTORY == data->prox_type &&
-      !robot_trajectory_proximity()) {
+  event_data_hold(false);
+  auto prox_checker = mc_perception->builder_prox();
+  auto prox = prox_checker->operator()(mc_alloc_lane, data->fs);
+  if (!(prox & data->prox_type)) {
+    ER_DEBUG("Resume previous state: no proxmity of type=%d",
+             rcppsw::as_underlying(data->prox_type));
     internal_event(previous_state());
-  } else if (robot_proximity_type::ekMANHATTAN == data->prox_type &&
-             !robot_manhattan_proximity()) {
-    internal_event(previous_state());
+  } else {
+    event_data_hold(true);
   }
   return rpfsm::event_signal::ekHANDLED;
 }
@@ -75,66 +78,5 @@ void builder_util_fsm::init(void) {
   actuation()->reset();
   util_hfsm::init();
 } /* init() */
-
-bool builder_util_fsm::robot_trajectory_proximity(void) const {
-  auto readings =
-      sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->readings();
-  auto robot_dpos = saa()->sensing()->dpos2D();
-  auto robot_azimuth = saa()->sensing()->azimuth();
-
-  bool prox = false;
-  for (auto& r : readings) {
-    /* something other than a robot */
-    if (rutils::color::kBLUE != r.color) {
-      continue;
-    }
-    auto other_dpos =
-        rmath::dvec2zvec(r.vec, mc_perception->arena_resolution().v());
-    rmath::range<rmath::radians> pos_x(
-        rmath::radians::kZERO + calculators::lane_alignment::kAZIMUTH_TOL,
-        rmath::radians::kZERO - calculators::lane_alignment::kAZIMUTH_TOL);
-    rmath::range<rmath::radians> neg_x(
-        rmath::radians::kPI + calculators::lane_alignment::kAZIMUTH_TOL,
-        rmath::radians::kPI - calculators::lane_alignment::kAZIMUTH_TOL);
-    rmath::range<rmath::radians> pos_y(
-        rmath::radians::kPI_OVER_TWO + calculators::lane_alignment::kAZIMUTH_TOL,
-        rmath::radians::kPI_OVER_TWO - calculators::lane_alignment::kAZIMUTH_TOL);
-    rmath::range<rmath::radians> neg_y(
-        rmath::radians::kTHREE_PI_OVER_TWO +
-            calculators::lane_alignment::kAZIMUTH_TOL,
-        rmath::radians::kTHREE_PI_OVER_TWO -
-            calculators::lane_alignment::kAZIMUTH_TOL);
-    if (pos_x.contains(robot_azimuth)) {
-      prox |= (other_dpos.x() - robot_dpos.x()) <= 2;
-    } else if (neg_x.contains(robot_azimuth)) {
-      prox |= (robot_dpos.x() - other_dpos.x()) <= 2;
-    } else if (pos_y.contains(robot_azimuth)) {
-      prox |= (other_dpos.y() - robot_dpos.y()) <= 2;
-    } else {
-      prox |= (robot_dpos.y() - robot_dpos.y()) <= 2;
-    }
-  } /* for(&r..) */
-  return prox;
-} /* robot_trajectory_proximity() */
-
-bool builder_util_fsm::robot_manhattan_proximity(void) const {
-  auto readings =
-      sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->readings();
-  auto robot_dpos = saa()->sensing()->dpos2D();
-
-  bool prox = false;
-  for (auto& r : readings) {
-    /* something other than a robot */
-    if (rutils::color::kBLUE != r.color) {
-      continue;
-    }
-    auto other_dpos =
-        rmath::dvec2zvec(r.vec, mc_perception->arena_resolution().v());
-    size_t dist = std::abs(static_cast<int>(robot_dpos.x() - other_dpos.x())) +
-                  std::abs(static_cast<int>(robot_dpos.y() - other_dpos.y()));
-    prox |= (dist <= 2);
-  } /* for(&r..) */
-  return prox;
-} /* robot_manhattan_proximity() */
 
 NS_END(fsm, silicon);

@@ -26,8 +26,6 @@
  ******************************************************************************/
 #include <utility>
 
-#include <argos3/core/simulator/entity/floor_entity.h>
-
 #include "cosm/arena/operations/free_block_drop.hpp"
 #include "cosm/arena/operations/nest_block_process.hpp"
 #include "cosm/repr/cube_block3D.hpp"
@@ -49,11 +47,11 @@ NS_START(silicon, support);
  ******************************************************************************/
 /**
  * \class base_ct_block_place_interactor
- * \ingroup support depth2
+ * \ingroup support
  *
- * \brief Handles a robot's (possible) placement of a block onto a structure, if
- * the conditions necessary for the event are met, updating the robot and the
- * target structure as needed.
+ * \brief Base clase for handling a robot's (possible) placement of a block onto
+ * a structure, if the conditions necessary for the event are met, updating the
+ * robot and the target structure as needed.
  */
 template <typename TController, typename TControllerSpecMap>
 class base_ct_block_place_interactor
@@ -156,14 +154,12 @@ class base_ct_block_place_interactor
     auto target = m_ct_manager->target(ct->id());
 
     if (builder->block_placement_valid(crepr::make_variant(controller.block()),
-                                       intent->site,
-                                       intent->orientation)) {
+                                       *intent)) {
       execute_block_place(controller, p, *intent, t);
     } else {
-      ER_WARN("Block placement on target%s@%s, orientation=%s invalid",
+      ER_WARN("Block placement on target%s with intent %s invalid",
               rcppsw::to_string(target->id()).c_str(),
-              rcppsw::to_string(intent->site.offset).c_str(),
-              rcppsw::to_string(intent->orientation).c_str());
+              rcppsw::to_string(*intent).c_str());
     }
 
     handler->penalty_remove(p);
@@ -176,7 +172,7 @@ class base_ct_block_place_interactor
    */
   void execute_block_place(TController& controller,
                            const ctv::temporal_penalty& penalty,
-                           const fsm::block_placer::placement_intent& intent,
+                           const repr::placement_intent& intent,
                            const rtypes::timestep& t) {
     auto* ct = controller.perception()->nearest_ct();
     auto builder = m_ct_manager->builder(ct->id());
@@ -193,21 +189,17 @@ class base_ct_block_place_interactor
     robot_previsit_hook(controller, penalty);
 
     /* place the block! */
-    bool res = builder->place_block(controller.block(),
-                                    intent.site,
-                                    intent.orientation);
+    bool res = builder->place_block(controller.block(), intent);
     ER_ASSERT(res,
-              "Failed to place block on target%s: intent@%s,orientation=%s",
+              "Failed to place block on target%s with intent %s",
               rcppsw::to_string(structure->id()).c_str(),
-              rcppsw::to_string(intent.site.offset).c_str(),
-              rcppsw::to_string(intent.orientation).c_str());
+              rcppsw::to_string(intent).c_str());
     auto placed = controller.block_release();
 
     robot_block_place_visitor_type rplace_op(controller.entity_id(),
                                              placed->danchor3D());
-    caops::nest_block_process_visitor aproc_op(m_arena_map->blocks()[placed->id().v()],
-                                               t);
-
+    caops::nest_block_process_visitor aproc_op(
+        m_arena_map->blocks()[placed->id().v()], t);
 
     /*
      * Distribute the block so that the # blocks available to robots in the

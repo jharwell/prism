@@ -34,6 +34,7 @@
 #include "silicon/fsm/calculators/egress_lane_path.hpp"
 #include "silicon/fsm/calculators/egress_path.hpp"
 #include "silicon/fsm/construction_signal.hpp"
+#include "silicon/repr/colors.hpp"
 #include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -60,14 +61,17 @@ structure_egress_fsm::structure_egress_fsm(
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&start),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_egress_lane,
                                              nullptr,
-                                             nullptr,
+                                             &entry_acquire_egress_lane,
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&structure_egress,
                                              nullptr,
                                              &entry_structure_egress,
-                                             &exit_structure_egress),
+                                             nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&wait_for_robot),
-          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&finished,
+                                             nullptr,
+                                             &entry_finished,
+                                             nullptr)),
       m_alignment_calc(saa->sensing()) {}
 
 /*******************************************************************************
@@ -77,56 +81,78 @@ RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, start) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
-RCPPSW_HFSM_STATE_DEFINE(structure_egress_fsm,
-                         acquire_egress_lane,
-                         csteer2D::ds::path_state* path) {
-  if (robot_manhattan_proximity()) {
-    internal_event(
-        ekST_WAIT_FOR_ROBOT,
-        std::make_unique<robot_wait_data>(robot_proximity_type::ekMANHATTAN));
+RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, acquire_egress_lane) {
+  auto prox_checker = perception()->builder_prox();
+  auto prox =
+      prox_checker->operator()(allocated_lane(), srepr::fs_configuration::ekNONE);
+
+  if (scperception::builder_prox_type::ekNONE != prox) {
+    ER_DEBUG("Wait@%s/%s while acquiring egress lane: robot manhattan proximity",
+             rcppsw::to_string(sensing()->rpos2D()).c_str(),
+             rcppsw::to_string(sensing()->dpos2D()).c_str())
+    internal_event(ekST_WAIT_FOR_ROBOT, std::make_unique<robot_wait_data>(prox));
   } else {
-    if (path->is_complete()) {
-      auto egress_path = calculators::egress_path(sensing(), perception(), rng())(
-          allocated_lane());
-      event_data_hold(false);
-      internal_event(ekST_STRUCTURE_EGRESS,
-                     std::make_unique<csteer2D::ds::path_state>(egress_path));
+    if (m_egress_state->is_complete()) {
+      auto egress_pt = allocated_lane()->geometry().egress_pt();
+      ER_DEBUG("Acquired egress lane%zu egress@%s",
+               allocated_lane()->id(),
+               rcppsw::to_string(egress_pt).c_str());
+      auto calculator = calculators::egress_path(sensing(), perception(), rng());
+      auto path = calculator(allocated_lane());
+      m_egress_state = std::make_unique<csteer2D::ds::path_state>(path);
+      internal_event(ekST_STRUCTURE_EGRESS);
     } else {
-      event_data_hold(true);
-      auto force = saa()->steer_force2D().path_following(path);
+      auto force = saa()->steer_force2D().path_following(m_egress_state.get());
       saa()->steer_force2D().accum(force);
     }
   }
   return rpfsm::event_signal::ekHANDLED;
 }
 
-RCPPSW_HFSM_STATE_DEFINE(structure_egress_fsm,
-                         structure_egress,
-                         csteer2D::ds::path_state* path) {
+RCPPSW_HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_acquire_egress_lane) {
+  /*
+   * Turn on LEDs--they were turned off when the task was reset. I don't think
+   * this is a design flaw--it is reasonable for an FSM to want to reset all
+   * actuators to their initial state and not rely on carryover from whatever
+   * previous task/FSM was running. Things are more modular this way.
+   */
+  saa()->actuation()->leds()->set_color(-1, srepr::colors::builder());
+}
+
+RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, structure_egress) {
   auto alignment = m_alignment_calc(allocated_lane());
   ER_ASSERT(alignment.egress_pos, "Bad alignment (position) on structure egress");
 
-  bool in_ct_zone =
-      saa()->sensing()->sensor<chal::sensors::ground_sensor>()->detect("nest");
+  bool in_ct_zone = saa()->sensing()->ground()->detect("nest");
+
   /*
    * A robot in front of us is too close--wait for it to move before
    * continuing.
    */
-  if (in_ct_zone && robot_trajectory_proximity()) {
-    internal_event(
-        ekST_WAIT_FOR_ROBOT,
-        std::make_unique<robot_wait_data>(robot_proximity_type::ekTRAJECTORY));
+  if (in_ct_zone) {
+    auto prox_checker = perception()->builder_prox();
+    auto prox = prox_checker->operator()(allocated_lane(),
+                                         srepr::fs_configuration::ekNONE);
+
+    if (scperception::builder_prox_type::ekNONE != prox) {
+      ER_DEBUG("Wait@%s/%s structure egress: robot trajectory proximity",
+               rcppsw::to_string(sensing()->rpos2D()).c_str(),
+               rcppsw::to_string(sensing()->dpos2D()).c_str())
+      internal_event(ekST_WAIT_FOR_ROBOT,
+                     std::make_unique<robot_wait_data>(prox));
+    } else {
+      auto force = saa()->steer_force2D().path_following(m_egress_state.get());
+      saa()->steer_force2D().accum(force);
+    }
   } else { /* left construction zone */
-    if (path->is_complete()) {
+    if (m_egress_state->is_complete()) {
       internal_event(ekST_FINISHED);
     } else {
-      event_data_hold(true);
-      auto force = saa()->steer_force2D().path_following(path);
+      auto force = saa()->steer_force2D().path_following(m_egress_state.get());
       saa()->steer_force2D().accum(force);
 
       /* back in 2D arena, so go back to obstacle avoidance */
-      auto* prox = saa()->sensing()->sensor<chal::sensors::proximity_sensor>();
-      if (auto obs = prox->avg_prox_obj()) {
+      if (auto obs = saa()->sensing()->proximity()->avg_prox_obj()) {
         saa()->steer_force2D().accum(saa()->steer_force2D().avoidance(*obs));
       }
     }
@@ -134,21 +160,24 @@ RCPPSW_HFSM_STATE_DEFINE(structure_egress_fsm,
   return rpfsm::event_signal::ekHANDLED;
 }
 
-RCPPSW_HFSM_EXIT_DEFINE(structure_egress_fsm, exit_structure_egress) {
-  /*
-   * If we have left the structure then disable the camera, as that is
-   * computationally expensive to compute readings for in large swarms, and we
-   * don't need it anymore at this point.
-   */
-  saa()->sensing()->sensor<chal::sensors::colored_blob_camera_sensor>()->disable();
-}
-
 RCPPSW_HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_structure_egress) {
   /*
    * Enable proximity sensor, which is needed as we exit the nest/construction
    * zone and move back into the 2D arena as part of structure egress.
    */
-  saa()->sensing()->sensor<chal::sensors::proximity_sensor>()->enable();
+  saa()->sensing()->proximity()->enable();
+
+  /*
+   * Enable the camera, which may have been disabled previously during egress
+   * if we had to wait for a robot while in the egress lane.
+   */
+  saa()->sensing()->blobs()->enable();
+
+  /*
+   * Turn on LEDs--they may have been turned off when we exited the egress state
+   * due to robot proximity.
+   */
+  saa()->actuation()->leds()->set_color(-1, srepr::colors::builder());
 }
 
 RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
@@ -158,11 +187,19 @@ RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, finished) {
   return rpfsm::event_signal::ekHANDLED;
 }
 
+RCPPSW_HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_finished) {
+  /*
+   * If we have left the structure then disable the camera, as that is
+   * computationally expensive to compute readings for in large swarms, and we
+   * don't need it anymore at this point.
+   */
+  saa()->sensing()->blobs()->disable();
+}
 /*******************************************************************************
  * Taskable Interface
  ******************************************************************************/
 void structure_egress_fsm::task_start(cta::taskable_argument* c_arg) {
-  static const uint8_t kTRANSITIONS[] = {
+  static const std::array<uint8_t, ekST_MAX_STATES> kTRANSITIONS = {
     ekST_ACQUIRE_EGRESS_LANE, /* start */
     rpfsm::event_signal::ekFATAL, /* acquire egress lane */
     rpfsm::event_signal::ekFATAL, /* structure egress */
@@ -176,8 +213,8 @@ void structure_egress_fsm::task_start(cta::taskable_argument* c_arg) {
   allocated_lane(a);
 
   auto path = calculators::egress_lane_path(sensing())(allocated_lane());
-  external_event(kTRANSITIONS[current_state()],
-                 std::make_unique<csteer2D::ds::path_state>(path));
+  m_egress_state = std::make_unique<csteer2D::ds::path_state>(path);
+  external_event(kTRANSITIONS[current_state()]);
 } /* task_start() */
 
 void structure_egress_fsm::task_execute(void) {
@@ -195,8 +232,8 @@ void structure_egress_fsm::task_execute(void) {
  * Member Functions
  ******************************************************************************/
 void structure_egress_fsm::init(void) {
-  actuation()->reset();
-  util_hfsm::init();
+  builder_util_fsm::init();
+  m_egress_state = nullptr;
 } /* init() */
 
 NS_END(fsm, silicon);

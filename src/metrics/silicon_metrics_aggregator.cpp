@@ -100,7 +100,7 @@ void silicon_metrics_aggregator::collect_from_tv(
 
 void silicon_metrics_aggregator::collect_from_ct(
     const structure::ct_manager* manager) {
-  for (auto* target : manager->targetsro()) {
+  for (const auto* target : manager->targetsro()) {
     collect("structure" + rcppsw::to_string(target->id()) + "::state", *target);
     collect("structure" + rcppsw::to_string(target->id()) + "::progress",
             *target);

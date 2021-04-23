@@ -31,6 +31,7 @@
 
 #include "silicon/repr/builder_los.hpp"
 #include "silicon/controller/perception/ct_skel_info.hpp"
+#include "silicon/controller/perception/builder_prox_checker.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -38,6 +39,10 @@
 namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem::sensing_subsystemQ3D */
+
+namespace silicon::repr {
+class construction_lane;
+} /* namespace silicon::repr */
 
 NS_START(silicon, controller, perception);
 
@@ -56,8 +61,8 @@ class perception_receptor;
  */
 class builder_perception_subsystem : public csperception::base_perception_subsystem<repr::builder_los> {
  public:
-  builder_perception_subsystem(const cspconfig::perception_config* const pconfig,
-                               const csubsystem::sensing_subsystemQ3D* const sensing);
+  builder_perception_subsystem(const cspconfig::perception_config* pconfig,
+                               const csubsystem::sensing_subsystemQ3D* sensing);
 
   ~builder_perception_subsystem(void) override;
 
@@ -78,6 +83,10 @@ class builder_perception_subsystem : public csperception::base_perception_subsys
   const rmath::ranged& arena_xrange(void) const { return mc_arena_xrange; }
   const rmath::ranged& arena_yrange(void) const { return mc_arena_yrange; }
 
+  const builder_prox_checker* builder_prox(void) const {
+    return & mc_builder_prox;
+  }
+
   /**
    * \brief Return the X range of the nearest known construction target, or
    * empty if there are no known targets.
@@ -96,12 +105,23 @@ class builder_perception_subsystem : public csperception::base_perception_subsys
    */
   const ct_skel_info* nearest_ct(void) const;
 
+  /**
+   * \brief Calculate whether or not another robot with RELATIVE offset from the
+   * current robot is in front of or behind it, accounting for construction lane
+   * orientation.
+   */
+  bool is_behind_self(const rmath::vector2d& other_offset,
+                      const srepr::construction_lane* lane) const;
+
+  bool self_lane_aligned(const srepr::construction_lane* lane) const;
+
  private:
   /* clang-format off */
   const rtypes::discretize_ratio          mc_arena_res;
   const rmath::ranged                     mc_arena_xrange;
   const rmath::ranged                     mc_arena_yrange;
   const csubsystem::sensing_subsystemQ3D* mc_sensing;
+  const builder_prox_checker              mc_builder_prox;
 
   std::unique_ptr<perception_receptor>    m_receptor;
   /* clang-format on */

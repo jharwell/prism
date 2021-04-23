@@ -71,12 +71,12 @@ void constructing_controller::init(ticpp::Element& node) {
   }
 
   /* initialize RNG */
-  auto rngp = repo.config_get<rmath::config::rng_config>();
+  const auto* rngp = repo.config_get<rmath::config::rng_config>();
   base_controllerQ3D::rng_init((nullptr == rngp) ? -1 : rngp->seed,
-                               kARGoSRobotType);
+                               cpal::kARGoSRobotType);
 
   /* initialize output */
-  auto* outputp = repo.config_get<cmconfig::output_config>();
+  const auto* outputp = repo.config_get<cmconfig::output_config>();
   base_controllerQ3D::output_init(outputp->output_root, outputp->output_dir);
 
   /* initialize sensing and actuation (SAA) subsystem */
@@ -186,9 +186,10 @@ void constructing_controller::saa_init(
        * drive instead of the governed version (no robust way to inform that we
        * want to use the governed version).
        */
-    csubsystem::actuation_subsystem2D::map_entry_create(chal::actuators::diff_drive_actuator(
-        GetActuator<chal::actuators::diff_drive_actuator::impl_type>(
-            saa_names::diff_steering_saa))),
+    csubsystem::actuation_subsystem2D::map_entry_create(
+        chal::actuators::diff_drive_actuator(
+            GetActuator<chal::actuators::diff_drive_actuator::impl_type>(
+                saa_names::diff_steering_saa))),
     csubsystem::actuation_subsystem2D::map_entry_create(diff_drivea),
     csubsystem::actuation_subsystem2D::map_entry_create(leds)
   };

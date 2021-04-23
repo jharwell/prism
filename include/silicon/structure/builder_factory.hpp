@@ -52,8 +52,8 @@ class builder_factory
                                           structure3D*,
                                           cpal::argos_sm_adaptor*> {
  public:
-  static constexpr char kStatic[] = "static";
-  static constexpr char kSwarm[] = "swarm";
+  inline static const std::string kStatic = "static";
+  inline static const std::string kSwarm = "swarm";
 
   builder_factory(void);
 };

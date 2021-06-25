@@ -55,27 +55,27 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
     m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
     m_xrange = { 0, target->bbd(true).x() };
-    m_yrange = { mc_ingress_virt.offset().y(),
-                 mc_ingress_virt.offset().y() + l1 };
+    m_yrange = { mc_egress_virt.offset().y(), mc_egress_virt.offset().y() + l1 };
 
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
     m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
     m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
-    m_xrange = { mc_egress_virt.offset().x(), mc_egress_virt.offset().x() + l1 };
+    m_xrange = { mc_ingress_virt.offset().x(),
+                 mc_ingress_virt.offset().x() + l1 };
     m_yrange = { 0, target->bbd(true).y() };
   } else if (rmath::radians::kPI == target->orientation()) {
     m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
     m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
     m_xrange = { 0, target->bbd(true).x() };
-    m_yrange = { mc_egress_virt.offset().y(), mc_egress_virt.offset().y() + l1 };
+    m_yrange = { mc_ingress_virt.offset().y(),
+                 mc_ingress_virt.offset().y() + l1 };
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
     m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
     m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
 
-    m_xrange = { mc_ingress_virt.offset().x(),
-                 mc_ingress_virt.offset().x() + l1 };
+    m_xrange = { mc_egress_virt.offset().x(), mc_egress_virt.offset().x() + l1 };
     m_yrange = { 0, target->bbd(true).y() };
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",

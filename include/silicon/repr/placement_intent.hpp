@@ -26,6 +26,8 @@
  ******************************************************************************/
 #include <string>
 
+#include "rcppsw/er/stringizable.hpp"
+
 #include "silicon/silicon.hpp"
 #include "silicon/structure/ds/ct_coord.hpp"
 
@@ -45,7 +47,8 @@ NS_START(silicon, repr);
  * \brief Representation of robot/arena intent to place a block at a specified
  * location with the specified orientation.
  */
-class placement_intent : public rer::client<placement_intent> {
+class placement_intent : public rer::client<placement_intent>,
+                         public rer::stringizable {
  public:
   placement_intent(void) : ER_CLIENT_INIT("silicon.repr.placement_intent") {}
 
@@ -54,12 +57,12 @@ class placement_intent : public rer::client<placement_intent> {
         m_site(site),
         m_z_rot(z_rot) {}
 
-  std::string to_str(void) const {
+  std::string to_str(void) const override {
     return "site=" + rcppsw::to_string(m_site) + "," +
            "z_rot=" + rcppsw::to_string(m_z_rot);
   }
   const ssds::ct_coord& site(void) const { return m_site; }
-  const rmath::radians z_rot(void) const { return m_z_rot; }
+  const rmath::radians& z_rot(void) const { return m_z_rot; }
 
  private:
   /* clang-format off */

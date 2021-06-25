@@ -78,26 +78,23 @@ ct_coord ct_coord::to_virtual(void) const {
   return ct_coord::to_virtual(*this, mc_ct);
 }
 
-ct_coord ct_coord::from_arena(rmath::vector3z coord, const structure3D* ct) {
+ct_coord ct_coord::from_arena(rmath::vector3d pos, const structure3D* ct) {
   /*
    * If the unit dim factor is > 1, it is possible that due to floating point
    * errors and the fact that robots traverse the middle of the ingress/egress
    * lane that our cell location within the construction target is not correct,
    * so we correct it here.
    */
-  coord.x(coord.x() -
-          ct->unit_dim_factor() * ((coord.x() % ct->unit_dim_factor()) != 0));
-  coord.y(coord.y() -
-          ct->unit_dim_factor() * ((coord.y() % ct->unit_dim_factor()) != 0));
+  /* coord.x(coord.x() - */
+  /*         ct->unit_dim_factor() * ((coord.x() % ct->unit_dim_factor()) != 0)); */
+  /* coord.y(coord.y() - */
+  /*         ct->unit_dim_factor() * ((coord.y() % ct->unit_dim_factor()) != 0)); */
 
-  /*
-   * 2021/06/25: I don't know why this corrective factor is necessary, but it
-   * seems to be, for now. Otherwise you get off-by-one errors between where a
-   * robot thinks its placement intent is, and where it actually is.
-   */
-  auto corr = rmath::vector3z{ coord.x() > 0, coord.y() > 0, coord.z() > 0 };
-  auto virt = (coord - ct->vorigind() - corr) / ct->unit_dim_factor();
-  return ct_coord{ virt, relativity::ekVORIGIN, ct };
+  auto arena_cell = rmath::dvec2zvec(pos - ct->voriginr(),
+                                     ct->arena_grid_resolution().v());
+
+  auto ct_cell = arena_cell / ct->unit_dim_factor();
+  return ct_coord{ ct_cell, relativity::ekVORIGIN, ct };
 } /* from_arena() */
 
 std::string ct_coord::to_str(void) const {

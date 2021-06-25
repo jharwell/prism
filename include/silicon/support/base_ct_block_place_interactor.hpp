@@ -64,17 +64,17 @@ class base_ct_block_place_interactor
   using robot_block_place_visitor_type =
       typename controller_spec::robot_block_place_visitor_type;
   using penalty_handler_type = typename controller_spec::penalty_handler_type;
-  using metrics_agg_type = typename controller_spec::metrics_agg_type;
+  using metrics_manager_type = typename controller_spec::metrics_manager_type;
   using arena_map_type = typename controller_spec::arena_map_type;
 
-  base_ct_block_place_interactor(sstructure::ct_manager* const manager,
+  base_ct_block_place_interactor(sstructure::ct_manager* const ct_manager,
                                  arena_map_type* const arena_map,
-                                 metrics_agg_type* const metrics_agg,
+                                 metrics_manager_type* const metrics_manager,
                                  argos::CFloorEntity* const floor)
       : ER_CLIENT_INIT("silicon.support.base_ct_block_place_interactor"),
-        m_ct_manager(manager),
+        m_ct_manager(ct_manager),
         m_arena_map(arena_map),
-        m_metrics_agg(metrics_agg),
+        m_metrics_manager(metrics_manager),
         m_floor(floor) {}
 
   base_ct_block_place_interactor(base_ct_block_place_interactor&&) = default;
@@ -183,7 +183,7 @@ class base_ct_block_place_interactor
      * the nest block drop event resets block metrics.
      */
     controller.block()->md()->dest_drop_time(t);
-    m_metrics_agg->collect_from_block(controller.block());
+    m_metrics_manager->collect_from_block(controller.block());
 
     /* update controller bookkeeping */
     robot_previsit_hook(controller, penalty);
@@ -217,7 +217,7 @@ class base_ct_block_place_interactor
   /* clang-format off */
   sstructure::ct_manager*const m_ct_manager;
   arena_map_type* const        m_arena_map;
-  metrics_agg_type * const     m_metrics_agg;
+  metrics_manager_type * const m_metrics_manager;
   argos::CFloorEntity*const    m_floor;
   /* clang-format on */
 };

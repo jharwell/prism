@@ -41,7 +41,7 @@
  * Namespaces
  ******************************************************************************/
 namespace silicon::metrics {
-class silicon_metrics_aggregator;
+class silicon_metrics_manager;
 } /* namespace silicon::metrics */
 
 namespace silicon::repr {
@@ -110,7 +110,7 @@ class construction_loop_functions
   using metric_extraction_map_type = rds::type_map<
       rmpl::typelist_wrap_apply<controller::typelist,
                                 ccops::metrics_extract,
-                                metrics::silicon_metrics_aggregator>::type>;
+                                metrics::silicon_metrics_manager>::type>;
 
   using losQ3D_updater_vector = std::vector<losQ3D_updater_map_type>;
 
@@ -170,10 +170,10 @@ class construction_loop_functions
   robot_target(const controller::constructing_controller* c) const;
 
   /* clang-format off */
-  std::unique_ptr<metrics::silicon_metrics_aggregator> m_metrics_agg;
-  std::unique_ptr<interactor_map_type>                 m_interactor_map;
-  std::unique_ptr<metric_extraction_map_type>          m_metrics_map;
-  losQ3D_updater_vector                                m_losQ3D_updaters{};
+  std::unique_ptr<metrics::silicon_metrics_manager> m_metrics_manager;
+  std::unique_ptr<interactor_map_type>              m_interactor_map;
+  std::unique_ptr<metric_extraction_map_type>       m_metrics_map;
+  losQ3D_updater_vector                             m_losQ3D_updaters{};
   /* clang-format on */
 };
 

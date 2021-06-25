@@ -43,7 +43,7 @@ NS_START(silicon, lane_alloc, config, xml);
  * \class lane_alloc_parser
  * \ingroup lane_alloc config xml
  *
- * \brief Parses XML parameters \ref lane_alloc::allocator objects.
+ * \brief Parses XML parameters \ref lane_alloc::lane_allocator objects.
  */
 class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
  public:

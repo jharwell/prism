@@ -70,7 +70,6 @@ class acquire_block_placement_site_fsm
   operator=(const acquire_block_placement_site_fsm&) = delete;
 
   /* taskable overrides */
-  void task_reset(void) override { init(); }
   bool task_running(void) const override {
     return current_state() != fsm_state::ekST_START &&
            current_state() != fsm_state::ekST_FINISHED;
@@ -80,6 +79,7 @@ class acquire_block_placement_site_fsm
   bool task_finished(void) const override {
     return current_state() == fsm_state::ekST_FINISHED;
   }
+  void task_reset(void) override;
 
   /**
    * \brief Once the robot has reached the end of the path from which it should
@@ -123,6 +123,8 @@ class acquire_block_placement_site_fsm
 
   /* inherited states */
   RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, robot_wait_data);
+  RCPPSW_HFSM_ENTRY_INHERIT_ND(builder_util_fsm, entry_wait_for_robot);
+  RCPPSW_HFSM_EXIT_INHERIT(builder_util_fsm, exit_wait_for_robot);
 
   /* FSM states */
   RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, start);
@@ -131,14 +133,14 @@ class acquire_block_placement_site_fsm
 
   RCPPSW_HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
                                entry_acquire_frontier_set);
+
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
+                               entry_acquire_placement_loc);
   RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm,
                                acquire_placement_loc);
 
   RCPPSW_HFSM_STATE_DECLARE_ND(acquire_block_placement_site_fsm, finished);
 
-  RCPPSW_HFSM_ENTRY_DECLARE_ND(acquire_block_placement_site_fsm,
-                               entry_wait_for_robot);
-  RCPPSW_HFSM_EXIT_DECLARE(acquire_block_placement_site_fsm, exit_wait_for_robot);
 
   RCPPSW_HFSM_DEFINE_STATE_MAP_ACCESSOR(state_map_ex, index) override {
     return &mc_state_map[index];
@@ -149,7 +151,9 @@ class acquire_block_placement_site_fsm
                                 fsm_state::ekST_MAX_STATES);
 
   /* clang-format off */
-  std::unique_ptr<csteer2D::ds::path_state> m_path{nullptr};
+  std::unique_ptr<csteer2D::ds::path_state> m_ingress_path{nullptr};
+  std::unique_ptr<csteer2D::ds::path_state> m_site_path{nullptr};
+  srepr::fs_configuration                   m_site_fs{srepr::fs_configuration::ekNONE};
   calculators::lane_alignment               m_alignment_calc;
   /* clang-format on */
 };

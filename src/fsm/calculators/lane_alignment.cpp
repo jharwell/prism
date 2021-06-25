@@ -24,6 +24,7 @@
 #include "silicon/fsm/calculators/lane_alignment.hpp"
 
 #include "rcppsw/math/radians.hpp"
+#include "rcppsw/math/degrees.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
@@ -37,7 +38,8 @@ NS_START(silicon, fsm, calculators);
 /*******************************************************************************
  * Class Constants
  ******************************************************************************/
-const rmath::radians lane_alignment::kAZIMUTH_TOL = rmath::radians(0.10);
+const rmath::radians lane_alignment::kAZIMUTH_TOL =
+    rmath::radians(rmath::degrees(15));
 const rtypes::spatial_dist lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL =
     rtypes::spatial_dist(0.2);
 
@@ -72,16 +74,16 @@ bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
 bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   rmath::radians angle_diff;
   if (rmath::radians::kZERO == orientation) {
-    angle_diff = (rmath::radians::kPI - mc_sensing->azimuth()).signed_normalize();
-  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO - mc_sensing->azimuth())
-                     .signed_normalize();
-  } else if (rmath::radians::kPI == orientation) {
     angle_diff =
         (rmath::radians::kZERO - mc_sensing->azimuth()).signed_normalize();
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
+  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
     angle_diff =
         (rmath::radians::kPI_OVER_TWO - mc_sensing->azimuth()).signed_normalize();
+  } else if (rmath::radians::kPI == orientation) {
+    angle_diff = (rmath::radians::kPI - mc_sensing->azimuth()).signed_normalize();
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
+    angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO - mc_sensing->azimuth())
+                 .signed_normalize();
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(orientation).c_str());

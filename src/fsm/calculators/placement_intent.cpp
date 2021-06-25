@@ -51,14 +51,15 @@ placement_intent::placement_intent(
 repr::placement_intent
 placement_intent::operator()(const srepr::construction_lane* lane) const {
   const auto* ct = mc_perception->nearest_ct();
-  auto pos = mc_sensing->dpos3D();
+  auto dpos = mc_sensing->dpos3D();
+  auto rpos = mc_sensing->rpos3D();
 
   /**
    * The CT cell the robot is in is calculated relative to the origin of the
    * nest (which is where their LOS kicks in), NOT relative to the real origin
    * of the structure, so we want virtual CT coordinates.
    */
-  auto robot_ct_cell = ct->to_vcoord(pos);
+  auto robot_ct_cell = ct->to_vcoord(rpos);
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
@@ -66,45 +67,45 @@ placement_intent::operator()(const srepr::construction_lane* lane) const {
    * validated.
    */
 
-  ER_INFO("Calculate placement intent: robot_pos=%s,robot_ct_cell=%s",
-          rcppsw::to_string(pos).c_str(),
+  ER_INFO("Calculate placement intent: robot_pos=%s,robot_arena_cell=%s,robot_ct_cell=%s",
+          rcppsw::to_string(rpos).c_str(),
+          rcppsw::to_string(dpos).c_str(),
           rcppsw::to_string(robot_ct_cell).c_str());
 
   /*
    * For all targets, we have to compute placement intent from the robot's
-   * current position.
-   *
-   * 1. Intent is always the cell directly in front of the robot, along the unit
-   *    vector for whatever direction the target's orientation is in, accounting
-   *    for the fact that the target grid resolution may be greater than that of
-   *    the arena.
-   *
-   * 2. Subtract the target origin to get a relative location within the the
-   *    construction target, again accounting for the fact that the structure
-   *    grid resolution may be greater than that of the arena.
+   * current position. Intent is always the cell directly in front of the robot,
+   * along the unit vector for whatever direction the target's orientation is
+   * in, accounting for the fact that the target grid resolution may be greater
+   * than that of the arena. Note that we do all intent calculations in real
+   * coordinates (even "one cell in front of") and only convert to discrete once
+   * the final value is achieved. Otherwise, you run the risk of off-by-one
+   * errors if the arena and/or ct resolution is != 1.0.
    */
-
   ssds::ct_coord coord;
+  rmath::vector3d placement_pos;
   if (rmath::radians::kZERO == lane->orientation()) {
-    /* intent is one cell -X from robot's current position  */
-    coord = robot_ct_cell - rmath::vector3z::X;
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    /* intent is one cell -Y from robot's current position  */
-    coord = robot_ct_cell - rmath::vector3z::Y;
-  } else if (rmath::radians::kPI == lane->orientation()) {
     /* intent is one cell +X from robot's current position  */
-    coord = robot_ct_cell + rmath::vector3z::X;
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    placement_pos = rpos + rmath::vector3d::X * ct->block_unit_dim();
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* intent is one cell +Y from robot's current position  */
-    coord = robot_ct_cell + rmath::vector3z::Y;
+    placement_pos = rpos + rmath::vector3d::Y * ct->block_unit_dim();
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    /* intent is one cell -X from robot's current position  */
+    placement_pos = rpos - rmath::vector3d::X * ct->block_unit_dim();
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    /* intent is one cell -Y from robot's current position  */
+    placement_pos = rpos - rmath::vector3d::Y * ct->block_unit_dim();
   } else {
     ER_FATAL_SENTINEL("Bad lane orientation '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
-  repr::placement_intent ret(coord, lane->orientation());
-  ER_INFO("Calculated placement intent: %s@%s",
-          rcppsw::to_string(ret.site().offset()).c_str(),
-          rcppsw::to_string(ret.z_rot()).c_str());
+  auto placement_ct_cell = ct->to_vcoord(placement_pos);
+
+  repr::placement_intent ret(placement_ct_cell, lane->orientation());
+  ER_INFO("Calculated placement intent: pos=%s,intent=%s",
+          rcppsw::to_string(placement_pos).c_str(),
+          rcppsw::to_string(ret).c_str());
   return ret;
 } /* operator()() */
 

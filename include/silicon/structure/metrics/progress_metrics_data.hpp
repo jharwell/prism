@@ -1,7 +1,7 @@
 /**
- * \file structure_state_metrics.hpp
+ * \file progress_metrics_data.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,17 +18,12 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_DATA_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_DATA_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-
-#include "rcppsw/metrics/base_metrics.hpp"
-#include "rcppsw/math/vector3.hpp"
-
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -40,20 +35,19 @@ NS_START(silicon, structure, metrics);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure_state_metrics
+ * \struct progress_metrics_data
  * \ingroup structure metrics
  *
- * \brief Interface defining the metrics to be collected from \ref structure3D
- * as it is built about block counts, etc.
+ * \brief Container for holding collected statistics of \ref
+ * progress_metrics. Does not need to be atomic, because these are collected
+ * in non-current contexts.
  */
-class structure_state_metrics : public virtual rmetrics::base_metrics {
- public:
-  /**
-   * \brief Return the list of cells within the structure that contain blocks.
-   */
-  virtual std::vector<rmath::vector3z> occupied_cells(void) const = 0;
+struct progress_metrics_data {
+  size_t placed_count{0};
+  size_t manifest_size{0};
+  size_t complete_count{0};
 };
 
 NS_END(metrics, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_PROGRESS_METRICS_DATA_HPP_ */

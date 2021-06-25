@@ -27,7 +27,7 @@
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/types/timestep.hpp"
 
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/metrics/silicon_metrics_manager.hpp"
 #include "silicon/silicon.hpp"
 #include "silicon/support/arena_block_pickup_interactor.hpp"
 #include "silicon/support/ct_block_place_interactor.hpp"
@@ -60,15 +60,15 @@ class robot_arena_interactor final
     : public rer::client<robot_arena_interactor<TControllerType>> {
  public:
   robot_arena_interactor(carena::base_arena_map* const map,
-                         sstructure::ct_manager* manager,
+                         sstructure::ct_manager* ct_manager,
                          argos::CFloorEntity* const floor,
                          tv::env_dynamics* const envd,
-                         smetrics::silicon_metrics_aggregator* metrics_agg)
+                         smetrics::silicon_metrics_manager* metrics_manager)
       : ER_CLIENT_INIT("silicon.support.robot_arena_interactor"),
         m_arena_pickup(map,
                        floor,
                        envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
-        m_block_place(manager, map, metrics_agg, floor) {}
+        m_block_place(ct_manager, map, metrics_manager, floor) {}
 
   robot_arena_interactor(robot_arena_interactor&&) = default;
 

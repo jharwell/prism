@@ -29,6 +29,7 @@
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -69,6 +70,26 @@ RCPPSW_HFSM_STATE_DEFINE(builder_util_fsm,
     event_data_hold(true);
   }
   return rpfsm::event_signal::ekHANDLED;
+}
+
+RCPPSW_HFSM_ENTRY_DEFINE_ND(builder_util_fsm, entry_wait_for_robot) {
+  inta_tracker()->inta_enter();
+}
+
+RCPPSW_HFSM_EXIT_DEFINE(builder_util_fsm, exit_wait_for_robot) {
+  inta_tracker()->inta_exit();
+  bool in_ct_zone = saa()->sensing()->ground()->detect("nest");
+
+  /*
+   * If the interference episode we have just experienced occured while we were
+   * on the structure, then add its duration to the running total for the
+   * currently allocated lane.
+   */
+  if (in_ct_zone) {
+    auto ct_interference = inta_tracker()->interference_duration();
+    allocated_lane()->history()->interference_mark(allocated_lane()->id(),
+                                                   ct_interference);
+  }
 }
 
 /*******************************************************************************

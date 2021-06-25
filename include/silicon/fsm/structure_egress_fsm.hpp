@@ -105,6 +105,8 @@ class structure_egress_fsm : public builder_util_fsm,
   /* inherited states */
   RCPPSW_HFSM_ENTRY_INHERIT_ND(util_hfsm, entry_wait_for_signal);
   RCPPSW_HFSM_STATE_INHERIT(builder_util_fsm, wait_for_robot, robot_wait_data);
+  RCPPSW_HFSM_ENTRY_INHERIT_ND(builder_util_fsm, entry_wait_for_robot);
+  RCPPSW_HFSM_EXIT_INHERIT(builder_util_fsm, exit_wait_for_robot);
 
   /* builder states */
   RCPPSW_HFSM_STATE_DECLARE_ND(structure_egress_fsm, start);

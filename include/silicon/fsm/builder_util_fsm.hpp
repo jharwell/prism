@@ -102,7 +102,7 @@ class builder_util_fsm : public csfsm::util_hfsm,
 
  protected:
   struct robot_wait_data final : public rpfsm::event_data {
-    robot_wait_data(
+    explicit robot_wait_data(
         const scperception::builder_prox_type& prox_in,
         srepr::fs_configuration fs_in = srepr::fs_configuration::ekNONE)
         : prox_type(prox_in), fs(fs_in) {}
@@ -122,6 +122,8 @@ class builder_util_fsm : public csfsm::util_hfsm,
 
   /* builder states */
   RCPPSW_HFSM_STATE_DECLARE(builder_util_fsm, wait_for_robot, robot_wait_data);
+  RCPPSW_HFSM_ENTRY_DECLARE_ND(builder_util_fsm, entry_wait_for_robot);
+  RCPPSW_HFSM_EXIT_DECLARE(builder_util_fsm, exit_wait_for_robot);
 
  private:
   /* clang-format off */

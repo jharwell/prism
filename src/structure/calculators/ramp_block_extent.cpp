@@ -48,19 +48,19 @@ ramp_block_extent::operator()(const config::ramp_block_loc_spec* spec) const {
    */
   if (rmath::radians::kZERO == spec->z_rotation) {
     for (size_t m = 1; m < kEXTENT_SIZE; ++m) {
-      ret.push_back({ spec->loc.x() + m, spec->loc.y(), spec->loc.z() });
+      ret.push_back({ spec->loc.x() - m, spec->loc.y(), spec->loc.z() });
     } /* for(m..) */
   } else if (rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
     for (size_t m = 1; m < kEXTENT_SIZE; ++m) {
-      ret.push_back({ spec->loc.x(), spec->loc.y() + m, spec->loc.z() });
+      ret.push_back({ spec->loc.x(), spec->loc.y() - m, spec->loc.z() });
     } /* for(m..) */
   } else if (rmath::radians::kPI == spec->z_rotation) {
     for (size_t m = 1; m < kEXTENT_SIZE; ++m) {
-      ret.push_back({ spec->loc.x() - m, spec->loc.y(), spec->loc.z() });
+      ret.push_back({ spec->loc.x() + m, spec->loc.y(), spec->loc.z() });
     } /* for(m..) */
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
     for (size_t m = 1; m < kEXTENT_SIZE; ++m) {
-      ret.push_back({ spec->loc.x(), spec->loc.y() - m, spec->loc.z() });
+      ret.push_back({ spec->loc.x(), spec->loc.y() + m, spec->loc.z() });
     } /* for(m..) */
   } else {
     ER_FATAL_SENTINEL("Bad rotation '%s' in spec",

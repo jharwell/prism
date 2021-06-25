@@ -32,6 +32,7 @@
 #include "rcppsw/types/type_uuid.hpp"
 
 #include "silicon/silicon.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics_data.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -55,35 +56,27 @@ NS_START(silicon, lane_alloc, metrics);
 class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collector {
  public:
   /**
-   * \param ofname_stem The output file name stem.
-   * \param interval Collection interval.
+   * \param sink The metrics sink to use.
+   *
    * \param target_id ID of the target structure from which lane allocation
    *                  metrics will be gathered.
    * \param n_lanes # of lanes on the target structure.
    */
-  lane_alloc_metrics_collector(const std::string& ofname_stem,
-                               const rtypes::timestep& interval,
-                               const rtypes::type_uuid& target_id,
-                               size_t n_lanes);
+  lane_alloc_metrics_collector(
+      std::unique_ptr<rmetrics::base_metrics_sink> sink,
+      const rtypes::type_uuid& target_id,
+      size_t n_lanes);
 
-  void reset(void) override;
+  /* base_metrics_collector overrides */
   void collect(const rmetrics::base_metrics& metrics) override;
   void reset_after_interval(void) override;
+  const rmetrics::base_metrics_data* data(void) const override { return &m_data; }
 
  private:
-  struct stats {
-    size_t alloc_count{0};
-  };
-
-  std::list<std::string> csv_header_cols(void) const override;
-
-  boost::optional<std::string> csv_line_build(void) override;
-
   /* clang-format off */
   const rtypes::type_uuid mc_target_id;
 
-  std::vector<stats>      m_interval{};
-  std::vector<stats>      m_cum{};
+  lane_alloc_metrics_data m_data;
   /* clang-format on */
 };
 

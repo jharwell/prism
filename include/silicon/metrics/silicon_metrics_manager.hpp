@@ -1,5 +1,5 @@
 /**
- * \file silicon_metrics_aggregator.hpp
+ * \file silicon_metrics_manager.hpp
  *
  * \copyright 2018 John Harwell, All rights reserved.
  *
@@ -18,19 +18,16 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_METRICS_SILICON_METRICS_AGGREGATOR_HPP_
-#define INCLUDE_SILICON_METRICS_SILICON_METRICS_AGGREGATOR_HPP_
+#ifndef INCLUDE_SILICON_METRICS_SILICON_METRICS_MANAGER_HPP_
+#define INCLUDE_SILICON_METRICS_SILICON_METRICS_MANAGER_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <string>
-
-#include "rcppsw/types/type_uuid.hpp"
+#include "rcppsw/metrics/config/metrics_config.hpp"
 
 #include "cosm/ds/config/grid2D_config.hpp"
-#include "cosm/metrics/base_metrics_aggregator.hpp"
-#include "cosm/metrics/config/metrics_config.hpp"
+#include "cosm/metrics/cosm_metrics_manager.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/ds/ct_vector.hpp"
@@ -50,20 +47,20 @@ NS_START(silicon, metrics);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class silicon_metrics_aggregator
+ * \class silicon_metrics_manager
  * \ingroup metrics
  *
- * \brief Extends the \ref cmetrics::base_metrics_aggregator for the SILICON
+ * \brief Extends the \ref cmetrics::base_metrics_manager for the SILICON
  * project.
  */
-class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator>,
-                                   public cmetrics::base_metrics_aggregator {
+class silicon_metrics_manager : public rer::client<silicon_metrics_manager>,
+                                public cmetrics::cosm_metrics_manager {
  public:
-  silicon_metrics_aggregator(const cmconfig::metrics_config* mconfig,
-                             const cdconfig::grid2D_config* gconfig,
-                             const std::string& output_root,
-                             const ds::ct_vectorno& targets);
-  ~silicon_metrics_aggregator(void) override = default;
+  silicon_metrics_manager(const rmconfig::metrics_config* mconfig,
+                          const cdconfig::grid2D_config* gconfig,
+                          const fs::path& output_root,
+                          const ds::ct_vectorno& targets);
+  ~silicon_metrics_manager(void) override = default;
 
   void collect_from_tv(const support::tv::tv_manager* tvm);
   void collect_from_ct(const structure::ct_manager* manager);
@@ -77,20 +74,20 @@ class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator
    * \brief Register collectors that don't need extra arguments that do not
    * pertain to construction targets.
    */
-  void register_standard_non_target(const cmconfig::metrics_config* mconfig);
+  void register_standard_non_target(const rmconfig::metrics_config* mconfig);
 
   /**
    * \brief Register collectors that don't need extra arguments that pertain to
    * construction targets.
    */
-  void register_standard_target(const cmconfig::metrics_config* mconfig,
+  void register_standard_target(const rmconfig::metrics_config* mconfig,
                                 const sstructure::structure3D* structure);
 
   /**
    * \brief Register collectors that need extra arguments that pertain to
    * construction targets (# construction lanes).
    */
-  void register_with_target_lanes(const cmconfig::metrics_config* mconfig,
+  void register_with_target_lanes(const rmconfig::metrics_config* mconfig,
                                   const sstructure::structure3D* structure);
 
   /**
@@ -98,17 +95,17 @@ class silicon_metrics_aggregator : public rer::client<silicon_metrics_aggregator
    * construction targets (# construction lanes and structure ID).
    */
   void
-  register_with_target_lanes_and_id(const cmconfig::metrics_config* mconfig,
+  register_with_target_lanes_and_id(const rmconfig::metrics_config* mconfig,
                                     const sstructure::structure3D* structure);
 
   /**
    * \brief Register collectors that need extra arguments that pertain to
    * construction targets (structure dimenions).
    */
-  void register_with_target_dims(const cmconfig::metrics_config* mconfig,
+  void register_with_target_dims(const rmconfig::metrics_config* mconfig,
                                  const sstructure::structure3D* structure);
 };
 
 NS_END(metrics, silicon);
 
-#endif /* INCLUDE_SILICON_METRICS_SILICON_METRICS_AGGREGATOR_HPP_ */
+#endif /* INCLUDE_SILICON_METRICS_SILICON_METRICS_MANAGER_HPP_ */

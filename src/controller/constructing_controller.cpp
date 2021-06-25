@@ -31,14 +31,13 @@
 
 #include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/hal/subsystem/config/saa_xml_names.hpp"
-#include "cosm/metrics/config/output_config.hpp"
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/steer2D/config/force_calculator_config.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
 
 #include "silicon/controller/config/constructing_controller_repository.hpp"
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "silicon/controller/perception/perception_subsystem_factory.hpp"
 #include "silicon/fsm/construction_transport_goal.hpp"
 
 /*******************************************************************************
@@ -72,19 +71,17 @@ void constructing_controller::init(ticpp::Element& node) {
 
   /* initialize RNG */
   const auto* rngp = repo.config_get<rmath::config::rng_config>();
-  base_controllerQ3D::rng_init((nullptr == rngp) ? -1 : rngp->seed,
-                               cpal::kARGoSRobotType);
+  rng_init((nullptr == rngp) ? -1 : rngp->seed, cpal::kARGoSRobotType);
 
   /* initialize output */
-  const auto* outputp = repo.config_get<cmconfig::output_config>();
-  base_controllerQ3D::output_init(outputp->output_root, outputp->output_dir);
+  output_init(repo.config_get<cpconfig::output_config>());
 
   /* initialize sensing and actuation (SAA) subsystem */
   saa_init(repo.config_get<csubsystem::config::actuation_subsystem2D_config>(),
            repo.config_get<csubsystem::config::sensing_subsystemQ3D_config>());
 
   /* initialize perception */
-  perception_init(repo.config_get<cspconfig::perception_config>());
+  perception_init(repo.config_get<perception::config::perception_config>());
 
   /* initialize supervisor */
   supervisor(std::make_unique<cfsm::supervisor_fsm>(saa()));
@@ -99,14 +96,16 @@ double constructing_controller::los_dim(void) const {
 void constructing_controller::reset(void) { block_carrying_controller::reset(); }
 
 void constructing_controller::perception_init(
-    const cspconfig::perception_config* perceptionp) {
-  m_perception = std::make_unique<perception::builder_perception_subsystem>(
-      perceptionp, saa()->sensing());
+    const perception::config::perception_config* perceptionp) {
+  auto factory = perception::perception_subsystem_factory();
+  m_perception = factory.create(perceptionp->type,
+                                &perceptionp->rlos,
+                                saa()->sensing());
 } /* perception_init() */
 
-void constructing_controller::output_init(const cmconfig::output_config* outputp) {
-  std::string dir =
-      base_controllerQ3D::output_init(outputp->output_root, outputp->output_dir);
+fs::path constructing_controller::output_init(
+    const cpconfig::output_config* outputp) {
+  auto path = base_controllerQ3D::output_init(outputp);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   /*
@@ -115,13 +114,14 @@ void constructing_controller::output_init(const cmconfig::output_config* outputp
    * lines within it are not always ordered, which is not overly helpful for
    * debugging.
    */
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.ta"), dir + "/ta.log");
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.ta"), path / "ta.log");
 
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.controller"),
-                 dir + "/controller.log");
+                 path / "controller.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.structure"),
-                 dir + "/structure.log");
+                 path / "structure.log");
 #endif
+  return path;
 } /* output_init() */
 
 void constructing_controller::saa_init(

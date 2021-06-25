@@ -23,6 +23,8 @@
  ******************************************************************************/
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 
+#include "rcppsw/math/angles.hpp"
+
 #include "cosm/ds/cell3D.hpp"
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
@@ -39,12 +41,12 @@ NS_START(silicon, controller, perception);
  * Constructors/Destructors
  ******************************************************************************/
 builder_perception_subsystem::builder_perception_subsystem(
-    const cspconfig::perception_config* const pconfig,
+    const cspconfig::rlos_config* const config,
     const csubsystem::sensing_subsystemQ3D* const sensing)
-    : base_perception_subsystem(pconfig),
-      mc_arena_res(pconfig->occupancy_grid.resolution),
-      mc_arena_xrange(0.0, pconfig->occupancy_grid.dims.x()),
-      mc_arena_yrange(0.0, pconfig->occupancy_grid.dims.y()),
+    : rlos_perception_subsystem(config),
+      mc_arena_res(config->grid2D.resolution),
+      mc_arena_xrange(0.0, config->grid2D.dims.x()),
+      mc_arena_yrange(0.0, config->grid2D.dims.y()),
       mc_sensing(sensing),
       mc_builder_prox(this, mc_sensing),
       m_receptor(nullptr) {}
@@ -87,15 +89,36 @@ void builder_perception_subsystem::receptor(
 } /* receptor() */
 
 bool builder_perception_subsystem::is_behind_self(
-    const rmath::vector2d& other_offset,
+    const rmath::vector2d& framed_offset,
     const srepr::construction_lane* lane) const {
-  if (rmath::radians::kZERO == lane->orientation() ||
-      rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    return (other_offset.x() < 0);
-  } else {
-    return (other_offset.y() < 0);
-  }
+  auto self_state = lane_traversal_state(lane, mc_sensing->rpos2D());
 
+  if (rmath::radians::kZERO == lane->orientation()) {
+    if (self_state.in_ingress) {
+      return framed_offset.x() < 0;
+    } else if (self_state.in_egress) {
+      return framed_offset.x() > 0;
+    }
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    if (self_state.in_ingress) {
+      return framed_offset.y() < 0;
+    } else if (self_state.in_egress) {
+      return framed_offset.y() > 0;
+    }
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    if (self_state.in_ingress) {
+      return framed_offset.x() > 0;
+    } else if (self_state.in_egress) {
+      return framed_offset.x() < 0;
+    }
+  }  else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    if (self_state.in_ingress) {
+      return framed_offset.y() > 0;
+    } else if (self_state.in_egress) {
+      return framed_offset.y() < 0;
+    }
+  }
+  return false;
 } /* is_behind_self() */
 
 bool builder_perception_subsystem::self_lane_aligned(
@@ -109,5 +132,54 @@ bool builder_perception_subsystem::self_lane_aligned(
   return range.contains(azimuth.unsigned_normalize()) ||
          range.contains((azimuth + rmath::radians::kPI).unsigned_normalize());
 } /* self_lane_aligned() */
+
+compass_orientation
+    builder_perception_subsystem::self_compass_orientation(rmath::radians azimuth) const {
+  return { is_aligned_with(azimuth, rmath::radians::kZERO),
+           is_aligned_with(azimuth, rmath::radians::kPI_OVER_TWO),
+           is_aligned_with(azimuth, rmath::radians::kPI),
+           is_aligned_with(azimuth, rmath::radians::kTHREE_PI_OVER_TWO) };
+} /* self_compass_orientation() */
+
+bool builder_perception_subsystem::is_aligned_with(rmath::radians azimuth,
+                                                   const rmath::radians& target) const {
+  auto res = rmath::normalized_diff(target, azimuth);
+  return rmath::abs(res) <= sfsm::calculators::lane_alignment::kAZIMUTH_TOL;
+} /* is_aligned_with() */
+
+lane_traversal_state
+builder_perception_subsystem::lane_traversal_state(
+    const srepr::construction_lane* lane,
+    const rmath::vector2d& rpos) const {
+  struct lane_traversal_state ret;
+
+  /*
+   * We are not on the structure/have allocated a lane yet, and so by definition
+   * are not sharing it with another robot.
+   */
+  if (nullptr == lane) {
+    return ret;
+  }
+  auto ct = nearest_ct();
+  auto self_vcoord2D = ct->to_vcoord2D(rpos);
+
+  auto ingress = lane->geometry().ingress_virt();
+  auto egress = lane->geometry().egress_virt();
+
+  if (rmath::radians::kZERO == lane->orientation()) {
+    ret.in_ingress = ingress.offset().y() == self_vcoord2D.offset().y();
+    ret.in_egress = egress.offset().y() == self_vcoord2D.offset().y();
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    ret.in_ingress = ingress.offset().x() == self_vcoord2D.offset().x();
+    ret.in_egress = egress.offset().x() == self_vcoord2D.offset().x();
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    ret.in_ingress = ingress.offset().y() == self_vcoord2D.offset().y();
+    ret.in_egress = egress.offset().y() == self_vcoord2D.offset().y();
+  }  else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    ret.in_ingress = ingress.offset().x() == self_vcoord2D.offset().x();
+    ret.in_egress = egress.offset().x() == self_vcoord2D.offset().x();
+  }
+  return ret;
+} /* lane_traversal_state() */
 
 NS_END(perception, controller, silicon);

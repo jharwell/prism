@@ -33,6 +33,7 @@ RCPPSW_WARNING_DISABLE_POP()
 #include "cosm/vis/block_carry_visualizer.hpp"
 #include "cosm/vis/polygon2D_visualizer.hpp"
 #include "cosm/vis/steer2D_visualizer.hpp"
+#include "cosm/ds/cell3D.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
@@ -91,22 +92,19 @@ void construction_qt_user_functions::los_render(
   const auto* ct = controller->perception()->nearest_ct();
 
   /*
-     * ARGos Qt user functions draw things relative to the robot's current
-     * position, and the LOS corners are absolute coordinates, so we need to
-     * transform. Also, the absolute cell location returned is the location of
-     * the lower left coordinate of the cell, which is fine for the minimum X/Y
-     * coordinates of the LOS corners, but off by the size of a cell for the
-     * maximum X/Y coordinates of the LOS corners, so we need to account for
-     * that too.
-     */
-  double correction = ct->block_unit_dim();
+   * The LOS rspan is relative to the virtual structure origin, and knows
+   * nothing of where the structure is in the arena, so we fix that to get
+   * proper rendering. Note we use translate() rather than recenter(), so that
+   * the rendered LOS "snaps" to structure coordinates.
+   */
+  auto xspan = los->xrspan().translate(ct->voriginr().x());
+  auto yspan = los->yrspan().translate(ct->voriginr().y());
 
   std::vector<rmath::vector2d> points = {
-    ct->cell_loc_abs(los->abs_ll()).to_2D(),
-    ct->cell_loc_abs(los->abs_ul()).to_2D() + rmath::vector2d(0.0, correction),
-    ct->cell_loc_abs(los->abs_ur()).to_2D() +
-        rmath::vector2d(correction, correction),
-    ct->cell_loc_abs(los->abs_lr()).to_2D() + rmath::vector2d(correction, 0.0)
+    {xspan.lb(), yspan.lb()},
+    {xspan.lb(), yspan.ub()},
+    {xspan.ub(), yspan.ub()},
+    {xspan.ub(), yspan.lb()}
   };
   cvis::polygon2D_visualizer(this).abs_draw(
       controller->rpos3D(), orientation, points, rutils::color::kYELLOW);

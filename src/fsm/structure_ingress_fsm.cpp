@@ -95,7 +95,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(structure_ingress_fsm, ct_approach) {
      * versa for < 180 degrees. See SILICON#41.
      */
     m_ct_approach_polar_sign =
-        (approach.ingress_angle >= rmath::radians::kPI) ? -1 : 1;
+        (approach.ingress_angle < rmath::radians::kPI) ? -1 : 1;
   }
 
   if (approach.x_ok && approach.y_ok) {
@@ -138,8 +138,9 @@ RCPPSW_HFSM_STATE_DEFINE_ND(structure_ingress_fsm, ct_approach) {
    * center.
    */
   double dist_to_center = (sensing()->rpos3D() - ingress_pt).length();
-  double light_factor = std::max(
-      0.0, (dist_to_center - ct_bc_radius() * 2.0) / kCT_TRANSPORT_BC_DIST_MIN);
+  double light_factor = std::max(0.0,
+                                 (dist_to_center - ct_bb_circle_radius() * 2.0) /
+                                 kCT_APPROACH_BB_CIRCLE_DIAMETER_PAD);
   saa()->steer_force2D().accum(light_force * light_factor +
                                polar_force * (1.0 - light_factor));
   saa()->steer_force2D().accum(saa()->steer_force2D().wander(rng()));
@@ -151,45 +152,35 @@ RCPPSW_HFSM_STATE_DEFINE_ND(structure_ingress_fsm, ct_entry) {
     ER_DEBUG("Beginning construction target entry");
   }
 
+  /*
+   * Always calculate the avoidance force so that even if we are slowing down
+   * for a robot in front of us, so that situations with another robot coming in
+   * from the left/right will still be resolved and not deadlock.
+   */
   if (auto obs = saa()->sensing()->proximity()->avg_prox_obj()) {
     auto avoidance_force = saa()->steer_force2D().avoidance(*obs);
     saa()->steer_force2D().accum(avoidance_force);
   }
 
+  /*
+   * We only care if we get too close to another robot once we are on the
+   * straightaway leading to the ingress point (last point on the path). If
+   * that is the case, we want to throttle our path following force
+   * proportionally to how much inside the minimum builder trajectory
+   * proximity distance we are to help avoid deadlocks of robots clustered
+   * near the ingress side of a construction lane.
+   *
+   * We can't stop and wait for any robots which appear in our trajectory at
+   * this point via the WAIT_FOR_ROBOT state, because that can catch robots
+   * coming in from our left or right using the polar force and cause
+   * deadlocks. This method effectively causes robots to stop by throttling
+   * their path following force to near 0, and is much less prone to
+   * deadlocks.
+   */
   double path_factor = 1.0;
-  bool home_stretch =
-      (m_ingress_state->point_index(m_ingress_state->next_point()) ==
-       m_ingress_state->n_points() - 1);
-  if (home_stretch) {
-    /*
-     * We only care if we get too close to another robot once we are on the
-     * straightaway leading to the ingress point (last point on the path). If
-     * that is the case, we want to throttle our path following force
-     * proportionally to how much inside the minimum builder trajectory
-     * proximity distance we are to help avoid deadlocks of robots clustered
-     * near the ingress side of a construction lane.
-     *
-     * We can't stop and wait for any robots which appear in our trajectory at
-     * this point via the WAIT_FOR_ROBOT state, because that can catch robots
-     * coming in from our left or right using the polar force and cause
-     * deadlocks. This method effectively causes robots to stop by throttling
-     * their path following force to near 0, and is much less prone to
-     * deadlocks.
-     */
-    auto thresh = perception()->builder_prox()->trajectory_prox_dist();
-    if (auto obs = saa()->sensing()->blobs()->closest_blob(
-            srepr::colors::ct_approach())) {
-      /*
-       * Only throttle if the detected robot is (1) too close, (2) in front of
-       * us, and if we are aligned with the ingress lane. Otherwise, it is not a
-       * robot we need to worry about yet.
-       */
-      if (obs->length() < thresh &&
-          perception()->self_lane_aligned(allocated_lane()) &&
-          !perception()->is_behind_self(*obs, allocated_lane())) {
-        path_factor = obs->length() / thresh;
-      }
-    }
+  if (m_ingress_state->point_index(m_ingress_state->next_point()) ==
+      m_ingress_state->n_points() - 1) {
+    path_factor = path_factor_calc();
   }
 
   if (m_ingress_state->is_complete()) {
@@ -281,16 +272,57 @@ void structure_ingress_fsm::init(void) {
   m_ingress_state = nullptr;
 } /* init() */
 
-double structure_ingress_fsm::ct_bc_radius(void) const {
+double structure_ingress_fsm::ct_bb_circle_radius(void) const {
   /*
    * Calculate the side of a square inscribed in the "bounding circle"
    * containing the bounding box of the nearest construction target.
    */
-  double side = std::max(perception()->nearest_ct()->bbr().x(),
-                         perception()->nearest_ct()->bbr().y());
+  double side = std::max(perception()->nearest_ct()->bbr(true).x(),
+                         perception()->nearest_ct()->bbr(true).y());
 
   /* Compute the radius of this circle from the square side length */
   return std::sqrt(std::pow(side, 2) * 2) / 2.0;
-} /* ct_bc_radius() */
+} /* ct_bb_circle_radius() */
+
+double structure_ingress_fsm::path_factor_calc(void) const {
+  auto thresh = perception()->builder_prox()->trajectory_prox_dist();
+
+  /*
+   * We need to make sure to check for the closest builder AND ct_approach
+   * robot, as they BOTH can appear directly in front of us as we near the
+   * ingress lane.
+   */
+  std::vector<rutils::color> colors = {
+    srepr::colors::builder(),
+    srepr::colors::ct_approach(),
+  };
+
+  double factor = 1.0;
+  for (auto &color : colors) {
+    if (auto framed_obs = saa()->sensing()->blobs()->closest_blob(
+            color, sensing()->azimuth())) {
+      /*
+       * Only throttle if the detected robot is (1) too close, (2) in front of
+       * us, and if we are aligned with the ingress lane. Otherwise, it is not a
+       * robot we need to worry about yet.
+       *
+       * framed_obs = A relative vector to an obstacle which has been translated
+       * into the global reference frame.
+       *
+       * We use exponential rather than linear throttling to better approximate
+       * using a dedicated "stop and wait if the robot is too close" FSM state
+       * without actually doing so.
+       */
+      if (framed_obs->length() < thresh &&
+          perception()->self_lane_aligned(allocated_lane()) &&
+          !perception()->is_behind_self(*framed_obs, allocated_lane()) &&
+          perception()->is_aligned_with(framed_obs->angle(),
+                                        saa()->sensing()->azimuth())) {
+        factor = std::min(factor, std::exp(-1.0 / (framed_obs->length() / thresh)));
+      }
+    }
+  } /* for(&color..) */
+  return factor;
+} /* path_factor_calc() */
 
 NS_END(fsm, silicon);

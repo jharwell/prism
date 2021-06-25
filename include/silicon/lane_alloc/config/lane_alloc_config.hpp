@@ -27,6 +27,7 @@
 #include <string>
 
 #include "rcppsw/config/base_config.hpp"
+#include "rcppsw/types/timestep.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -42,10 +43,19 @@ NS_START(silicon, lane_alloc, config);
  * \struct lane_alloc_config
  * \ingroup lane_alloc config
  *
- * \brief Parsed configuration for  \ref lane_alloc::allocator objects
+ * \brief Parsed configuration for  \ref lane_alloc::lane_allocator objects
  */
 struct lane_alloc_config final : public rconfig::base_config {
+  /**
+   * \brief The lane allocation policy to use.
+   */
   std::string policy{};
+
+  /**
+   * \brief The interference window to use (only applicable to
+   * interference-related policies).
+   */
+  rtypes::timestep interference_window{rtypes::timestep(0)};
 };
 
 NS_END(config, controler, silicon);

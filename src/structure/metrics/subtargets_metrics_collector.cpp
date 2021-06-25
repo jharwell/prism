@@ -34,76 +34,31 @@ NS_START(silicon, structure, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 subtargets_metrics_collector::subtargets_metrics_collector(
-    const std::string& ofname_stem,
-    const rtypes::timestep& interval,
+    std::unique_ptr<rmetrics::base_metrics_sink> sink,
     size_t n_subtargets)
-    : base_metrics_collector(ofname_stem,
-                             interval,
-                             rmetrics::output_mode::ekAPPEND),
-      m_interval(n_subtargets),
-      m_cum(n_subtargets) {}
+    : base_metrics_collector(std::move(sink)),
+      m_data(n_subtargets) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> subtargets_metrics_collector::csv_header_cols(void) const {
-  auto merged = dflt_csv_header_cols();
-  auto cols = std::list<std::string>();
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_complete_count");
-    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_complete_count");
-
-    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_placed_count");
-    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_placed_count");
-
-    cols.push_back("int_avg_subtarget" + std::to_string(i) + "_manifest_size");
-    cols.push_back("cum_avg_subtarget" + std::to_string(i) + "_manifest_size");
-  } /* for(i..) */
-
-  merged.splice(merged.end(), cols);
-  return merged;
-} /* csv_header_cols() */
-
-void subtargets_metrics_collector::reset(void) {
-  base_metrics_collector::reset();
-  reset_after_interval();
-} /* reset() */
-
-boost::optional<std::string> subtargets_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0UL)) {
-    return boost::none;
-  }
-  std::string line;
-
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    line += csv_entry_intavg(m_interval[i].complete_count);
-    line += csv_entry_intavg(m_cum[i].complete_count);
-
-    line += csv_entry_tsavg(m_interval[i].placed_count);
-    line += csv_entry_tsavg(m_cum[i].placed_count);
-
-    line += rcppsw::to_string(m_interval[i].manifest_size) + separator();
-    line += rcppsw::to_string(m_cum[i].manifest_size) + separator();
-  } /* for(i..) */
-
-  return boost::make_optional(line);
-} /* csv_line_build() */
-
 void subtargets_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
   const auto& m = dynamic_cast<const metrics::subtarget_metrics&>(metrics);
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    m_interval[i].complete_count += m.is_complete();
-    m_interval[i].placed_count += m.n_interval_placed();
-    m_interval[i].manifest_size = m.manifest_size();
+  for (size_t i = 0; i < m_data.interval.size(); ++i) {
+    m_data.interval[i].complete_count += m.is_complete();
+    m_data.interval[i].placed_count += m.n_interval_placed();
+    m_data.interval[i].manifest_size = m.manifest_size();
 
-    m_cum[i].complete_count += m.is_complete();
-    m_cum[i].placed_count += m.n_interval_placed();
-    m_cum[i].manifest_size = m.manifest_size();
+    m_data.cum[i].complete_count += m.is_complete();
+    m_data.cum[i].placed_count += m.n_interval_placed();
+    m_data.cum[i].manifest_size = m.manifest_size();
   } /* for(i..) */
 } /* collect() */
 
 void subtargets_metrics_collector::reset_after_interval(void) {
-  std::fill(m_interval.begin(), m_interval.end(), stats{});
+  std::fill(m_data.interval.begin(),
+            m_data.interval.end(),
+            progress_metrics_data{m_data.interval.size()});
 } /* reset_after_interval() */
 
 NS_END(metrics, structure, silicon);

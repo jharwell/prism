@@ -62,7 +62,6 @@ bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
     /* @todo check if structure invariants are violated by adding this block */
   } else if (rmath::radians::kPI == mc_intent.z_rot()) {
     /* @todo check if structure invariants are violated by adding this block */
-    return validate_common();
   } else {
     ER_FATAL_SENTINEL("Bad orientation: %s",
                       rcppsw::to_string(mc_intent.z_rot()).c_str());
@@ -103,7 +102,9 @@ bool validate_placement::validate_common(void) const {
 
   /* check rotation */
   ER_CHECK(rmath::radians::kZERO == mc_intent.z_rot() ||
-               rmath::radians::kPI_OVER_TWO == mc_intent.z_rot(),
+           rmath::radians::kPI_OVER_TWO == mc_intent.z_rot() ||
+           rmath::radians::kPI == mc_intent.z_rot() ||
+           rmath::radians::kTHREE_PI_OVER_TWO == mc_intent.z_rot(),
            "Bad rotation %s: must be %s or %s",
            rcppsw::to_string(mc_intent.z_rot()).c_str(),
            rcppsw::to_string(rmath::radians::kZERO).c_str(),

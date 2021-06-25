@@ -1,7 +1,7 @@
 /**
- * \file structure_progress_metrics.hpp
+ * \file manipulation_metrics_data.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,31 +18,47 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_
+#ifndef INCLUDE_SILICON_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_
+#define INCLUDE_SILICON_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/metrics/progress_metrics.hpp"
+#include <atomic>
+
+#include "rcppsw/metrics/base_metrics_data.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, metrics);
+NS_START(silicon, metrics, blocks, detail);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure_progress_metrics
- * \ingroup structure metrics
+ * \struct manipulation_metrics_data
+ * \ingroup metrics blocks detail
  *
- * \brief Interface defining the metrics to be collected from \ref structure3D
- * objects as they are built.
+ * \brief Container for holding collected statistics of \ref
+ * manipulation_metrics. Must be atomic so counts are valid in parallel metric
+ * collection contexts.
  */
-class structure_progress_metrics : public progress_metrics {};
+struct manipulation_metrics_data {
+  std::atomic_size_t arena_pickup_events{0};
+  std::atomic_size_t arena_pickup_penalty{0};
 
-NS_END(metrics, structure, silicon);
+  std::atomic_size_t structure_place_events{0};
+  std::atomic_size_t structure_place_penalty{0};
+};
 
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_PROGRESS_METRICS_HPP_ */
+NS_END(detail);
+
+struct manipulation_metrics_data : public rmetrics::base_metrics_data {
+  detail::manipulation_metrics_data interval{};
+  detail::manipulation_metrics_data cum{};
+};
+
+NS_END(metrics, manipulation, silicon);
+
+#endif /* INCLUDE_SILICON_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_ */

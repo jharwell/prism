@@ -27,11 +27,13 @@
 #include <boost/optional.hpp>
 #include <memory>
 
-#include "cosm/subsystem/perception/base_perception_subsystem.hpp"
+#include "cosm/subsystem/perception/rlos_perception_subsystem.hpp"
 
 #include "silicon/repr/builder_los.hpp"
 #include "silicon/controller/perception/ct_skel_info.hpp"
 #include "silicon/controller/perception/builder_prox_checker.hpp"
+#include "silicon/controller/perception/compass_orientation.hpp"
+#include "silicon/controller/perception/lane_traversal_state.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -56,12 +58,12 @@ class perception_receptor;
  * \ingroup controller perception
  *
  * \brief Base class for robot perception common to all builder controllers. It
- * is memory less; that is, it just stores the current LOS and allows the robot
+ * is memory-less; that is, it just stores the current LOS and allows the robot
  * to query it.
  */
-class builder_perception_subsystem : public csperception::base_perception_subsystem<repr::builder_los> {
+class builder_perception_subsystem : public csperception::rlos_perception_subsystem<repr::builder_los> {
  public:
-  builder_perception_subsystem(const cspconfig::perception_config* pconfig,
+  builder_perception_subsystem(const cspconfig::rlos_config* pconfig,
                                const csubsystem::sensing_subsystemQ3D* sensing);
 
   ~builder_perception_subsystem(void) override;
@@ -106,14 +108,27 @@ class builder_perception_subsystem : public csperception::base_perception_subsys
   const ct_skel_info* nearest_ct(void) const;
 
   /**
-   * \brief Calculate whether or not another robot with RELATIVE offset from the
-   * current robot is in front of or behind it, accounting for construction lane
-   * orientation.
+   * \brief Calculate whether or not another robot with ABSOLUTE offset from the
+   * current robot is in front of or behind it (i.e., an offset that accounts
+   * for the robot's reference frame), accounting for robot orientation.
    */
-  bool is_behind_self(const rmath::vector2d& other_offset,
+  bool is_behind_self(const rmath::vector2d& framed_offset,
                       const srepr::construction_lane* lane) const;
 
   bool self_lane_aligned(const srepr::construction_lane* lane) const;
+
+  /**
+   * \brief Calculate the compass orientation (-X,+X,-Y,+Y), given azimuthal
+   * angle.
+   */
+  compass_orientation self_compass_orientation(rmath::radians azimuth) const;
+
+  bool is_aligned_with(rmath::radians azimuth,
+                       const rmath::radians& target) const;
+
+  struct lane_traversal_state
+  lane_traversal_state(const srepr::construction_lane* lane,
+                       const rmath::vector2d& rpos) const;
 
  private:
   /* clang-format off */

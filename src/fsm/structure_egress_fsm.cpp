@@ -67,7 +67,10 @@ structure_egress_fsm::structure_egress_fsm(
                                              nullptr,
                                              &entry_structure_egress,
                                              nullptr),
-          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&wait_for_robot),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_robot,
+                                             nullptr,
+                                             &entry_wait_for_robot,
+                                             &exit_wait_for_robot),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&finished,
                                              nullptr,
                                              &entry_finished,
@@ -121,9 +124,9 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(structure_egress_fsm, entry_acquire_egress_lane) {
 
 RCPPSW_HFSM_STATE_DEFINE_ND(structure_egress_fsm, structure_egress) {
   auto alignment = m_alignment_calc(allocated_lane());
-  ER_ASSERT(alignment.egress_pos, "Bad alignment (position) on structure egress");
-
   bool in_ct_zone = saa()->sensing()->ground()->detect("nest");
+  ER_ASSERT(!(in_ct_zone && !alignment.egress),
+            "Bad alignment (position) on structure egress");
 
   /*
    * A robot in front of us is too close--wait for it to move before

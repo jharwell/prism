@@ -47,20 +47,20 @@ class ct_block_place_interactor
   using penalty_handler_type =
       typename base_ct_block_place_interactor<TController, TControllerSpecMap>::
           penalty_handler_type;
-  using metrics_agg_type =
+  using metrics_manager_type =
       typename base_ct_block_place_interactor<TController, TControllerSpecMap>::
-          metrics_agg_type;
+          metrics_manager_type;
   using arena_map_type =
       typename base_ct_block_place_interactor<TController,
                                               TControllerSpecMap>::arena_map_type;
-  ct_block_place_interactor(sstructure::ct_manager* const manager,
+  ct_block_place_interactor(sstructure::ct_manager* const ct_manager,
                             arena_map_type* const arena_map,
-                            metrics_agg_type* const metrics_agg,
+                            metrics_manager_type* const metrics_manager,
                             argos::CFloorEntity* const floor)
       : base_ct_block_place_interactor<TController, TControllerSpecMap>(
-            manager,
+            ct_manager,
             arena_map,
-            metrics_agg,
+            metrics_manager,
             floor) {}
 
   ct_block_place_interactor(ct_block_place_interactor&&) = default;

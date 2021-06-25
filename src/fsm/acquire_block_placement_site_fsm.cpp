@@ -23,7 +23,7 @@
  ******************************************************************************/
 #include "silicon/fsm/acquire_block_placement_site_fsm.hpp"
 
-#include "rcppsw/patterns/fsm/event.hpp"
+#include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/ds/cell3D.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
@@ -70,7 +70,7 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
                                              &exit_wait_for_robot),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&acquire_placement_loc,
                                              nullptr,
-                                             nullptr,
+                                             &entry_acquire_placement_loc,
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_alignment_calc(saa->sensing()) {}
@@ -98,10 +98,31 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
   saa()->actuation()->leds()->set_color(-1, srepr::colors::builder());
 }
 
+RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
+                            entry_acquire_placement_loc) {
+  /*
+   * We need to calculate the placement path every time we entire the
+   * ACQUIRE_PLACEMENT_LOC state, because if we are re-rentering that state
+   * after leaving it due to having to wait for a robot in front of us to place
+   * its block, it is possible that the placement path we currently have
+   * calculated is for a configuration we no longer exists, and if we try to use
+   * it we will cause a construction deadlock.
+   */
+  auto old_fs = m_site_fs;
+  m_site_fs = fs_acq_checker(sensing(), perception())(allocated_lane());
+
+  ER_INFO("Recalculate placement path for site acquisition: old_fs=%d new_fs=%d",
+          rcppsw::as_underlying(old_fs),
+          rcppsw::as_underlying(m_site_fs));
+  auto calculator = calculators::placement_path(sensing(), perception());
+  m_site_path = std::make_unique<csteer2D::ds::path_state>(
+      calculator(allocated_lane(), m_site_fs));
+}
+
 RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
                             acquire_frontier_set) {
   auto alignment = m_alignment_calc(allocated_lane());
-  ER_ASSERT(alignment.ingress_pos,
+  ER_ASSERT(alignment.ingress,
             "Bad alignment (position) during frontier set acqusition");
   ER_CHECKW(alignment.azimuth,
             "Bad alignment (orientation) during frontier set acquisition");
@@ -112,9 +133,10 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   /*
    * A robot in front of us is too close (either on structure or when we are in
    * the nest moving towards the structure)--wait for it to move before
-   * continuing.
+   * continuing. We only consider trajectory proximities here, because frontier
+   * set proximities only matter once we have acquired the frontier set.
    */
-  if (scperception::builder_prox_type::ekNONE != prox) {
+  if (scperception::builder_prox_type::ekTRAJECTORY & prox) {
     ER_DEBUG("Wait@%s/%s while acquiring frontier set: robot proximity=%d",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
@@ -130,7 +152,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str());
     saa()->steer_force2D().accum(
-        saa()->steer_force2D().path_following(m_path.get()));
+        saa()->steer_force2D().path_following(m_ingress_path.get()));
   } else {
     /* somewhere on structure */
     ER_TRACE("Robot=%s/%s: On structure, acq=%d",
@@ -141,11 +163,8 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
     if (srepr::fs_configuration::ekNONE == acq) {
       /* no robots in front, but not there yet */
       saa()->steer_force2D().accum(
-          saa()->steer_force2D().path_following(m_path.get()));
+          saa()->steer_force2D().path_following(m_ingress_path.get()));
     } else { /* arrived! */
-      auto calculator = calculators::placement_path(sensing(), perception());
-      m_path = std::make_unique<csteer2D::ds::path_state>(
-          calculator(allocated_lane(), acq));
       internal_event(fsm_state::ekST_ACQUIRE_PLACEMENT_LOC);
     }
   }
@@ -157,7 +176,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
   auto prox = perception()->builder_prox()->operator()(allocated_lane(), acq);
 
-  if (scperception::builder_prox_type::ekNONE != prox) {
+  if (scperception::builder_prox_type::ekFRONTIER_SET == prox) {
     ER_DEBUG("Wait@%s/%s while acquiring frontier set: robot proximity=%d",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
@@ -165,11 +184,10 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
                    std::make_unique<robot_wait_data>(prox, acq));
   } else {
-    if (!m_path->is_complete()) {
-      auto force = saa()->steer_force2D().path_following(m_path.get());
+    if (!m_site_path->is_complete()) {
+      auto force = saa()->steer_force2D().path_following(m_site_path.get());
       saa()->steer_force2D().accum(force);
     } else {
-      m_path.reset();
       internal_event(fsm_state::ekST_FINISHED);
     }
   }
@@ -181,15 +199,6 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm, finished) {
     ER_DEBUG("Executing ekST_FINISHED");
   }
   return rpfsm::event_signal::ekHANDLED;
-}
-
-RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
-                            entry_wait_for_robot) {
-  inta_tracker()->inta_enter();
-}
-
-RCPPSW_HFSM_EXIT_DEFINE(acquire_block_placement_site_fsm, exit_wait_for_robot) {
-  inta_tracker()->inta_exit();
 }
 
 /*******************************************************************************
@@ -210,7 +219,7 @@ void acquire_block_placement_site_fsm::task_start(cta::taskable_argument* c_arg)
   allocated_lane(a);
 
   auto calculator = calculators::ingress_path(sensing(), perception());
-  m_path =
+  m_ingress_path =
       std::make_unique<csteer2D::ds::path_state>(calculator(allocated_lane()));
   external_event(kTRANSITIONS[current_state()]);
 } /* task_start() */
@@ -225,6 +234,13 @@ void acquire_block_placement_site_fsm::task_execute(void) {
     inject_event(fsm::construction_signal::ekRUN, rpfsm::event_type::ekNORMAL);
   }
 } /* task_execute() */
+
+void acquire_block_placement_site_fsm::task_reset(void) {
+  builder_util_fsm::init();
+  m_site_fs = srepr::fs_configuration::ekNONE;
+  m_site_path.reset();
+  m_ingress_path.reset();
+} /* task_reset() */
 
 /*******************************************************************************
  * Member Functions

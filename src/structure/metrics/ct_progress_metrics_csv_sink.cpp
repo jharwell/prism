@@ -1,5 +1,5 @@
 /**
- * \file structure_progress_metrics_collector.cpp
+ * \file ct_progress_metrics_csv_sink.cpp
  *
  * \copyright 2018 John Harwell, All rights reserved.
  *
@@ -21,9 +21,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/metrics/structure_progress_metrics_collector.hpp"
+#include "silicon/structure/metrics/ct_progress_metrics_csv_sink.hpp"
 
-#include "silicon/structure/metrics/structure_progress_metrics.hpp"
+#include "silicon/structure/metrics/ct_progress_metrics_data.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -33,18 +33,18 @@ NS_START(silicon, structure, metrics);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-structure_progress_metrics_collector::structure_progress_metrics_collector(
-    const std::string& ofname_stem,
+ct_progress_metrics_csv_sink::ct_progress_metrics_csv_sink(
+    fs::path fpath_no_ext,
+    const rmetrics::output_mode& mode,
     const rtypes::timestep& interval)
-    : base_metrics_collector(ofname_stem,
-                             interval,
-                             rmetrics::output_mode::ekAPPEND) {}
+    : csv_sink(fpath_no_ext, mode, interval) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
 std::list<std::string>
-structure_progress_metrics_collector::csv_header_cols(void) const {
+ct_progress_metrics_csv_sink::csv_header_cols(
+    const rmetrics::base_metrics_data*) const {
   auto merged = dflt_csv_header_cols();
   auto cols = std::list<std::string>{
     /* clang-format off */
@@ -61,49 +61,28 @@ structure_progress_metrics_collector::csv_header_cols(void) const {
   return merged;
 } /* csv_header_cols() */
 
-void structure_progress_metrics_collector::reset(void) {
-  base_metrics_collector::reset();
-  reset_after_interval();
-} /* reset() */
-
 boost::optional<std::string>
-structure_progress_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0UL)) {
+ct_progress_metrics_csv_sink::csv_line_build(const rmetrics::base_metrics_data* data,
+                                          const rtypes::timestep& t) {
+  if (!ready_to_flush(t)) {
     return boost::none;
   }
+  auto* d = static_cast<const ct_progress_metrics_data*>(data);
   std::string line;
 
   /* complete counts */
-  line += csv_entry_intavg(m_interval.complete_count);
-  line += csv_entry_tsavg(m_cum.complete_count);
+  line += csv_entry_intavg(d->interval.complete_count);
+  line += csv_entry_tsavg(d->cum.complete_count, t);
 
   /* placed counts */
-  line += csv_entry_intavg(m_interval.placed_count);
-  line += csv_entry_tsavg(m_cum.placed_count);
+  line += csv_entry_intavg(d->interval.placed_count);
+  line += csv_entry_tsavg(d->cum.placed_count, t);
 
   /* manifest sizes */
-  line += rcppsw::to_string(m_interval.manifest_size) + separator();
-  line += rcppsw::to_string(m_cum.manifest_size) + separator();
+  line += rcppsw::to_string(d->interval.manifest_size) + separator();
+  line += rcppsw::to_string(d->cum.manifest_size);
 
   return boost::make_optional(line);
 } /* csv_line_build() */
-
-void structure_progress_metrics_collector::collect(
-    const rmetrics::base_metrics& metrics) {
-  const auto& m =
-      dynamic_cast<const metrics::structure_progress_metrics&>(metrics);
-  m_interval.complete_count += m.is_complete();
-  m_interval.placed_count += m.n_interval_placed();
-  m_interval.manifest_size = m.manifest_size();
-
-  m_cum.complete_count += m.is_complete();
-  m_cum.placed_count += m.n_total_placed();
-  m_cum.manifest_size = m.manifest_size();
-} /* collect() */
-
-void structure_progress_metrics_collector::reset_after_interval(void) {
-  m_interval.complete_count = 0;
-  m_interval.placed_count = 0;
-} /* reset_after_interval() */
 
 NS_END(metrics, structure, silicon);

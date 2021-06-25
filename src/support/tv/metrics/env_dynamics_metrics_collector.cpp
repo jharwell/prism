@@ -34,43 +34,18 @@ NS_START(silicon, support, tv, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 env_dynamics_metrics_collector::env_dynamics_metrics_collector(
-    const std::string& ofname_stem)
-    : base_metrics_collector(ofname_stem,
-                             rtypes::timestep(1),
-                             rmetrics::output_mode::ekAPPEND) {}
+    std::unique_ptr<rmetrics::base_metrics_sink> sink)
+    : base_metrics_collector(std::move(sink)) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string>
-env_dynamics_metrics_collector::csv_header_cols(void) const {
-  auto merged = dflt_csv_header_cols();
-  auto cols = std::list<std::string>{
-    /* clang-format off */
-      "swarm_motion_throttle",
-      "arena_block_manip_penalty",
-      "ct_block_manip_penalty"
-    /* clang-format on */
-  };
-  merged.splice(merged.end(), cols);
-  return merged;
-} /* csv_header_cols() */
-
-boost::optional<std::string>
-env_dynamics_metrics_collector::csv_line_build(void) {
-  std::string line;
-  line += rcppsw::to_string(m_avg_motion_throttle) + separator();
-  line += rcppsw::to_string(m_arena_block_manip_penalty) + separator();
-  line += rcppsw::to_string(m_structure_block_manip_penalty);
-  return boost::make_optional(line);
-} /* csv_line_build() */
-
 void env_dynamics_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   const auto& m = dynamic_cast<const env_dynamics_metrics&>(metrics);
-  m_avg_motion_throttle = m.avg_motion_throttle();
-  m_arena_block_manip_penalty = m.arena_block_manip_penalty();
-  m_structure_block_manip_penalty = m.ct_block_manip_penalty();
+  m_data.avg_motion_throttle = m.avg_motion_throttle();
+  m_data.arena_block_manip_penalty = m.arena_block_manip_penalty();
+  m_data.structure_block_manip_penalty = m.ct_block_manip_penalty();
 } /* collect() */
 
 NS_END(metrics, tv, support, silicon);

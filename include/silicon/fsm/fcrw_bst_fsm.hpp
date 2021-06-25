@@ -37,7 +37,7 @@
 #include "silicon/fsm/construction_transport_goal.hpp"
 #include "silicon/fsm/structure_egress_fsm.hpp"
 #include "silicon/fsm/structure_ingress_fsm.hpp"
-#include "silicon/lane_alloc/allocator.hpp"
+#include "silicon/lane_alloc/lane_allocator.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -118,8 +118,8 @@ class fcrw_bst_fsm final
   boost::optional<repr::placement_intent>
   block_placement_intent(void) const override;
 
-  const lane_alloc::allocator* lane_allocator(void) const { return &m_allocator; }
-  lane_alloc::allocator* lane_allocator(void) { return &m_allocator; }
+  const lane_alloc::lane_allocator* lane_allocator(void) const { return &m_allocator; }
+  lane_alloc::lane_allocator* lane_allocator(void) { return &m_allocator; }
 
   /**
    * \brief (Re)-initialize the FSM.
@@ -197,7 +197,7 @@ class fcrw_bst_fsm final
   RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
-  lane_alloc::allocator                             m_allocator;
+  lane_alloc::lane_allocator                        m_allocator;
   std::unique_ptr<srepr::construction_lane>         m_allocated_lane;
   csfsm::explore_for_goal_fsm                       m_forage_fsm;
   acquire_block_placement_site_fsm                  m_block_place_fsm;

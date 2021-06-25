@@ -33,16 +33,16 @@
 #include "cosm/controller/irv_recipient_controller.hpp"
 #include "cosm/controller/manip_event_recorder.hpp"
 #include "cosm/fsm/block_transporter.hpp"
-#include "cosm/metrics/config/output_config.hpp"
+#include "cosm/pal/config/output_config.hpp"
 #include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
 #include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
-#include "cosm/subsystem/perception/config/perception_config.hpp"
 #include "cosm/subsystem/subsystem_fwd.hpp"
 
 #include "silicon/fsm/block_placer.hpp"
 #include "silicon/fsm/construction_transport_goal.hpp"
 #include "silicon/metrics/blocks/block_manip_events.hpp"
+#include "silicon/controller/perception/config/perception_config.hpp"
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
@@ -142,9 +142,10 @@ class constructing_controller
   void
   saa_init(const csubsystem::config::actuation_subsystem2D_config* actuation_p,
            const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
-  void output_init(const cmconfig::output_config* outputp);
 
-  void perception_init(const cspconfig::perception_config* perceptionp);
+  fs::path output_init(const cpconfig::output_config* outputp) override;
+
+  void perception_init(const perception::config::perception_config* perceptionp);
 
   /* clang-format off */
   bool                                                      m_display_nearest_ct{false};

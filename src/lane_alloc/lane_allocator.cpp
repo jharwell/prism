@@ -1,5 +1,5 @@
 /**
- * \file allocator.cpp
+ * \file lane_allocator.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,11 +21,15 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/lane_alloc/allocator.hpp"
+#include "silicon/lane_alloc/lane_allocator.hpp"
 
 #include <algorithm>
 
 #include "silicon/controller/perception/ct_skel_info.hpp"
+#include "silicon/lane_alloc/random_allocator.hpp"
+#include "silicon/lane_alloc/lru_allocator.hpp"
+#include "silicon/lane_alloc/interference_allocator.hpp"
+#include "silicon/lane_alloc/closest_allocator.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -35,8 +39,8 @@ NS_START(silicon, lane_alloc);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-allocator::allocator(const config::lane_alloc_config* config, rmath::rng* rng)
-    : ER_CLIENT_INIT("silicon.lane_alloc.allocator"),
+lane_allocator::lane_allocator(const config::lane_alloc_config* config, rmath::rng* rng)
+    : ER_CLIENT_INIT("silicon.lane_alloc.lane_allocator"),
       mc_config(*config),
       m_rng(rng) {}
 
@@ -44,7 +48,7 @@ allocator::allocator(const config::lane_alloc_config* config, rmath::rng* rng)
  * Member Functions
  ******************************************************************************/
 std::vector<lane_geometry>
-allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
+lane_allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
 
   /*
@@ -56,31 +60,31 @@ allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
   if (rmath::radians::kZERO == target->orientation()) {
     for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
          j += 2) {
-      auto ingress_virt = target->as_vcoord({ bbd.x() - 1, j, 0 });
-      auto egress_virt = target->as_vcoord({ bbd.x() - 1, j + 1, 0 });
-
+      auto ingress_virt = target->as_vcoord({ 0, j + 1, 0 });
+      auto egress_virt = target->as_vcoord({ 0, j, 0 });
       ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
     for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
          i += 2) {
-      auto ingress_virt = target->as_vcoord({ i + 1, bbd.y() - 1, 0 });
-      auto egress_virt = target->as_vcoord({ i, bbd.y() - 1, 0 });
+      auto ingress_virt = target->as_vcoord({ i, 0, 0 });
+      auto egress_virt = target->as_vcoord({ i + 1, 0, 0 });
 
       ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(i..) */
   } else if (rmath::radians::kPI == target->orientation()) {
     for (size_t j = target->vshell_sized(); j < bbd.y() - target->vshell_sized();
          j += 2) {
-      auto ingress_virt = target->as_vcoord({ 0, j + 1, 0 });
-      auto egress_virt = target->as_vcoord({ 0, j, 0 });
+      auto ingress_virt = target->as_vcoord({ bbd.x() - 1, j, 0 });
+      auto egress_virt = target->as_vcoord({ bbd.x() - 1, j + 1, 0 });
+
       ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(j..) */
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
     for (size_t i = target->vshell_sized(); i < bbd.x() - target->vshell_sized();
          i += 2) {
-      auto ingress_virt = target->as_vcoord({ i, 0, 0 });
-      auto egress_virt = target->as_vcoord({ i + 1, 0, 0 });
+      auto ingress_virt = target->as_vcoord({ i + 1, bbd.y() - 1, 0 });
+      auto egress_virt = target->as_vcoord({ i, bbd.y() - 1, 0 });
 
       ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(i..) */
@@ -92,39 +96,36 @@ allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
 } /* lane_locs_calc() */
 
 std::unique_ptr<repr::construction_lane>
-allocator::operator()(const rmath::vector3d& robot_loc,
+lane_allocator::operator()(const rmath::vector3d& robot_pos,
                       const scperception::ct_skel_info* target) {
   auto locs = lane_locs_calc(target);
 
   /*
    * If we have never allocated a lane from this structure before, then
-   * initialize a new allocation history for the structure.
+   * initialize a new allocation history for the structure, and set the last
+   * allocated lane randomly.
    */
   auto hist_it = m_history.find(target->id());
   if (m_history.end() == hist_it) {
-    allocation_history h(locs.size(), m_rng->uniform(0UL, locs.size() - 1));
+    history h(locs.size(), m_rng);
     m_history.insert({ target->id(), h });
   }
   auto& hist = m_history.find(target->id())->second;
 
   size_t id = 0;
   if (kPolicyRandom == mc_config.policy) {
-    id = m_rng->uniform(0UL, locs.size() - 1);
+    id = random_allocator(m_rng)(locs);
   } else if (kPolicyLRU == mc_config.policy) {
-    id = (hist.prev_lane + 1) % locs.size();
-    hist.prev_lane = id;
+    id = lru_allocator(m_rng)(locs, &hist);
   } else if (kPolicyClosest == mc_config.policy) {
-    auto pred = [&](const auto& loc1, const auto& loc2) {
-      return (robot_loc - loc1.ingress_pt()).length() <
-             (robot_loc - loc2.ingress_pt()).length();
-    };
-    auto it = std::min_element(locs.begin(), locs.end(), pred);
-    id = std::distance(locs.begin(), it);
+    id = closest_allocator(m_rng)(locs, robot_pos);
+  } else if (kPolicyMinInterference == mc_config.policy) {
+    id = interference_allocator(m_rng)(locs, &hist);
   } else {
     ER_FATAL_SENTINEL("Bad lane allocation policy '%s'",
                       mc_config.policy.c_str());
   }
-  ++hist.alloc_counts[id];
+  hist.alloc_mark(id);
 
   ER_INFO("Allocated lane%zu: orientation=%s, ingress=%s, egress=%s",
           id,
@@ -132,24 +133,23 @@ allocator::operator()(const rmath::vector3d& robot_loc,
           rcppsw::to_string(locs[id].ingress_pt()).c_str(),
           rcppsw::to_string(locs[id].egress_pt()).c_str());
   return std::make_unique<repr::construction_lane>(
-      id, target->orientation(), locs[id]);
+      id, target->orientation(), locs[id], &hist);
 } /* operator()() */
 
 /*******************************************************************************
  * Metrics
  ******************************************************************************/
-size_t allocator::alloc_count(const rtypes::type_uuid& target, size_t id) const {
+size_t lane_allocator::alloc_count(const rtypes::type_uuid& target, size_t id) const {
   auto it = m_history.find(target);
   if (m_history.end() != it) {
-    return it->second.alloc_counts[id];
+    return it->second.alloc_count(id);
   }
   return 0;
 } /* alloc_count() */
 
-void allocator::reset_metrics(void) {
+void lane_allocator::reset_metrics(void) {
   for (auto& pair : m_history) {
-    std::fill(
-        pair.second.alloc_counts.begin(), pair.second.alloc_counts.end(), 0);
+    pair.second.reset_int_allocs();
   } /* for(&pair..) */
 } /* reset_metrics() */
 

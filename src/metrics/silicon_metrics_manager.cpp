@@ -1,5 +1,5 @@
 /**
- * \file silicon_metrics_aggregator.cpp
+ * \file silicon_metrics_manager.cpp
  *
  * \copyright 2018 John Harwell, All rights reserved.
  *
@@ -21,28 +21,33 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/metrics/silicon_metrics_manager.hpp"
 
 #include <boost/mpl/for_each.hpp>
 
 #include "rcppsw/mpl/typelist.hpp"
 #include "rcppsw/utils/maskable_enum.hpp"
+#include "rcppsw/metrics/collector_registerer.hpp"
 
 #include "cosm/convergence/convergence_calculator.hpp"
-#include "cosm/metrics/collector_registerer.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/fsm/fcrw_bst_fsm.hpp"
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics_collector.hpp"
+#include "silicon/lane_alloc/metrics/lane_alloc_metrics_csv_sink.hpp"
 #include "silicon/metrics/blocks/manipulation_metrics_collector.hpp"
+#include "silicon/metrics/blocks/manipulation_metrics_csv_sink.hpp"
 #include "silicon/structure/ct_manager.hpp"
-#include "silicon/structure/metrics/structure_progress_metrics_collector.hpp"
-#include "silicon/structure/metrics/structure_state_metrics_collector.hpp"
+#include "silicon/structure/metrics/ct_progress_metrics_collector.hpp"
+#include "silicon/structure/metrics/ct_progress_metrics_csv_sink.hpp"
+#include "silicon/structure/metrics/ct_state_metrics_collector.hpp"
+#include "silicon/structure/metrics/ct_state_metrics_csv_sink.hpp"
 #include "silicon/structure/metrics/subtargets_metrics_collector.hpp"
+#include "silicon/structure/metrics/subtargets_metrics_csv_sink.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/subtarget.hpp"
-#include "silicon/support/tv/metrics/env_dynamics_metrics.hpp"
 #include "silicon/support/tv/metrics/env_dynamics_metrics_collector.hpp"
+#include "silicon/support/tv/metrics/env_dynamics_metrics_csv_sink.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -52,24 +57,22 @@ NS_START(silicon, metrics);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-silicon_metrics_aggregator::silicon_metrics_aggregator(
-    const cmconfig::metrics_config* const mconfig,
+silicon_metrics_manager::silicon_metrics_manager(
+    const rmconfig::metrics_config* const mconfig,
     const cdconfig::grid2D_config* const gconfig,
-    const std::string& output_root,
+    const fs::path& output_root,
     const ds::ct_vectorno& targets)
-    : ER_CLIENT_INIT("silicon.metrics.aggregator"),
-      base_metrics_aggregator(mconfig, output_root) {
+    : ER_CLIENT_INIT("silicon.metrics.manager"),
+      cosm_metrics_manager(mconfig, output_root) {
   /* register collectors from base class  */
-  rmath::vector2z dims2D =
-      rmath::dvec2zvec(gconfig->dims, gconfig->resolution.v());
+  auto dims2D = rmath::dvec2zvec(gconfig->dims, gconfig->resolution.v());
   size_t max_height = 0;
   for (auto* target : targets) {
     max_height = std::max(target->zdsize(), max_height);
   } /* for(*target..) */
 
   /* robots can be on top of structures, so give a little padding in Z */
-  rmath::vector3z dims3D =
-      rmath::vector3z(dims2D.x(), dims2D.y(), max_height + 2);
+  auto dims3D = rmath::vector3z(dims2D.x(), dims2D.y(), max_height + 2);
 
   register_with_arena_dims2D(mconfig, dims2D);
   register_with_arena_dims3D(mconfig, dims3D);
@@ -83,13 +86,14 @@ silicon_metrics_aggregator::silicon_metrics_aggregator(
     register_with_target_dims(mconfig, target);
   } /* for(*target..) */
 
-  reset_all();
+  /* setup metric collection for all collector groups in all sink groups */
+  initialize();
 }
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void silicon_metrics_aggregator::collect_from_tv(
+void silicon_metrics_manager::collect_from_tv(
     const support::tv::tv_manager* const tvm) {
   collect("tv::environment", *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
 
@@ -98,7 +102,7 @@ void silicon_metrics_aggregator::collect_from_tv(
   }
 } /* collect_from_tv() */
 
-void silicon_metrics_aggregator::collect_from_ct(
+void silicon_metrics_manager::collect_from_ct(
     const structure::ct_manager* manager) {
   for (const auto* target : manager->targetsro()) {
     collect("structure" + rcppsw::to_string(target->id()) + "::state", *target);
@@ -112,10 +116,10 @@ void silicon_metrics_aggregator::collect_from_ct(
 } /* collect_from_ct() */
 
 template <typename TController>
-void silicon_metrics_aggregator::collect_from_controller(
+void silicon_metrics_manager::collect_from_controller(
     const TController* c,
     const rtypes::type_uuid& structure_id) {
-  base_metrics_aggregator::collect_from_controller(c);
+  cosm_metrics_manager::collect_from_controller(c);
 
   if (rtypes::constants::kNoUUID != structure_id) {
     collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc",
@@ -129,12 +133,13 @@ void silicon_metrics_aggregator::collect_from_controller(
   collect("fsm::interference_counts", *c->fsm());
 } /* collect_from_controller() */
 
-void silicon_metrics_aggregator::register_standard_non_target(
-    const cmconfig::metrics_config* mconfig) {
-  using collector_typelist = rmpl::typelist<
-      rmpl::identity<blocks::manipulation_metrics_collector>,
-      rmpl::identity<support::tv::metrics::env_dynamics_metrics_collector> >;
-  cmetrics::collector_registerer<>::creatable_set creatable_set = {
+void silicon_metrics_manager::register_standard_non_target(
+    const rmconfig::metrics_config* mconfig) {
+  using sink_list = rmpl::typelist<
+      rmpl::identity<blocks::manipulation_metrics_csv_sink>,
+      rmpl::identity<support::tv::metrics::env_dynamics_metrics_csv_sink>
+    >;
+  rmetrics::creatable_collector_set creatable_set = {
     { typeid(blocks::manipulation_metrics_collector),
       "block_manipulation",
       "blocks::manipulation",
@@ -144,87 +149,105 @@ void silicon_metrics_aggregator::register_standard_non_target(
       "tv::environment",
       rmetrics::output_mode::ekAPPEND }
   };
-  cmetrics::collector_registerer<> registerer(mconfig, creatable_set, this);
-  boost::mpl::for_each<collector_typelist>(registerer);
+  rmetrics::register_with_csv_sink csv(&mconfig->csv,
+                                       creatable_set,
+                                       this);
+  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  boost::mpl::for_each<sink_list>(registerer);
 } /* register_standard_non_target() */
 
-void silicon_metrics_aggregator::register_standard_target(
-    const cmconfig::metrics_config* mconfig,
+void silicon_metrics_manager::register_standard_target(
+    const rmconfig::metrics_config* mconfig,
     const sstructure::structure3D* structure) {
-  using collector_typelist = rmpl::typelist<
-      rmpl::identity<structure::metrics::structure_progress_metrics_collector> >;
-  cmetrics::collector_registerer<>::creatable_set creatable_set = {
-    { typeid(structure::metrics::structure_progress_metrics_collector),
+  using sink_list = rmpl::typelist<
+      rmpl::identity<structure::metrics::ct_progress_metrics_csv_sink>
+    >;
+  rmetrics::creatable_collector_set creatable_set = {
+    { typeid(structure::metrics::ct_progress_metrics_collector),
       "structure" + rcppsw::to_string(structure->id()) + "_progress",
       "structure" + rcppsw::to_string(structure->id()) + "::progress",
       rmetrics::output_mode::ekAPPEND },
   };
-  cmetrics::collector_registerer<> registerer(mconfig, creatable_set, this);
-  boost::mpl::for_each<collector_typelist>(registerer);
+  rmetrics::register_with_csv_sink csv(&mconfig->csv,
+                                       creatable_set,
+                                       this);
+  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  boost::mpl::for_each<sink_list>(registerer);
 } /* register_standard_target() */
 
-void silicon_metrics_aggregator::register_with_target_lanes(
-    const cmconfig::metrics_config* mconfig,
+void silicon_metrics_manager::register_with_target_lanes(
+    const rmconfig::metrics_config* mconfig,
     const sstructure::structure3D* structure) {
-  using extra_args_type = std::tuple<size_t>;
-  using collector_typelist = rmpl::typelist<
-      rmpl::identity<structure::metrics::subtargets_metrics_collector> >;
+  using sink_list = rmpl::typelist<
+      rmpl::identity<ssmetrics::subtargets_metrics_csv_sink>
+    >;
 
-  cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
+  rmetrics::creatable_collector_set creatable_set = {
     { typeid(structure::metrics::subtargets_metrics_collector),
       "structure" + rcppsw::to_string(structure->id()) + "_subtargets",
       "structure" + rcppsw::to_string(structure->id()) + "::subtargets",
       rmetrics::output_mode::ekAPPEND },
   };
   auto extra_args = std::make_tuple(structure->subtargets().size());
-  cmetrics::collector_registerer<extra_args_type> registerer(
-      mconfig, creatable_set, this, extra_args);
-  boost::mpl::for_each<collector_typelist>(registerer);
+  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
+                                                             creatable_set,
+                                                             this,
+                                                             extra_args);
+  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  boost::mpl::for_each<sink_list>(registerer);
 } /* register_with_target_lanes() */
 
-void silicon_metrics_aggregator::register_with_target_lanes_and_id(
-    const cmconfig::metrics_config* mconfig,
+void silicon_metrics_manager::register_with_target_lanes_and_id(
+    const rmconfig::metrics_config* mconfig,
     const sstructure::structure3D* structure) {
-  using extra_args_type = std::tuple<rtypes::type_uuid, size_t>;
-  using collector_typelist =
-      rmpl::typelist<rmpl::identity<slametrics::lane_alloc_metrics_collector> >;
+  using sink_list = rmpl::typelist<
+        rmpl::identity<slametrics::lane_alloc_metrics_csv_sink>
+    >;
 
-  cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
+  rmetrics::creatable_collector_set creatable_set = {
     { typeid(slametrics::lane_alloc_metrics_collector),
       "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
       "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
       rmetrics::output_mode::ekAPPEND }
   };
-  auto extra_args =
-      std::make_tuple(structure->id(), structure->subtargets().size());
-  cmetrics::collector_registerer<extra_args_type> registerer(
-      mconfig, creatable_set, this, extra_args);
-  boost::mpl::for_each<collector_typelist>(registerer);
+  auto extra_args = std::make_tuple(structure->id(),
+                                    structure->subtargets().size());
+  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
+                                                            creatable_set,
+                                                             this,
+                                                             extra_args);
+  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  boost::mpl::for_each<sink_list>(registerer);
 } /* register_with_target_lanes_and_id() */
 
-void silicon_metrics_aggregator::register_with_target_dims(
-    const cmconfig::metrics_config* mconfig,
+void silicon_metrics_manager::register_with_target_dims(
+    const rmconfig::metrics_config* mconfig,
     const sstructure::structure3D* structure) {
-  using extra_args_type = std::tuple<rmath::vector3z>;
-  using collector_typelist = rmpl::typelist<
-      rmpl::identity<structure::metrics::structure_state_metrics_collector> >;
-  cmetrics::collector_registerer<extra_args_type>::creatable_set creatable_set = {
-    { typeid(structure::metrics::structure_state_metrics_collector),
+
+  using sink_list = rmpl::typelist<
+    rmpl::identity<ssmetrics::ct_state_metrics_csv_sink>
+    >;
+
+  rmetrics::creatable_collector_set creatable_set = {
+    { typeid(structure::metrics::ct_state_metrics_collector),
       "structure" + rcppsw::to_string(structure->id()) + "_state",
       "structure" + rcppsw::to_string(structure->id()) + "::state",
       rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE },
   };
 
   auto extra_args = std::make_tuple(structure->dimsd());
-  cmetrics::collector_registerer<extra_args_type> registerer(
-      mconfig, creatable_set, this, extra_args);
-  boost::mpl::for_each<collector_typelist>(registerer);
+  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
+                                                             creatable_set,
+                                                             this,
+                                                             extra_args);
+  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  boost::mpl::for_each<sink_list>(registerer);
 } /* register_with_target_dims() */
 
 /*******************************************************************************
  * Template Instantiations
  ******************************************************************************/
-template void silicon_metrics_aggregator::collect_from_controller(
+template void silicon_metrics_manager::collect_from_controller(
     const controller::fcrw_bst_controller*,
     const rtypes::type_uuid&);
 

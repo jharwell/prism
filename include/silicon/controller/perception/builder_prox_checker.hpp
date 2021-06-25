@@ -34,9 +34,10 @@
 
 #include "silicon/controller/perception/builder_prox_type.hpp"
 #include "silicon/repr/fs_configuration.hpp"
+#include "silicon/controller/perception/lane_traversal_state.hpp"
 
 /*******************************************************************************
- * Namespaces/Decls
+ * namespaces/Decls
  ******************************************************************************/
 namespace silicon::repr {
 class construction_lane;
@@ -57,8 +58,7 @@ class builder_perception_subsystem;
  * proximity of other builder robots.
  */
 class builder_prox_checker : public rer::client<builder_prox_checker> {
-
-public:
+ public:
   builder_prox_checker(const scperception::builder_perception_subsystem* perception,
                        const csubsystem::sensing_subsystemQ3D* sensing)
       : ER_CLIENT_INIT("silicon.controller.perception.builder_prox_checker"),
@@ -80,21 +80,10 @@ public:
  private:
   struct lane_share_state {
     bool is_shared{false};
-    bool other_in_ingress{false};
-    bool other_in_egress{false};
-    bool self_in_ingress{false};
-    bool self_in_egress{false};
+    lane_traversal_state self{};
+    lane_traversal_state other{};
   };
 
-  struct robot_compass_orientation {
-    bool pos_x;
-    bool neg_x;
-    bool pos_y;
-    bool neg_y;
-  };
-
-  static constexpr size_t kFRONTIER_SET_PROX_CELLS = 3;
-  static constexpr size_t kTRAJECTORY_PROX_CELLS = 3;
 
   /**
    * \brief Return \c TRUE if there is another robot close to the current
@@ -132,11 +121,6 @@ public:
   lane_share_state share_state_calc(const rmath::vector2d& other_rpos,
                                     const srepr::construction_lane* lane) const;
 
-  /**
-   * \brief Calculate the compass orientation (-X,+X,-Y,+Y) for the current
-   * robot.
-   */
-  robot_compass_orientation self_orientation(void) const;
 
   /**
    * \brief Calculate whether or not the other robot with color \p color is a

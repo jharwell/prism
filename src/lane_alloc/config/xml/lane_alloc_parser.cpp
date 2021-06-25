@@ -36,6 +36,7 @@ void lane_alloc_parser::parse(const ticpp::Element& node) {
   m_config = std::make_unique<config_type>();
 
   XML_PARSE_ATTR(lnode, m_config, policy);
+  XML_PARSE_ATTR_DFLT(lnode, m_config, interference_window, rtypes::timestep(0));
 } /* parse() */
 
 NS_END(xml, config, lane_alloc, silicon);

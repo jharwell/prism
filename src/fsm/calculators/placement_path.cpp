@@ -61,62 +61,62 @@ placement_path::operator()(const srepr::construction_lane* lane,
    * such. This will be fixed once the most basic construction has been
    * validated.
    */
+
+  rmath::vector2d forward1p25;
+  rmath::vector2d forward1p5;
+  rmath::vector2d forward1;
+  rmath::vector2d right1;
   if (rmath::radians::kZERO == lane->orientation()) {
-    rmath::vector2d forward1(rpos.x() - 1 * cell_size * 1.5, rpos.y());
-    rmath::vector2d right1(rpos.x() - 1 * cell_size * 1.5,
-                           rpos.y() + 1 * cell_size);
-    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
-        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(forward1);
-    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
-      /* no further waypoints needed */
-    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(forward1);
-      path.push_back(right1);
-    }
+    forward1p25 = {rpos.x() + cell_size * 1.25, rpos.y()};
+    forward1p25 = {rpos.x() + cell_size * 1.5, rpos.y()};
+    forward1 = {rpos.x() + cell_size, rpos.y()};
+    right1 = {rpos.x() + cell_size * 1.25, rpos.y() - cell_size};
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    rmath::vector2d forward1(rpos.x(), rpos.y() - 1 * cell_size * 1.5);
-    rmath::vector2d right1(rpos.x() - 1 * cell_size,
-                           rpos.y() - 1 * cell_size * 1.5);
-    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
-        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(forward1);
-    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
-      /* no further waypoints needed */
-    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(forward1);
-      path.push_back(right1);
-    }
+    forward1p25 = {rpos.x(), rpos.y() + cell_size * 1.25};
+    forward1p5 = {rpos.x(), rpos.y() + cell_size * 1.5};
+    forward1 = {rpos.x(), rpos.y() + cell_size};
+    right1 = {rpos.x() + cell_size, rpos.y() + cell_size * 1.25};
   } else if (rmath::radians::kPI == lane->orientation()) {
-    rmath::vector2d forward1(rpos.x() + 1 * cell_size * 1.5, rpos.y());
-    rmath::vector2d right1(rpos.x() + 1 * cell_size * 1.5,
-                           rpos.y() - 1 * cell_size);
-    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
-        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(forward1);
-    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
-      /* no further waypoints needed */
-    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(forward1);
-      path.push_back(right1);
-    }
+    forward1p25 = {rpos.x() - cell_size * 1.25, rpos.y()};
+    forward1p5 = {rpos.x() - cell_size * 1.5, rpos.y()};
+    forward1 = {rpos.x() - cell_size, rpos.y()};
+    right1 = {rpos.x() - cell_size * 1.25, rpos.y() + cell_size};
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    rmath::vector2d forward1(rpos.x(), rpos.y() + 1 * cell_size * 1.5);
-    rmath::vector2d right1(rpos.x() + 1 * cell_size,
-                           rpos.y() + 1 * cell_size * 1.5);
-    if (srepr::fs_configuration::ekLANE_EMPTY == acq ||
-        srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
-      path.push_back(forward1);
-    } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
-      /* no further waypoints needed */
-    } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
-      path.push_back(forward1);
-      path.push_back(right1);
-    }
+    forward1p25 = {rpos.x(), rpos.y() - cell_size * 1.25};
+    forward1p5 = {rpos.x(), rpos.y() - cell_size * 1.5};
+    forward1 = {rpos.x(), rpos.y() - cell_size};
+    right1 = {rpos.x() - cell_size, rpos.y() - cell_size * 1.25 };
   } else {
     ER_FATAL_SENTINEL("Bad orientation: '%s'",
                       rcppsw::to_string(lane->orientation()).c_str());
   }
+
+  /*
+   * In order to make block placements look "mostly" physical, we need to move
+   * forward by 1 OR 1.25 OR 1.5 cells from our current position, due to the
+   * truncation used when robot position is converted from real -> discrete ->
+   * CT coordinates. We don't have to move at all to get algorithmic
+   * correctness, but it help the simulations to look nice.
+   *
+   * LANE_EMPTY is the only one that requires 1.5 cells because we detect this
+   * configuration using the EDGE of our LOS, rather than what cells it
+   * contains.
+   */
+  if (srepr::fs_configuration::ekLANE_EMPTY == acq) {
+    path.push_back(forward1p5);
+  } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
+    path.push_back(forward1);
+  } else if (srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
+    path.push_back(forward1);
+  } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
+    path.push_back(forward1p25);
+    path.push_back(right1);
+  }
+
+  ER_INFO("Calculated placement path for fs=%d, %zu waypoints",
+          rcppsw::as_underlying(acq),
+          path.size());
+
   return path;
 } /* operator()() */
 

@@ -31,7 +31,7 @@
 #include "silicon/fsm/calculators/lane_alignment.hpp"
 #include "silicon/fsm/construction_acq_goal.hpp"
 #include "silicon/fsm/construction_signal.hpp"
-#include "silicon/lane_alloc/allocator.hpp"
+#include "silicon/lane_alloc/lane_allocator.hpp"
 #include "silicon/repr/construction_lane.hpp"
 #include "silicon/structure/structure3D.hpp"
 
@@ -120,19 +120,16 @@ RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
                          rpfsm::event_data* data) {
   if (fsm::construction_signal::ekFORAGING_BLOCK_PICKUP == data->signal()) {
     ER_INFO("Block pickup signal received while foraging");
+    /* allocate construction lane */
     ER_ASSERT(nullptr != perception()->nearest_ct(),
               "Cannot allocate construction lane: No known construction targets");
 
-    /* allocate construction lane */
     m_allocated_lane =
         m_allocator(sensing()->rpos3D(), perception()->nearest_ct());
-
-    if (fsm::construction_signal::ekFORAGING_BLOCK_VANISHED == data->signal()) {
+    internal_event(ekST_STRUCTURE_INGRESS);
+  } else if (fsm::construction_signal::ekFORAGING_BLOCK_VANISHED == data->signal()) {
       ER_INFO("Block vanished signal received while foraging");
       internal_event(ekST_FORAGE);
-    } else {
-      internal_event(ekST_STRUCTURE_INGRESS);
-    }
   }
   return fsm::construction_signal::ekHANDLED;
 }
@@ -157,6 +154,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_ingress) {
 
 RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_build) {
   if (m_block_place_fsm.task_finished()) {
+    /* note no reset call here! */
     internal_event(ekST_WAIT_FOR_BLOCK_PLACE);
   } else {
     if (!m_block_place_fsm.task_running()) {
@@ -340,7 +338,7 @@ void fcrw_bst_fsm::task_execute(void) {
  * Member Functions
  ******************************************************************************/
 void fcrw_bst_fsm::init(void) {
-  csfsm::util_hfsm::init();
+  sfsm::builder_util_fsm::init();
   m_forage_fsm.init();
   m_block_place_fsm.init();
   m_structure_egress_fsm.init();

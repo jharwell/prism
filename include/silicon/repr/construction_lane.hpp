@@ -34,6 +34,7 @@
 #include "silicon/lane_alloc/lane_geometry.hpp"
 #include "silicon/repr/frontier_coord.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/lane_alloc/history.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,14 +51,15 @@ class builder_los;
  * \ingroup repr
  *
  * \brief Representation of a construction lane, as returned by \ref
- * lane_alloc::allocator.
+ * lane_alloc::lane_allocator.
  */
 class construction_lane : public cta::taskable_argument,
                           public rer::client<construction_lane> {
  public:
   construction_lane(size_t id,
                     const rmath::radians& orientation,
-                    const lane_alloc::lane_geometry& geometry);
+                    const lane_alloc::lane_geometry& geometry,
+                    lane_alloc::history* history);
 
   /* Not copy/move constructable/assignable by default */
   construction_lane(const construction_lane&) = delete;
@@ -71,9 +73,7 @@ class construction_lane : public cta::taskable_argument,
   bool contains(const ssds::ct_coord& coord) const;
   const rmath::radians& orientation(void) const { return m_orientation; }
   const lane_alloc::lane_geometry& geometry(void) const { return m_geometry; }
-
-  boost::optional<frontier_coord> frontier(const scperception::ct_skel_info* ct,
-                                           const srepr::builder_los* los) const;
+  lane_alloc::history* history(void) const { return m_history; }
 
  private:
   /* clang-format off */
@@ -81,6 +81,7 @@ class construction_lane : public cta::taskable_argument,
   rmath::radians            m_orientation;
 
   lane_alloc::lane_geometry m_geometry;
+  lane_alloc::history*      m_history;
   /* clang-format on */
 };
 

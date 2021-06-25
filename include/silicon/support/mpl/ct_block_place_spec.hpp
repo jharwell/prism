@@ -35,7 +35,7 @@
 #include "silicon/support/interactor_status.hpp"
 #include "silicon/controller/operations/ct_block_place.hpp"
 #include "silicon/structure/structure3D.hpp"
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/metrics/silicon_metrics_manager.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,7 +50,7 @@ struct ct_block_place_spec_value {
   using penalty_handler_type = tv::block_op_penalty_handler;
   using interactor_status_type = interactor_status;
   using robot_block_place_visitor_type = scops::ct_block_place_visitor;
-  using metrics_agg_type = smetrics::silicon_metrics_aggregator;
+  using metrics_manager_type = smetrics::silicon_metrics_manager;
   using arena_map_type = carena::base_arena_map;
 };
 

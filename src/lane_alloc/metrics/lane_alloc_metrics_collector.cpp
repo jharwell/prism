@@ -34,62 +34,28 @@ NS_START(silicon, lane_alloc, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 lane_alloc_metrics_collector::lane_alloc_metrics_collector(
-    const std::string& ofname_stem,
-    const rtypes::timestep& interval,
+    std::unique_ptr<rmetrics::base_metrics_sink> sink,
     const rtypes::type_uuid& target_id,
     size_t n_lanes)
-    : base_metrics_collector(ofname_stem,
-                             interval,
-                             rmetrics::output_mode::ekAPPEND),
+    : base_metrics_collector(std::move(sink)),
       mc_target_id(target_id),
-      m_interval(n_lanes),
-      m_cum(n_lanes) {}
+      m_data(n_lanes) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string> lane_alloc_metrics_collector::csv_header_cols(void) const {
-  auto merged = dflt_csv_header_cols();
-  auto cols = std::list<std::string>();
-
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    cols.push_back("int_avg_lane" + std::to_string(i) + "_alloc_count");
-    cols.push_back("cum_avg_lane" + std::to_string(i) + "_alloc_count");
-  } /* for(i..) */
-
-  merged.splice(merged.end(), cols);
-  return merged;
-} /* csv_header_cols() */
-
-void lane_alloc_metrics_collector::reset(void) {
-  base_metrics_collector::reset();
-  reset_after_interval();
-} /* reset() */
-
-boost::optional<std::string> lane_alloc_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0UL)) {
-    return boost::none;
-  }
-  std::string line;
-
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    line += csv_entry_intavg(m_interval[i].alloc_count);
-    line += csv_entry_tsavg(m_cum[i].alloc_count);
-  } /* for(i..) */
-
-  return boost::make_optional(line);
-} /* csv_line_build() */
-
 void lane_alloc_metrics_collector::collect(const rmetrics::base_metrics& metrics) {
   const auto& m = dynamic_cast<const metrics::lane_alloc_metrics&>(metrics);
-  for (size_t i = 0; i < m_interval.size(); ++i) {
-    m_interval[i].alloc_count += m.alloc_count(mc_target_id, i);
-    m_cum[i].alloc_count += m.alloc_count(mc_target_id, i);
+  for (size_t i = 0; i < m_data.interval.size(); ++i) {
+    m_data.interval[i].alloc_count += m.alloc_count(mc_target_id, i);
+    m_data.cum[i].alloc_count += m.alloc_count(mc_target_id, i);
   } /* for(i..) */
 } /* collect() */
 
 void lane_alloc_metrics_collector::reset_after_interval(void) {
-  std::fill(m_interval.begin(), m_interval.end(), stats{});
+  for (auto& stats : m_data.interval) {
+    stats.alloc_count = 0;
+  } /* for(stats&..) */
 } /* reset_after_interval() */
 
 NS_END(metrics, lane_alloc, silicon);

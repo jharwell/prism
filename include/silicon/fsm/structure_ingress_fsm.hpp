@@ -112,13 +112,21 @@ class structure_ingress_fsm final : public builder_util_fsm,
 
   /**
    * When transporting a block to the construction site via polar forces, this
-   * is the minimum distance the robot must maintain from the center of the
-   * structure.
+   * is the extra distance adding to the diameter of the circle inscribed by the
+   * bounding box for the structure which robots use to maintain sufficient
+   * distance from the construction zone while transporting.
    */
+  static constexpr const double kCT_APPROACH_BB_CIRCLE_DIAMETER_PAD = 5.0;
 
-  static constexpr const double kCT_TRANSPORT_BC_DIST_MIN = 5.0;
+  /**
+   * \brief Calculate the radius of the smallest circle in which the bounding
+   * box containing the current construction target can be inscribed for use in
+   * calculating the approach vector to the allocated \ref
+   * srepr::construction_lane.
+   */
+  double ct_bb_circle_radius(void) const;
 
-  double ct_bc_radius(void) const;
+  double path_factor_calc(void) const;
 
   /* inherited states */
   RCPPSW_HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);

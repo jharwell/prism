@@ -24,7 +24,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <boost/optional.hpp>
+
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
@@ -38,6 +41,7 @@ class cell3D;
 
 namespace silicon::repr {
 class construction_lane;
+class builder_los;
 } /* namespace silicon::repr */
 
 namespace silicon::controller::perception {
@@ -75,9 +79,20 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
   fs_acq_checker& operator=(fs_acq_checker&&) = delete;
 
  private:
-  struct los_lane_cells {
+  struct acq_positions {
+    rmath::vector3d ingress{};
+    rmath::vector3d egress{};
+  };
+
+  struct acq_cells {
     const cds::cell3D* ingress{ nullptr };
     const cds::cell3D* egress{ nullptr };
+  };
+
+  struct acq_result {
+    acq_positions positions{};
+    acq_cells cells{};
+    size_t lookahead{0};
   };
 
   /**
@@ -85,13 +100,22 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
    * for stygmergic configurations, in units of cells. This is a critical value
    * for overall builder FSM provable correctness.
    */
-  static constexpr const size_t kDETECT_CELL_DIST = 2;
+  static constexpr const size_t kDETECT_CELL_DIST_MAX = 3;
 
-  los_lane_cells los_cells_calc(const srepr::construction_lane* lane) const;
+  acq_result acq_result_calc(const srepr::construction_lane* lane,
+                             size_t lookahead) const;
 
   srepr::fs_configuration
-  configuration_calc(const los_lane_cells& los_cells,
-                     const srepr::construction_lane* lane) const;
+  configuration_calc(const acq_result& result,
+                     const srepr::construction_lane* lane,
+                     const srepr::builder_los* los) const;
+
+  acq_positions acq_positions_calc(const rmath::vector3d& rpos,
+                                   const srepr::construction_lane* lane,
+                                   size_t lookahead) const;
+
+  bool acq_empty_lane(const srepr::construction_lane* lane,
+                      const srepr::builder_los* los) const;
 
   /* clang-format off */
   const csubsystem::sensing_subsystemQ3D*           mc_sensing;

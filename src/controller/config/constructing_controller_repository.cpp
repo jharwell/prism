@@ -25,11 +25,11 @@
 
 #include "rcppsw/math/config/xml/rng_parser.hpp"
 
-#include "cosm/metrics/config/xml/output_parser.hpp"
+#include "cosm/pal/config/xml/output_parser.hpp"
 #include "cosm/subsystem/config/xml/actuation_subsystem2D_parser.hpp"
 #include "cosm/subsystem/config/xml/sensing_subsystemQ3D_parser.hpp"
-#include "cosm/subsystem/perception/config/xml/perception_parser.hpp"
 
+#include "silicon/controller/perception/config/perception_parser.hpp"
 #include "silicon/lane_alloc/config/xml/lane_alloc_parser.hpp"
 
 /*******************************************************************************
@@ -43,8 +43,8 @@ namespace cscxml = csconfig::xml;
  * Constructors/Destructor
  ******************************************************************************/
 constructing_controller_repository::constructing_controller_repository(void) {
-  parser_register<cmconfig::xml::output_parser, cmconfig::output_config>(
-      cmconfig::xml::output_parser::kXMLRoot);
+  parser_register<cpcxml::output_parser, cpconfig::output_config>(
+      cpcxml::output_parser::kXMLRoot);
   parser_register<cscxml::actuation_subsystem2D_parser,
                   csconfig::actuation_subsystem2D_config>(
       cscxml::actuation_subsystem2D_parser::kXMLRoot);
@@ -55,8 +55,8 @@ constructing_controller_repository::constructing_controller_repository(void) {
       rmath::config::xml::rng_parser::kXMLRoot);
   parser_register<slaconfig::xml::lane_alloc_parser, slaconfig::lane_alloc_config>(
       slaconfig::xml::lane_alloc_parser::kXMLRoot);
-  parser_register<cspconfig::xml::perception_parser, cspconfig::perception_config>(
-      cspconfig::xml::perception_parser::kXMLRoot);
+  parser_register<scpconfig::perception_parser, scpconfig::perception_config>(
+      scpconfig::perception_parser::kXMLRoot);
 
   parser_find<cscxml::sensing_subsystemQ3D_parser>(
       cscxml::sensing_subsystemQ3D_parser::kXMLRoot)

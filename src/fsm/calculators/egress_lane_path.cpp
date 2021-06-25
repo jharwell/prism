@@ -59,12 +59,12 @@ egress_lane_path::operator()(const srepr::construction_lane* lane) const {
      */
   if ((rmath::radians::kZERO == lane->orientation() ||
        rmath::radians::kPI == lane->orientation())) {
-    if (!alignment.egress_pos) {
+    if (!alignment.egress) {
       path.push_back({ rpos.x(), egress_pt.y() });
     }
   } else if ((rmath::radians::kPI_OVER_TWO == lane->orientation() ||
               rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation())) {
-    if (!alignment.egress_pos) {
+    if (!alignment.egress) {
       path.push_back({ egress_pt.x(), rpos.y() });
     }
   } else {

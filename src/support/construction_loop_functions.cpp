@@ -33,10 +33,11 @@
 #include "cosm/foraging/metrics/block_transportee_metrics_collector.hpp"
 #include "cosm/interactors/applicator.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
+#include "cosm/pal/config/output_config.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/metrics/silicon_metrics_aggregator.hpp"
+#include "silicon/metrics/silicon_metrics_manager.hpp"
 #include "silicon/structure/ct_manager.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/support/interactor_status.hpp"
@@ -79,11 +80,11 @@ struct functor_maps_initializer {
             lf->ct_manager(),
             lf->floor(),
             lf->tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>(),
-            lf->m_metrics_agg.get()));
+            lf->m_metrics_manager.get()));
     lf->m_metrics_map->emplace(
         typeid(controller),
-        ccops::metrics_extract<T, metrics::silicon_metrics_aggregator>(
-            lf->m_metrics_agg.get()));
+        ccops::metrics_extract<T, smetrics::silicon_metrics_manager>(
+            lf->m_metrics_manager.get()));
     config_map->emplace(
         typeid(controller),
         robot_configurer<T>(
@@ -117,7 +118,7 @@ NS_END(detail);
 construction_loop_functions::construction_loop_functions(void)
     : base_loop_functions(),
       ER_CLIENT_INIT("silicon.loop.construction"),
-      m_metrics_agg(nullptr),
+      m_metrics_manager(nullptr),
       m_interactor_map(nullptr),
       m_metrics_map(nullptr) {}
 
@@ -151,13 +152,13 @@ void construction_loop_functions::private_init(void) {
   auto padded_size =
       rmath::vector2d(arena_map()->xrsize(), arena_map()->yrsize());
   auto arena = *config()->config_get<caconfig::arena_map_config>();
-  const auto* output = config()->config_get<cmconfig::output_config>();
+  const auto* output = config()->config_get<cpconfig::output_config>();
   arena.grid.dims = padded_size;
-  m_metrics_agg = std::make_unique<metrics::silicon_metrics_aggregator>(
+  m_metrics_manager = std::make_unique<smetrics::silicon_metrics_manager>(
       &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
 
   /* this starts at 0, and ARGoS starts at 1, so sync up */
-  m_metrics_agg->timestep_inc_all();
+  m_metrics_manager->timestep_inc();
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
@@ -235,7 +236,7 @@ void construction_loop_functions::post_step(void) {
   ndc_push();
   /* Update block distribution status */
   const auto* collector =
-      m_metrics_agg->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
+      m_metrics_manager->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
                                                                          ":transp"
                                                                          "ortee");
   arena_map()->redist_governor()->update(
@@ -244,13 +245,13 @@ void construction_loop_functions::post_step(void) {
       false); /* @todo never converged until that stuff is incorporated... */
 
   /* Collect metrics from loop functions */
-  m_metrics_agg->collect_from_ct(ct_manager());
+  m_metrics_manager->collect_from_ct(ct_manager());
 
-  m_metrics_agg->metrics_write(rmetrics::output_mode::ekTRUNCATE);
-  m_metrics_agg->metrics_write(rmetrics::output_mode::ekCREATE);
+  m_metrics_manager->flush(rmetrics::output_mode::ekTRUNCATE);
+  m_metrics_manager->flush(rmetrics::output_mode::ekCREATE);
 
   /* Not a clean way to do this in the metrics collectors... */
-  if (m_metrics_agg->metrics_write(rmetrics::output_mode::ekAPPEND)) {
+  if (m_metrics_manager->flush(rmetrics::output_mode::ekAPPEND)) {
     tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>()->reset_metrics();
 
     for (auto* target : ct_manager()->targetsno()) {
@@ -258,22 +259,22 @@ void construction_loop_functions::post_step(void) {
     } /* for(*target..) */
   }
 
-  m_metrics_agg->interval_reset_all();
-  m_metrics_agg->timestep_inc_all();
+  m_metrics_manager->interval_reset();
+  m_metrics_manager->timestep_inc();
 
   ndc_pop();
 } /* post_step() */
 
 void construction_loop_functions::destroy(void) {
-  if (nullptr != m_metrics_agg) {
-    m_metrics_agg->finalize_all();
+  if (nullptr != m_metrics_manager) {
+    m_metrics_manager->finalize();
   }
 } /* destroy() */
 
 void construction_loop_functions::reset(void) {
   ndc_push();
   base_loop_functions::reset();
-  m_metrics_agg->reset_all();
+  m_metrics_manager->initialize();
   ndc_pop();
 } /* reset() */
 
@@ -328,7 +329,7 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
   auto mapplicator =
       ccops::applicator<controller::constructing_controller,
                         ccops::metrics_extract,
-                        metrics::silicon_metrics_aggregator>(controller);
+                        smetrics::silicon_metrics_manager>(controller);
   if (nullptr != controller->perception()->nearest_ct()) {
     auto visitor = [&](const auto& v) {
       mapplicator(v, controller->perception()->nearest_ct()->id());
@@ -364,7 +365,7 @@ bool construction_loop_functions::robot_losQ3D_update(
   auto applicator = ccops::applicator<controller::constructing_controller,
                                       ccops::robot_los_update,
                                       rds::grid3D_overlay<cds::cell3D>,
-                                      repr::builder_los>(c);
+                                      srepr::builder_los>(c);
   boost::apply_visitor(applicator,
                        m_losQ3D_updaters[index].find(c->type_index())->second);
   return true;

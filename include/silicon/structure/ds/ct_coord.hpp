@@ -27,6 +27,7 @@
 #include <string>
 
 #include "rcppsw/math/vector3.hpp"
+#include "rcppsw/er/stringizable.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -52,7 +53,7 @@ NS_START(silicon, structure, ds);
  * the \a implied origin is when an offset is passed to a different
  * function/class/etc.*
  */
-class ct_coord : public rer::client<ct_coord> {
+class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
  public:
   /**
    * \brief Type tag specifying if the coordinates for a cell within a \ref
@@ -64,7 +65,7 @@ class ct_coord : public rer::client<ct_coord> {
     ekRORIGIN
   };
 
-  static ct_coord from_arena(rmath::vector3z coord,
+  static ct_coord from_arena(rmath::vector3d pos,
                              const structure3D* ct);
   static ct_coord to_virtual(const ct_coord& coord,
                              const structure3D* ct);
@@ -95,7 +96,7 @@ class ct_coord : public rer::client<ct_coord> {
 
   ct_coord to_real(void) const;
   ct_coord to_virtual(void) const;
-  std::string to_str(void) const;
+  std::string to_str(void) const override;
 
  private:
   /* clang-format off */

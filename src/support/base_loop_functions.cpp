@@ -25,9 +25,9 @@
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/arena/config/arena_map_config.hpp"
-#include "cosm/metrics/config/output_config.hpp"
 #include "cosm/pal/argos_swarm_iterator.hpp"
 #include "cosm/vis/config/visualization_config.hpp"
+#include "cosm/pal/config/output_config.hpp"
 
 #include "silicon/structure/ct_manager.hpp"
 #include "silicon/support/tv/config/tv_manager_config.hpp"
@@ -61,7 +61,7 @@ void base_loop_functions::init(ticpp::Element& node) {
   rng_init(config()->config_get<rmath::config::rng_config>());
 
   /* initialize output and metrics collection */
-  output_init(m_config.config_get<cmconfig::output_config>());
+  output_init(m_config.config_get<cpconfig::output_config>());
 
   /* initialize arena map and distribute blocks */
   const auto* aconfig = config()->config_get<caconfig::arena_map_config>();
@@ -113,20 +113,20 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
       this, cb, cpal::kARGoSRobotType);
 } /* tv_init() */
 
-void base_loop_functions::output_init(const cmconfig::output_config* output) {
-  argos_sm_adaptor::output_init(output->output_root, output->output_dir);
+void base_loop_functions::output_init(const cpconfig::output_config* output) {
+  argos_sm_adaptor::output_init(output);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.events"),
-                 output_root() + "/events.log");
+                 output_root() / "events.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.support"),
-                 output_root() + "/support.log");
+                 output_root() / "support.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.loop"),
-                 output_root() + "/sim.log");
+                 output_root() / "sim.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.arena.base_arena_map"),
-                 output_root() + "/sim.log");
+                 output_root() / "sim.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.metrics"),
-                 output_root() + "/metrics.log");
+                 output_root() / "metrics.log");
 #endif
 } /* output_init() */
 

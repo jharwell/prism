@@ -67,7 +67,7 @@ class egress_path : public rer::client<egress_path> {
    * extends a little beyond that range on the ingress/egress face, and we
    * (ideally) want to be out of the nest when we finish structure egress.
    */
-  static constexpr const size_t kNEST_PADDING = 8;
+  static constexpr const size_t kNEST_PADDING = 4;
 
   egress_path(const csubsystem::sensing_subsystemQ3D* sensing,
               const scperception::builder_perception_subsystem* perception,

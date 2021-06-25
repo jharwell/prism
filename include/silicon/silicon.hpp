@@ -32,12 +32,17 @@
 namespace silicon {
 namespace ds {}
 
+namespace algorithm {
+namespace constants {}
+} /* namespace algorithm */
+
 namespace repr {}
 
 namespace structure {
 namespace config {}
 namespace operations {}
 namespace ds {}
+namespace metrics {}
 } /* namespace structure */
 
 namespace fsm {}
@@ -47,8 +52,9 @@ namespace tv {}
 } /* namespace support */
 
 namespace controller {
+namespace perception {
 namespace config {}
-namespace perception {}
+}
 namespace operations {}
 } /* namespace controller */
 
@@ -70,16 +76,20 @@ namespace srepr = silicon::repr;
 namespace smetrics = silicon::metrics;
 
 namespace sstructure = silicon::structure;
+namespace ssmetrics = sstructure::metrics;
 namespace ssops = sstructure::operations;
 namespace ssconfig = sstructure::config;
 namespace ssds = sstructure::ds;
+
+namespace salgorithm = silicon::algorithm;
+namespace saconstants = salgorithm::constants;
 
 namespace ssupport = silicon::support;
 namespace sstv = ssupport::tv;
 
 namespace scontroller = silicon::controller;
-namespace scconfig = scontroller::config;;
 namespace scperception = scontroller::perception;
+namespace scpconfig = scperception::config;
 namespace scops = scontroller::operations;
 
 namespace slane_alloc = silicon::lane_alloc;

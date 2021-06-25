@@ -24,12 +24,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <string>
-#include <list>
-#include <vector>
+#include <memory>
 
 #include "rcppsw/metrics/base_metrics_collector.hpp"
-#include "silicon/silicon.hpp"
+
+#include "silicon/structure/metrics/subtargets_metrics_data.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -47,39 +46,27 @@ NS_START(silicon, structure, metrics);
  * structure3D.
  *
  * Metrics MUST be collected serially; concurrent updates to the gathered stats
- * are not supported. Metrics are written out at the specified collection
- * interval.
+ * are not supported.
  */
 class subtargets_metrics_collector final : public rmetrics::base_metrics_collector {
  public:
-  /**
-   * \param ofname_stem The output file name stem.
-   * \param interval Collection interval.
+ /**
+   * \param sink The metrics sink to use.
+   *
    * \param n_subtargets The # of subtargets the structure will be broken down
    *                     into during construction.
    */
-  subtargets_metrics_collector(const std::string& ofname_stem,
-                               const rtypes::timestep& interval,
+  subtargets_metrics_collector(std::unique_ptr<rmetrics::base_metrics_sink> sink,
                                size_t n_subtargets);
 
-  void reset(void) override;
+  /* base_metrics_collector overrides */
   void collect(const rmetrics::base_metrics& metrics) override;
   void reset_after_interval(void) override;
+  const rmetrics::base_metrics_data* data(void) const override { return &m_data; }
 
  private:
-  struct stats {
-    size_t placed_count{0};
-    size_t manifest_size{0};
-    size_t complete_count{0};
-  };
-
-  std::list<std::string> csv_header_cols(void) const override;
-
-  boost::optional<std::string> csv_line_build(void) override;
-
   /* clang-format off */
-  std::vector<stats> m_interval{};
-  std::vector<stats> m_cum{};
+  subtargets_metrics_data m_data;
   /* clang-format on */
 };
 

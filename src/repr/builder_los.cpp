@@ -26,7 +26,6 @@
 #include "cosm/ds/cell3D.hpp"
 
 #include "silicon/repr/construction_lane.hpp"
-#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -36,20 +35,20 @@ NS_START(silicon, repr);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-builder_los::builder_los(const const_grid_view& c_view,
-                         const rds::grid3D_overlay<cds::cell3D>* target)
-    : losQ3D(c_view),
-      ER_CLIENT_INIT("silicon.repr.builder_los"),
-      mc_target(static_cast<const structure::structure3D*>(target)) {}
+builder_los::builder_los(const rtypes::type_uuid& c_id,
+                         const grid_view_type& c_view,
+                         const rtypes::discretize_ratio& c_resolution)
+    : losQ3D(c_id, c_view, c_resolution),
+      ER_CLIENT_INIT("silicon.repr.builder_los") {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
 cds::block3D_vectorno builder_los::blocks(void) const {
   cds::block3D_vectorno blocks{};
-  for (size_t i = 0; i < xsize(); ++i) {
-    for (size_t j = 0; j < ysize(); ++j) {
-      const cds::cell3D& cell = access(i, j);
+  for (size_t i = 0; i < xdsize(); ++i) {
+    for (size_t j = 0; j < ydsize(); ++j) {
+      auto& cell = access(i, j, 0);
       if (cell.state_has_block()) {
         ER_ASSERT(nullptr != cell.block(),
                   "Cell at(%zu,%zu) in HAS_BLOCK state, but does not have block",

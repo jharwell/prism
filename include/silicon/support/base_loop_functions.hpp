@@ -34,7 +34,6 @@
 #include "rcppsw/math/vector2.hpp"
 #include "rcppsw/utils/color.hpp"
 
-#include "cosm/metrics/config/metrics_config.hpp"
 #include "cosm/pal/argos_sm_adaptor.hpp"
 
 #include "silicon/structure/config/construct_targets_config.hpp"
@@ -46,9 +45,9 @@
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-namespace cosm::metrics::config {
+namespace cosm::pal::config {
 struct output_config;
-} /* namespace cosm::metrics::config */
+} /* namespace cosm::pal::config */
 
 namespace silicon::structure {
 class ct_manager;
@@ -115,7 +114,7 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
    *
    * \param output Parsed output parameters.
    */
-  void output_init(const cmconfig::output_config* output) RCPPSW_COLD;
+  void output_init(const cpconfig::output_config* output) override RCPPSW_COLD;
 
   /**
    * \brief Initialize the \ref structure::ct_manager.

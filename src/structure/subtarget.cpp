@@ -24,6 +24,7 @@
 #include "silicon/structure/subtarget.hpp"
 
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/algorithm/constants.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -38,11 +39,11 @@ subtarget::subtarget(const structure3D* structure, size_t id)
       mc_id(id),
       mc_entry(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
                                     structure,
-                                    id * structure3D::kSUBTARGET_CELL_WIDTH),
+                                    id * saconstants::kCT_SUBTARGET_WIDTH_CELLS),
                structure),
       mc_exit(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
                                    structure,
-                                   id * structure3D::kSUBTARGET_CELL_WIDTH + 1),
+                                   id * saconstants::kCT_SUBTARGET_WIDTH_CELLS + 1),
               structure),
       mc_manifest_size(manifest_size_calc(mc_entry, structure) +
                        manifest_size_calc(mc_exit, structure)) {}

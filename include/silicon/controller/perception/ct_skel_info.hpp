@@ -26,6 +26,7 @@
  ******************************************************************************/
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/types/type_uuid.hpp"
+#include "rcppsw/types/spatial_dist.hpp"
 
 #include "silicon/silicon.hpp"
 #include "silicon/structure/ds/ct_coord.hpp"
@@ -55,6 +56,7 @@ class ct_skel_info {
       : m_target(target) {}
 
   size_t vshell_sized(void) const;
+  rtypes::spatial_dist vshell_sizer(void) const;
   rmath::vector3d center(void) const;
   rmath::vector3d roriginr(void) const;
   rmath::vector3z rorigind(void) const;
@@ -62,20 +64,21 @@ class ct_skel_info {
   rmath::vector3z vorigind(void) const;
   rmath::ranged xrange(void) const;
   rmath::ranged yrange(void) const;
-  rmath::vector3d bbr(void) const;
+  rmath::vector3d bbr(bool include_virtual = false) const;
   rmath::vector3z bbd(bool include_virtual = false) const;
   double block_unit_dim(void) const;
   size_t unit_dim_factor(void) const;
   const rmath::radians& orientation(void) const;
   size_t n_lanes(void) const;
+  const rtypes::discretize_ratio& grid_resolution(void) const;
 
   rmath::vector3d cell_loc_abs(const rmath::vector3z& coord) const;
   rtypes::type_uuid id(void) const;
-  ssds::ct_coord to_vcoord(const rmath::vector3z& arena_coord) const;
-  ssds::ct_coord to_vcoord2D(const rmath::vector2z& arena_coord) const;
+  ssds::ct_coord to_vcoord(const rmath::vector3d& arena_pos) const;
+  ssds::ct_coord to_vcoord2D(const rmath::vector2d& arena_pos) const;
   ssds::ct_coord as_vcoord(const rmath::vector3z& coord) const;
-  ssds::ct_coord to_rcoord(const rmath::vector3z& arena_coord) const;
-  ssds::ct_coord to_rcoord2D(const rmath::vector2z& arena_coord) const;
+  ssds::ct_coord to_rcoord(const rmath::vector3d& arena_pos) const;
+  ssds::ct_coord to_rcoord2D(const rmath::vector2d& arena_pos) const;
 
  private:
   /* clang-format off */

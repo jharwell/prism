@@ -32,6 +32,7 @@
 #include "silicon/structure/calculators/ramp_block_extent.hpp"
 #include "silicon/structure/operations/validate_placement.hpp"
 #include "silicon/structure/subtarget.hpp"
+#include "silicon/algorithm/constants.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,12 +51,12 @@ structure3D::structure3D(const config::structure3D_config* config,
                       * surrounding the structure so the origin of the real
                       * structure is as configured in the input file.
                       */
-                         rmath::vector3d(
-                             config->bounding_box.resolution.v() * vshell_sized(),
-                             config->bounding_box.resolution.v() * vshell_sized(),
-                             0.0),
+                     rmath::vector3d(
+                         config->bounding_box.resolution.v() * vshell_sized(),
+                         config->bounding_box.resolution.v() * vshell_sized(),
+                         0.0),
                      config->bounding_box.dims +
-                         /*
+                     /*
                       * Add padding for the two layers of virtual cells
                       * surrounding the structure (* 2 because padding is added
                       * on both X,Y sides).
@@ -74,15 +75,8 @@ structure3D::structure3D(const config::structure3D_config* config,
       mc_unit_dim_factor(unit_dim_factor_calc(map)),
       mc_arena_grid_res(map->grid_resolution()),
       mc_config(*config) {
-  ER_ASSERT(orientation_valid(orientation()),
-            "Bad structure orientation: '%s'",
-            rcppsw::to_string(orientation()).c_str());
-  ER_ASSERT(std::fabs(config->bounding_box.resolution.v() - mc_block_unit_dim) <=
-                std::numeric_limits<double>::epsilon(),
-            "Resolution of 3D grid does not match block unit dimension (%s != "
-            "%f)",
-            rcppsw::to_string(config->bounding_box.resolution).c_str(),
-            mc_block_unit_dim);
+  ER_ASSERT(initialization_checks(config),
+            "Initialization sanity checks failed");
   ER_INFO("Structure%s: vorigin=%s/%s, rorigin=%s/%s",
           rcppsw::to_string(mc_id).c_str(),
           rcppsw::to_string(voriginr()).c_str(),
@@ -120,6 +114,57 @@ structure3D::~structure3D(void) = default;
 /*******************************************************************************
  * Initialization Functions
  ******************************************************************************/
+bool structure3D::initialization_checks(
+    const config::structure3D_config* config) const {
+  ER_CHECK(orientation_valid(orientation()),
+           "Bad structure orientation: '%s'",
+           rcppsw::to_string(orientation()).c_str());
+  ER_CHECK(rmath::is_equal(config->bounding_box.resolution.v() - mc_block_unit_dim,
+                           0.0),
+           "Resolution of 3D grid does not match block unit dimension (%s != "
+           "%f)",
+           rcppsw::to_string(config->bounding_box.resolution).c_str(),
+           mc_block_unit_dim);
+  ER_CHECK(rmath::is_multiple_of(voriginr().x(),
+                                 config->bounding_box.resolution.v()) &&
+           rmath::is_multiple_of(voriginr().y(),
+                                 config->bounding_box.resolution.v()),
+           "Virtual origin %s (X,Y) coordinates not a multiple of 3D grid resolution %f",
+           rcppsw::to_string(voriginr()).c_str(),
+           config->bounding_box.resolution.v());
+
+  ER_CHECK(rmath::is_multiple_of(roriginr().x(),
+                                 config->bounding_box.resolution.v()) &&
+           rmath::is_multiple_of(roriginr().y(),
+                                 config->bounding_box.resolution.v()),
+           "Real origin %s (X,Y) coordinates not a multiple of 3D grid resolution %f",
+           rcppsw::to_string(roriginr()).c_str(),
+           config->bounding_box.resolution.v());
+
+  return true;
+
+error:
+  return false;
+} /* initialization_checks() */
+
+bool structure3D::orientation_valid(const rmath::radians& orientation) const {
+  return (rmath::radians::kZERO == orientation ||
+          rmath::radians::kPI_OVER_TWO == orientation ||
+          rmath::radians::kPI == orientation ||
+          rmath::radians::kTHREE_PI_OVER_TWO == orientation);
+} /* orientation_valid() */
+
+size_t
+structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
+  ER_ASSERT(std::fmod(mc_block_unit_dim, map->grid_resolution().v()) <=
+            std::numeric_limits<double>::epsilon(),
+            "Block unit dimension (%f) not a multiple of arena grid resolution "
+            "(%f)",
+            mc_block_unit_dim,
+            map->grid_resolution().v());
+  return static_cast<size_t>(mc_block_unit_dim / map->grid_resolution().v());
+} /* unit_dim_factor_calc() */
+
 structure3D::cell_spec_map_type structure3D::cell_spec_map_init(void) {
   cell_spec_map_type ret;
   size_t shell = vshell_sized();
@@ -218,14 +263,14 @@ structure3D::subtarget_vectoro structure3D::subtargetso_init(void) const {
   subtarget_vectoro ret;
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    for (size_t j = 0; j < ydsize() / kSUBTARGET_CELL_WIDTH - vshell_sized();
+    for (size_t j = 0; j < ydsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS - vshell_sized();
          ++j) {
       ER_INFO("Calculating subtarget %zu along Y slice axis", j);
       ret.push_back(std::make_unique<subtarget>(this, j));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    for (size_t i = 0; i < xdsize() / kSUBTARGET_CELL_WIDTH - vshell_sized();
+    for (size_t i = 0; i < xdsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS - vshell_sized();
          ++i) {
       ER_INFO("Calculating subtarget %zu along X slice axis", i);
       ret.push_back(std::make_unique<subtarget>(this, i));
@@ -298,27 +343,16 @@ rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
          rmath::zvec2dvec(cell.loc()) * unit_dim_factor() * mc_arena_grid_res.v();
 } /* cell_loc_abs() */
 
-size_t
-structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
-  ER_ASSERT(std::fmod(mc_block_unit_dim, map->grid_resolution().v()) <=
-                std::numeric_limits<double>::epsilon(),
-            "Block unit dimension (%f) not a multiple of arena grid resolution "
-            "(%f)",
-            mc_block_unit_dim,
-            map->grid_resolution().v());
-  return static_cast<size_t>(mc_block_unit_dim / map->grid_resolution().v());
-} /* unit_dim_factor_calc() */
-
 subtarget* structure3D::parent_subtarget(const ssds::ct_coord& coord) {
   size_t index = 0;
 
   auto rcoord = coord.to_real();
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    index = rcoord.offset().y() / kSUBTARGET_CELL_WIDTH;
+    index = rcoord.offset().y() / saconstants::kCT_SUBTARGET_WIDTH_CELLS;
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    index = rcoord.offset().x() / kSUBTARGET_CELL_WIDTH;
+    index = rcoord.offset().x() / saconstants::kCT_SUBTARGET_WIDTH_CELLS;
   } else {
     ER_FATAL_SENTINEL("Bad orientation: %s",
                       rcppsw::to_string(orientation()).c_str());
@@ -350,13 +384,6 @@ void structure3D::reset_metrics(void) {
     t->reset_metrics();
   } /* for(*t..) */
 } /* reset_metrics() */
-
-bool structure3D::orientation_valid(const rmath::radians& orientation) const {
-  return (rmath::radians::kZERO == orientation ||
-          rmath::radians::kPI_OVER_TWO == orientation ||
-          rmath::radians::kPI == orientation ||
-          rmath::radians::kTHREE_PI_OVER_TWO == orientation);
-} /* orientation_valid() */
 
 /*******************************************************************************
  * Progress Metrics

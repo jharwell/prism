@@ -53,24 +53,38 @@ size_t ct_skel_info::vshell_sized(void) const {
   return m_target->vshell_sized();
 } /* vshell_sized() */
 
+rtypes::spatial_dist ct_skel_info::vshell_sizer(void) const {
+  return m_target->vshell_sizer();
+} /* vshell_sizer() */
+
 rmath::vector3d ct_skel_info::center(void) const {
   return m_target->voriginr() + rmath::vector3d(m_target->xrsize() / 2.0,
                                                 m_target->yrsize() / 2.0,
                                                 m_target->zrsize() / 2.0);
 } /* center() */
 
-rmath::vector3d ct_skel_info::bbr(void) const {
+rmath::vector3d ct_skel_info::bbr(bool include_virtual) const {
   /*
-   * Targets are surrounded by layers of virtual cells, which we don't care
-   * about when allocating construction lanes.
+   * *2 because the layers of virtual cells are no both sizes of the structure
+   * in X and Y.
    */
-  return { m_target->xrsize() - m_target->vshell_sizer().v() * 2,
-           m_target->yrsize() - m_target->vshell_sizer().v() * 2,
+  return { m_target->xrsize() - m_target->vshell_sizer().v() * 2 * !include_virtual,
+           m_target->yrsize() - m_target->vshell_sizer().v() *2 * !include_virtual,
            m_target->zrsize() };
 } /* bbr() */
 
-ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3z& arena_coord) const {
-  auto raw = ssds::ct_coord::from_arena(arena_coord, m_target);
+rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
+  /*
+   * *2 because the layers of virtual cells are no both sizes of the structure
+   * in X and Y.
+   */
+  return { m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
+           m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
+           m_target->zdsize() };
+} /* bbd() */
+
+ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3d& arena_pos) const {
+  auto raw = ssds::ct_coord::from_arena(arena_pos, m_target);
   return raw.to_virtual();
 } /* to_vcoord() */
 
@@ -79,29 +93,19 @@ ssds::ct_coord ct_skel_info::as_vcoord(const rmath::vector3z& coord) const {
 } /* to_vcoord() */
 
 ssds::ct_coord
-ct_skel_info::to_vcoord2D(const rmath::vector2z& arena_coord) const {
-  return to_vcoord(rmath::vector3z(arena_coord.x(), arena_coord.y(), 0));
+ct_skel_info::to_vcoord2D(const rmath::vector2d& arena_coord) const {
+  return to_vcoord(rmath::vector3d(arena_coord.x(), arena_coord.y(), 0));
 } /* to_vcoord() */
 
-ssds::ct_coord ct_skel_info::to_rcoord(const rmath::vector3z& arena_coord) const {
-  auto raw = ssds::ct_coord::from_arena(arena_coord, m_target);
+ssds::ct_coord ct_skel_info::to_rcoord(const rmath::vector3d& arena_pos) const {
+  auto raw = ssds::ct_coord::from_arena(arena_pos, m_target);
   return raw.to_real();
 } /* to_rcoord() */
 
 ssds::ct_coord
-ct_skel_info::to_rcoord2D(const rmath::vector2z& arena_coord) const {
-  return to_rcoord(rmath::vector3z(arena_coord.x(), arena_coord.y(), 0));
+ct_skel_info::to_rcoord2D(const rmath::vector2d& arena_pos) const {
+  return to_rcoord(rmath::vector3d(arena_pos.x(), arena_pos.y(), 0));
 } /* to_rcoord() */
-
-rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
-  /*
-   * Targets are surrounded by layers of virtual cells, which we don't care
-   * about when allocating construction lanes.
-   */
-  return { m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
-           m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
-           m_target->zdsize() };
-} /* bbd() */
 
 const rmath::radians& ct_skel_info::orientation(void) const {
   return m_target->orientation();
@@ -130,5 +134,9 @@ double ct_skel_info::block_unit_dim(void) const {
 size_t ct_skel_info::unit_dim_factor(void) const {
   return m_target->unit_dim_factor();
 } /* unit_dim_factor() */
+
+const rtypes::discretize_ratio& ct_skel_info::grid_resolution(void) const {
+  return m_target->resolution();
+} /* grid_resolution() */
 
 NS_END(perception, controller, silicon);

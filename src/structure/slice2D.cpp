@@ -83,13 +83,13 @@ bool slice2D::is_hamiltonian(void) const {
 
 bool slice2D::is_traversable(const rmath::radians& orientation) const {
   if (rmath::radians::kZERO == orientation) {
-    return is_traversable_d1_neg();
-  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
-    return is_traversable_d2_neg();
-  } else if (rmath::radians::kPI == orientation) {
     return is_traversable_d1_pos();
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
+  } else if (rmath::radians::kPI_OVER_TWO == orientation) {
     return is_traversable_d2_pos();
+  } else if (rmath::radians::kPI == orientation) {
+    return is_traversable_d1_neg();
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
+    return is_traversable_d2_neg();
   } else {
     ER_FATAL_SENTINEL("Bad orientation for traversability: %s",
                       rcppsw::to_string(orientation).c_str());
@@ -459,28 +459,7 @@ bool slice2D::is_feasible(void) const {
        */
       if (crepr::block_type::ekRAMP == spec->block_type &&
           rmath::radians::kZERO == spec->z_rotation) {
-        for (size_t m = 1; m < spec->extent; ++m) {
-          auto ext_coord = ssds::ct_coord{ access(i + m, j).loc(),
-                                           ssds::ct_coord::relativity::ekVORIGIN,
-                                           mc_structure };
-          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
-          if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
-            return false;
-          }
-        } /* for(m..) */
-      } else if (crepr::block_type::ekRAMP == spec->block_type &&
-                 rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
-        for (size_t m = 1; m < spec->extent; ++m) {
-          auto ext_coord = ssds::ct_coord{ access(i, j + m).loc(),
-                                           ssds::ct_coord::relativity::ekVORIGIN,
-                                           mc_structure };
-          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
-          if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
-            return false;
-          }
-        } /* for(m..) */
-      } else if (crepr::block_type::ekRAMP == spec->block_type &&
-                 rmath::radians::kPI == spec->z_rotation) {
+
         for (size_t m = 1; m < spec->extent; ++m) {
           auto ext_coord = ssds::ct_coord{ access(i - m, j).loc(),
                                            ssds::ct_coord::relativity::ekVORIGIN,
@@ -491,9 +470,31 @@ bool slice2D::is_feasible(void) const {
           }
         } /* for(m..) */
       } else if (crepr::block_type::ekRAMP == spec->block_type &&
-                 rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
+                 rmath::radians::kPI_OVER_TWO == spec->z_rotation) {
         for (size_t m = 1; m < spec->extent; ++m) {
           auto ext_coord = ssds::ct_coord{ access(i, j - m).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
+          if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
+            return false;
+          }
+        } /* for(m..) */
+      } else if (crepr::block_type::ekRAMP == spec->block_type &&
+                 rmath::radians::kPI == spec->z_rotation) {
+        for (size_t m = 1; m < spec->extent; ++m) {
+          auto ext_coord = ssds::ct_coord{ access(i + m, j).loc(),
+                                           ssds::ct_coord::relativity::ekVORIGIN,
+                                           mc_structure };
+          const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);
+          if (cfsm::cell3D_state::ekST_BLOCK_EXTENT != extent_spec->state) {
+            return false;
+          }
+        } /* for(m..) */
+      } else if (crepr::block_type::ekRAMP == spec->block_type &&
+                 rmath::radians::kTHREE_PI_OVER_TWO == spec->z_rotation) {
+        for (size_t m = 1; m < spec->extent; ++m) {
+          auto ext_coord = ssds::ct_coord{ access(i, j + m).loc(),
                                            ssds::ct_coord::relativity::ekVORIGIN,
                                            mc_structure };
           const auto* extent_spec = mc_structure->cell_spec_retrieve(ext_coord);

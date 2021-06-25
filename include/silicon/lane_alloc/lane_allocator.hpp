@@ -1,5 +1,5 @@
 /**
- * \file allocator.hpp
+ * \file lane_allocator.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,17 +18,17 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_LANE_ALLOC_ALLOCATOR_HPP_
-#define INCLUDE_SILICON_LANE_ALLOC_ALLOCATOR_HPP_
+#ifndef INCLUDE_SILICON_LANE_ALLOC_LANE_ALLOCATOR_HPP_
+#define INCLUDE_SILICON_LANE_ALLOC_LANE_ALLOCATOR_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 
 #include "rcppsw/er/client.hpp"
 #include "rcppsw/math/rng.hpp"
@@ -41,6 +41,7 @@
 #include "silicon/lane_alloc/metrics/lane_alloc_metrics.hpp"
 #include "silicon/repr/construction_lane.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/lane_alloc/history.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -51,25 +52,26 @@ NS_START(silicon, lane_alloc);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class allocator
+ * \class lane_allocator
  * \ingroup lane_alloc
  *
  * \brief Given the specification for a \ref structure 3D, its current progress,
  * robot location, etc., allocate a construction lane within the structure for
  * the calling robot to use.
  */
-class allocator : public rer::client<allocator>,
-                  public slametrics::lane_alloc_metrics {
+class lane_allocator : public rer::client<lane_allocator>,
+                       public slametrics::lane_alloc_metrics {
  public:
   inline static const std::string kPolicyRandom = "random";
   inline static const std::string kPolicyLRU = "lru";
   inline static const std::string kPolicyClosest = "closest";
+  inline static const std::string kPolicyMinInterference = "min_interference";
 
-  allocator(const config::lane_alloc_config* config, rmath::rng* rng);
+  lane_allocator(const config::lane_alloc_config* config, rmath::rng* rng);
 
   /* Not copy constructable/assignable by default */
-  allocator(const allocator&) = delete;
-  const allocator& operator=(const allocator&) = delete;
+  lane_allocator(const lane_allocator&) = delete;
+  const lane_allocator& operator=(const lane_allocator&) = delete;
 
   /* lane allocation metrics */
   size_t alloc_count(const rtypes::type_uuid& target, size_t id) const override;
@@ -80,14 +82,6 @@ class allocator : public rer::client<allocator>,
              const scperception::ct_skel_info* target);
 
  private:
-  struct allocation_history {
-    allocation_history(size_t n_lanes, size_t prev)
-        : alloc_counts(n_lanes), prev_lane(prev) {}
-
-    std::vector<size_t> alloc_counts{};
-    size_t prev_lane{ 0 };
-  };
-
   /**
    * \brief Compute the locations of the entry point for each of the
    * construction lanes in the structure.
@@ -96,13 +90,13 @@ class allocator : public rer::client<allocator>,
   lane_locs_calc(const scperception::ct_skel_info* target) const;
 
   /* clang-format off */
-  const config::lane_alloc_config                 mc_config;
+  const config::lane_alloc_config      mc_config;
 
-  rmath::rng*                                     m_rng;
-  std::map<rtypes::type_uuid, allocation_history> m_history{};
+  rmath::rng*                          m_rng;
+  std::map<rtypes::type_uuid, history> m_history{};
   /* clang-format on */
 };
 
 NS_END(lane_alloc, silicon);
 
-#endif /* INCLUDE_SILICON_LANE_ALLOC_~ALLOCATOR_HPP_ */
+#endif /* INCLUDE_SILICON_LANE_ALLOC_LANE_ALLOCATOR_HPP_ */

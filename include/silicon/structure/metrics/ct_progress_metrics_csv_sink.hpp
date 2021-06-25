@@ -1,5 +1,5 @@
 /**
- * \file structure_state_metrics_collector.hpp
+ * \file ct_progress_metrics_csv_sink.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,54 +18,55 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
-#define INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_METRICS_CT_PROGRESS_METRICS_CSV_SINK_HPP_
+#define INCLUDE_SILICON_STRUCTURE_METRICS_CT_PROGRESS_METRICS_CSV_SINK_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <string>
 #include <list>
+#include <string>
 
-#include "rcppsw/metrics/spatial/grid3D_metrics_collector.hpp"
+#include "rcppsw/metrics/csv_sink.hpp"
+
 #include "silicon/silicon.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
 NS_START(silicon, structure, metrics);
+class ct_progress_metrics_collector;
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class structure_state_metrics_collector
- * \ingroup structure metrics
+ * \class ct_progress_metrics_csv_sink
+ * \ingroup support metrics tv
  *
- * \brief Collector for construction progress as reported directly from \ref
- * structure3D.
- *
- * Metrics MUST be collected serially; concurrent updates to the gathered stats
- * are not supported.
+ * \brief Sink for \ref ct_progress_metrics and \ref
+ * ct_progress_metrics_collector to output metrics to .csv.
  */
-class structure_state_metrics_collector final :
-    public rmetrics::spatial::grid3D_metrics_collector<rmetrics::spatial::cell_avg> {
+class ct_progress_metrics_csv_sink final : public rmetrics::csv_sink {
  public:
-  /**
-   * \param ofname The output file name.
-   * \param interval Collection interval.
-   * \param dims Dimensions of the structure.
-   * \param mode The selected output mode.
-   */
-  structure_state_metrics_collector(const std::string& ofname,
-                                    const rtypes::timestep& interval,
-                                    const rmetrics::output_mode& mode,
-                                    const rmath::vector3z& dims) :
-      grid3D_metrics_collector(ofname, interval, mode, dims) {}
+  using collector_type = ct_progress_metrics_collector;
 
-  void collect(const rmetrics::base_metrics& metrics) override;
+  /**
+   * \brief \see rmetrics::csv_sink.
+   */
+  ct_progress_metrics_csv_sink(fs::path fpath_no_ext,
+                                const rmetrics::output_mode& mode,
+                                const rtypes::timestep& interval);
+
+  /* csv_sink overrides */
+  std::list<std::string> csv_header_cols(
+      const rmetrics::base_metrics_data* data) const override;
+
+  boost::optional<std::string> csv_line_build(
+      const rmetrics::base_metrics_data* data,
+      const rtypes::timestep& t) override;
 };
 
 NS_END(metrics, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_STRUCTURE_STATE_METRICS_COLLECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_METRICS_CT_PROGRESS_METRICS_CSV_SINK_HPP_ */

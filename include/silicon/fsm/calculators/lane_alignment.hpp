@@ -58,8 +58,8 @@ NS_START(silicon, fsm, calculators);
 class lane_alignment : public rer::client<lane_alignment> {
  public:
   struct ret_type {
-    bool ingress_pos{false};
-    bool egress_pos{false};
+    bool ingress{false};
+    bool egress{false};
     bool azimuth{false};
   };
 

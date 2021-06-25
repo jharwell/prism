@@ -1,36 +1,70 @@
+============================
 Controller XML Configuration
 ============================
 
 The following controllers are available:
 
-+--------------+-------------------------+-----------------------------------------+
-| Controller   | Required Loop functions | Notes                                   |
-+--------------+-------------------------+-----------------------------------------+
-| fcrw_bst     | construction            | CRW Foraging + single target building.  |
-+--------------+-------------------------+-----------------------------------------+
+ .. list-table::
+    :widths: 25,50,50
+    :header-rows: 1
+
+    * - Controller
+
+      - Required Loop Functions
+
+      - Notes
+
+
+ * - fcrw_bst
+
+   - construction
+
+   - CRW Foraging + single target building.
 
 
 The following root XML tags are defined under ``<params>``.
 
-+---------------------------+---------------------------+----------------------------------------------------------------+
-| Root XML tag              | Mandatory For?            | Description                                                    |
-+---------------------------+---------------------------+----------------------------------------------------------------+
-| ``output``                | All controllers           | See :xref:`COSM` docs.                                         |
-+---------------------------+---------------------------+----------------------------------------------------------------+
-| ``sensing_subsystem2D``   | All controllers           | See :xref:`COSM` docs.                                         |
-+---------------------------+---------------------------+----------------------------------------------------------------+
-| ``actuation_subsystem2D`` | All controllers           | See :xref:`COSM` docs.                                         |
-+---------------------------+---------------------------+----------------------------------------------------------------+
-| ``lane_alloc``            | All controllers           | Parameters for construction lane allocation.                   |
-+---------------------------+---------------------------+----------------------------------------------------------------+
+.. list-table::
+    :widths: 25,50,50
+    :header-rows: 1
 
+    * - Root XML Tag
+
+      - Mandatory For?
+
+      - Description
+
+
+ * - ``output``
+
+   -  All controllers
+
+   - See :xref:`COSM` docs.
+
+ * - ``sensing_subsystem2D``
+
+   - All controllers
+
+   - See :xref:`COSM` docs.
+
+ * - ``actuation_subsystem2D``
+
+   - All controllers
+
+   - See :xref:`COSM` docs.
+
+ * - ``lane_alloc``
+
+   - All controllers
+
+   - Parameters for construction lane allocation.
 
 ``lane_alloc``
 --------------
 
 - Required child attributes if present: ``policy``.
 - Required child tags if present: none.
-- Optional child attributes: none.
+- Optional child attributes: [ ``interference_window`` ].
 - Optional child tags: none.
 
 XML configuration:
@@ -38,7 +72,8 @@ XML configuration:
 .. code-block:: XML
 
    <lane_alloc
-       policy="random|lru|closest"
+       policy="random|lru|closest|min_interference">
+       interference_window="INTEGER"
    />
 
 ``policy`` - The lane allocation policy to use. Valid values are:
@@ -51,3 +86,9 @@ XML configuration:
 
   - ``closest`` - Choose the lane closest to the robot's current location when
     the allocation algorithm is run.
+
+  - ``min_interference`` - Choose the lane which the robot has experienced the
+    minimum average interference (i.e., having to wait for other robots) while
+    in the lane. The average interference is calculated using a sliding window
+    of ``interference_window`` timesteps. If multiple lanes have the same average, a
+    random one is selected.

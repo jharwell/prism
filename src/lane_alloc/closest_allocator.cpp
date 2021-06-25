@@ -1,7 +1,7 @@
 /**
- * \file structure_state_metrics_collector.cpp
+ * \file closest_allocator.cpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -21,28 +21,32 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/metrics/structure_state_metrics_collector.hpp"
-
-#include "cosm/repr/base_block3D.hpp"
-
-#include "silicon/structure/metrics/structure_state_metrics.hpp"
+#include "silicon/lane_alloc/closest_allocator.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, metrics);
+NS_START(silicon, lane_alloc);
+
+/*******************************************************************************
+ * Constructors/Destructors
+ ******************************************************************************/
+closest_allocator::closest_allocator(rmath::rng* rng)
+    : policy_allocator(rng),
+      ER_CLIENT_INIT("silicon.lane_alloc.closest_allocator") {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void structure_state_metrics_collector::collect(
-    const rmetrics::base_metrics& metrics) {
-  const auto& m = dynamic_cast<const structure_state_metrics&>(metrics);
-  inc_total_count(m.occupied_cells().size());
+size_t closest_allocator::operator()(
+    const std::vector<lane_geometry>& lanes,
+    const rmath::vector3d& robot_pos) const {
+  auto pred = [&](const auto& loc1, const auto& loc2) {
+                return (robot_pos - loc1.ingress_pt()).length() <
+                  (robot_pos - loc2.ingress_pt()).length();
+              };
+  auto it = std::min_element(lanes.begin(), lanes.end(), pred);
+  return std::distance(lanes.begin(), it);
+}/* operator()() */
 
-  for (auto& cell : m.occupied_cells()) {
-    inc_cell_count(cell);
-  } /* for(*b..) */
-} /* collect() */
-
-NS_END(metrics, structure, silicon);
+NS_END(lane_alloc, silicon);

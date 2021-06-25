@@ -18,18 +18,17 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
-#define INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
+#ifndef INCLUDE_SILICON_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
+#define INCLUDE_SILICON_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <list>
-#include <string>
+#include <memory>
 
 #include "rcppsw/metrics/base_metrics_collector.hpp"
 
-#include "silicon/silicon.hpp"
+#include "silicon/support/tv/metrics/env_dynamics_metrics_data.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -48,27 +47,25 @@ NS_START(silicon, support, tv, metrics);
  * Metrics CANNOT be collected in parallel; concurrent updates to the gathered
  * stats are not supported. Metrics are written out every timestep.
  */
-class env_dynamics_metrics_collector final
-    : public rmetrics::base_metrics_collector {
+class env_dynamics_metrics_collector final : public rmetrics::base_metrics_collector {
  public:
   /**
-   * \param ofname_stem The output file name stem.
+   * \param sink The metrics sink to use.
    */
-  explicit env_dynamics_metrics_collector(const std::string& ofname_stem);
+  explicit env_dynamics_metrics_collector(
+      std::unique_ptr<rmetrics::base_metrics_sink> sink);
 
+  /* base_metrics_collector overrides */
   void collect(const rmetrics::base_metrics& metrics) override;
+  const rmetrics::base_metrics_data* data(void) const override { return &m_data; }
+
 
  private:
-  std::list<std::string> csv_header_cols(void) const override;
-  boost::optional<std::string> csv_line_build(void) override;
-
   /* clang-format off */
-  double           m_avg_motion_throttle{0.0};
-  rtypes::timestep m_arena_block_manip_penalty{0};
-  rtypes::timestep m_structure_block_manip_penalty{0};
+  env_dynamics_metrics_data m_data{};
   /* clang-format on */
 };
 
 NS_END(metrics, tv, support, silicon);
 
-#endif /* INCLUDE_SILICON_SUPPORT_METRICS_TV_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_ */
+#endif /* INCLUDE_SILICON_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_COLLECTOR_HPP_ */

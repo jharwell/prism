@@ -31,6 +31,7 @@
 #include "silicon/fsm/calculators/lane_alignment.hpp"
 #include "silicon/repr/colors.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/algorithm/constants.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -55,16 +56,37 @@ builder_prox_checker::operator()(const srepr::construction_lane* lane,
 
 builder_prox_type builder_prox_checker::trajectory_proximity(
     const srepr::construction_lane* lane) const {
-  auto readings = mc_sensing->blobs()->readings();
-  auto rorientation = self_orientation();
-  auto rpos = mc_sensing->rpos2D();
+  /*
+   * Get readings with angles relative to the robots current heading, rather
+   * than PI=0 (default).
+   */
+  auto readings = mc_sensing->blobs()->readings(mc_sensing->azimuth());
+  auto self_orientation = mc_perception->self_compass_orientation(mc_sensing->azimuth());
+  auto self_rpos = mc_sensing->rpos2D();
   auto prox = builder_prox_type::ekNONE;
 
-  ER_TRACE("Robot orientation: pos_x=%d neg_x=%d pos_y=%d neg_y=%d",
-           rorientation.pos_x,
-           rorientation.neg_x,
-           rorientation.pos_y,
-           rorientation.neg_x);
+  auto self_traversal = mc_perception->lane_traversal_state(lane, self_rpos);
+
+  ER_DEBUG("Self lane traversal: pos=%s in_ingress=%d in_egress=%d",
+           rcppsw::to_string(self_rpos).c_str(),
+           self_traversal.in_ingress,
+           self_traversal.in_egress);
+
+  ER_DEBUG("Self orientation: pos_x=%d neg_x=%d pos_y=%d neg_y=%d",
+           self_orientation.pos_x,
+           self_orientation.neg_x,
+           self_orientation.pos_y,
+           self_orientation.neg_y);
+
+  /*
+   * Robot is in the middle of a hard turn in place and not align with any
+   * of the 4 directions, so ignore any actual proximities until it
+   * finishes.
+   */
+  if (!(self_orientation.neg_x || self_orientation.neg_y ||
+        self_orientation.pos_x || self_orientation.pos_y)) {
+    return prox;
+  }
 
   for (auto& r : readings) {
     /* If the robot is not a builder robot we ignore it */
@@ -76,8 +98,7 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
      * If the blob is more than 'tolerance' off from our current heading, then
      * it is not a robot we need to worry about.
      */
-    if (r.vec.angle().unsigned_normalize() >
-        sfsm::calculators::lane_alignment::kAZIMUTH_TOL) {
+    if (!mc_perception->is_aligned_with(r.vec.angle(), mc_sensing->azimuth())) {
       continue;
     }
 
@@ -92,18 +113,11 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
 
     /*
      * Depending on which way we are facing we need to either add or subtract
-     * the relative offset of the other robot to get its absolute(ish)
-     * position in the global reference frame.
+     * the relative offset of the other robot to get its absolute position in
+     * the global reference frame.
      */
-    rmath::vector2d other_rpos;
-    lane_share_state sharing;
-    if (rorientation.neg_x || rorientation.neg_y) {
-      other_rpos = rpos - r.vec;
-      sharing = share_state_calc(other_rpos, lane);
-    } else {
-      other_rpos = rpos + r.vec;
-      sharing = share_state_calc(other_rpos, lane);
-    }
+
+    auto sharing = share_state_calc(self_rpos + r.vec, lane);
 
     /* If the robot is not in our lane, ignore it */
     if (!sharing.is_shared) {
@@ -111,23 +125,11 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
     }
 
     /* If the robot does not share the ingress/egress lane with us, ignore it */
-    if (!((sharing.self_in_ingress && sharing.other_in_ingress) ||
-          (sharing.self_in_egress && sharing.other_in_egress))) {
+    if (!((sharing.self.in_ingress && sharing.other.in_ingress) ||
+          (sharing.self.in_egress && sharing.other.in_egress))) {
       continue;
     }
 
-    bool in_ct_zone = mc_sensing->ground()->detect("nest");
-    if (in_ct_zone) {
-      /*
-       * Robot is in the middle of a hard turn in place and not align with any
-       * of the 4 directions, so ignore any actual proximities until it
-       * finishes.
-       */
-      if (!(rorientation.neg_x || rorientation.neg_y || rorientation.pos_x ||
-            rorientation.pos_y)) {
-        continue;
-      }
-    }
     if (r.vec.length() <= trajectory_prox_dist()) {
       prox |= builder_prox_type::ekTRAJECTORY;
     }
@@ -138,15 +140,45 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
 builder_prox_type builder_prox_checker::frontier_set_proximity(
     const srepr::fs_configuration& fs,
     const srepr::construction_lane* lane) const {
-  auto readings = mc_sensing->blobs()->readings();
-  auto rorientation = self_orientation();
+  /*
+   * Get readings with angles relative to the robots current heading, rather
+   * than PI=0 (default).
+   */
+  auto readings = mc_sensing->blobs()->readings(mc_sensing->azimuth());
+  auto self_orientation = mc_perception->self_compass_orientation(mc_sensing->azimuth());
   auto prox = builder_prox_type::ekNONE;
+  auto self_rpos = mc_sensing->rpos2D();
 
-  ER_TRACE("Robot orientation: pos_x=%d neg_x=%d pos_y=%d neg_y=%d",
-           rorientation.pos_x,
-           rorientation.neg_x,
-           rorientation.pos_y,
-           rorientation.neg_x);
+  auto self_traversal = mc_perception->lane_traversal_state(lane, self_rpos);
+
+  ER_DEBUG("Self lane traversal: pos=%s in_ingress=%d in_egress=%d",
+           rcppsw::to_string(self_rpos).c_str(),
+           self_traversal.in_ingress,
+           self_traversal.in_egress);
+
+  ER_DEBUG("Robot orientation: pos_x=%d neg_x=%d pos_y=%d neg_y=%d",
+           self_orientation.pos_x,
+           self_orientation.neg_x,
+           self_orientation.pos_y,
+           self_orientation.neg_y);
+
+  /*
+   * Robot is in the middle of a hard turn in place and not aligned with any of
+   * the 4 directions, so ignore any actual proximities until it finishes.
+   */
+  if (!(self_orientation.neg_x || self_orientation.neg_y
+        || self_orientation.pos_x || self_orientation.pos_y)) {
+    return prox;
+  }
+
+  /*
+   * If we are not aligned with our lane we are executing a hard turn adjacent
+   * to the frontier set as we acquire our placement site, so by definition
+   * there are no robots ahead of us.
+   */
+  if (!mc_perception->self_lane_aligned(lane)) {
+    return prox;
+  }
 
   for (auto& r : readings) {
     /* If the robot is not a builder robot we ignore it */
@@ -163,14 +195,8 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
       continue;
     }
 
-    auto rpos = mc_sensing->rpos2D();
-    lane_share_state sharing;
 
-    if (rorientation.neg_x || rorientation.neg_y) {
-      sharing = share_state_calc(rpos - r.vec, lane);
-    } else {
-      sharing = share_state_calc(rpos + r.vec, lane);
-    }
+    auto sharing = share_state_calc(self_rpos + r.vec, lane);
 
     /* If the robot is not in our lane, ignore it */
     if (!sharing.is_shared) {
@@ -184,7 +210,7 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
      * builder robot proximities cannot happen (we must be in the ingress lane
      * for them to occur).
      */
-    if (sharing.self_in_egress) {
+    if (sharing.self.in_egress) {
       continue;
     }
 
@@ -213,12 +239,12 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
 
 double builder_prox_checker::trajectory_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim();
-  return std::sqrt(cellsize * kTRAJECTORY_PROX_CELLS);
+  return std::sqrt(cellsize * saconstants::kCT_TRAJECTORY_PROX_CELLS);
 } /* trajectory_prox_dist() */
 
 double builder_prox_checker::frontier_set_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim();
-  return std::sqrt(cellsize * kFRONTIER_SET_PROX_CELLS);
+  return std::sqrt(cellsize * saconstants::kCT_FRONTIER_SET_PROX_CELLS);
 } /* frontier_set_prox_dist() */
 
 builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
@@ -239,57 +265,24 @@ builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
    * since that is how construction lanes are defined.
    */
   auto self_rpos = mc_sensing->rpos2D();
-  auto self_dpos = mc_sensing->dpos2D();
 
-  auto ct = mc_perception->nearest_ct();
-  auto self_vcoord2D = ct->to_vcoord2D(self_dpos);
-  auto cellsize = ct->block_unit_dim();
+  ret.self = mc_perception->lane_traversal_state(lane, self_rpos);
+  ret.other = mc_perception->lane_traversal_state(lane, other_rpos);
 
-  auto ingress = lane->geometry().ingress_virt();
-  auto egress = lane->geometry().egress_virt();
-
-  double diff = 0;
-  if (rmath::radians::kZERO == lane->orientation()) {
-    diff = other_rpos.y() - self_rpos.y();
-    ret.self_in_ingress = ingress.offset().y() == self_vcoord2D.offset().y();
-    ret.self_in_egress = egress.offset().y() == self_vcoord2D.offset().y();
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    diff = self_rpos.x() - other_rpos.x();
-    ret.self_in_ingress = ingress.offset().x() == self_vcoord2D.offset().x();
-    ret.self_in_egress = egress.offset().x() == self_vcoord2D.offset().x();
-  } else if (rmath::radians::kPI == lane->orientation()) {
-    diff = self_rpos.y() - other_rpos.y();
-    ret.self_in_ingress = ingress.offset().y() == self_vcoord2D.offset().y();
-    ret.self_in_egress = egress.offset().y() == self_vcoord2D.offset().y();
-
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    diff = other_rpos.x() - self_rpos.x();
-    ret.self_in_ingress = ingress.offset().x() == self_vcoord2D.offset().x();
-    ret.self_in_egress = egress.offset().x() == self_vcoord2D.offset().x();
-  }
-
-  if (ret.self_in_ingress) {
-    ret.other_in_ingress = RCPPSW_IS_BETWEEN(std::fabs(diff), 0, cellsize * 0.5);
-    ret.other_in_egress = RCPPSW_IS_BETWEEN(diff, cellsize * 0.5, cellsize * 1.5);
-  } else {
-    ret.other_in_ingress =
-        RCPPSW_IS_BETWEEN(diff, -cellsize * 0.5, -cellsize * 1.5);
-    ret.other_in_egress = RCPPSW_IS_BETWEEN(std::fabs(diff), 0, cellsize * 0.5);
-  }
   ret.is_shared =
-      (ret.self_in_ingress && (ret.other_in_ingress || ret.other_in_egress)) ||
-      (ret.self_in_egress && (ret.other_in_egress || ret.other_in_ingress));
+      (ret.self.in_ingress && (ret.other.in_ingress || ret.other.in_egress)) ||
+      (ret.self.in_egress && (ret.other.in_egress || ret.other.in_ingress));
 
   ER_TRACE("Lane sharing: rpos=%s other=%s",
            rcppsw::to_string(self_rpos).c_str(),
            rcppsw::to_string(other_rpos).c_str());
 
-  ER_TRACE("Lane sharing: self_ingress=%d self_egress=%d other_ingress=%d "
+  ER_TRACE("Lane sharing: self.ingress=%d self.egress=%d other.ingress=%d "
            "other_egress=%d",
-           ret.self_in_ingress,
-           ret.self_in_egress,
-           ret.other_in_ingress,
-           ret.other_in_egress);
+           ret.self.in_ingress,
+           ret.self.in_egress,
+           ret.other.in_ingress,
+           ret.other.in_egress);
   return ret;
 } /* share_state_calc() */
 
@@ -298,36 +291,5 @@ bool builder_prox_checker::is_builder_robot(const rutils::color& color) const {
   return colors.end() != std::find(colors.begin(), colors.end(), color);
 } /* is_builder_robot() */
 
-builder_prox_checker::robot_compass_orientation
-builder_prox_checker::self_orientation(void) const {
-  auto robot_azimuth = mc_sensing->azimuth();
-
-  rmath::range<rmath::radians> kRobotPosXHeading{
-    rmath::radians::kZERO - sfsm::calculators::lane_alignment::kAZIMUTH_TOL,
-    rmath::radians::kZERO + sfsm::calculators::lane_alignment::kAZIMUTH_TOL
-  };
-
-  rmath::range<rmath::radians> kRobotNegXHeading{
-    rmath::radians::kPI - sfsm::calculators::lane_alignment::kAZIMUTH_TOL,
-    rmath::radians::kPI + sfsm::calculators::lane_alignment::kAZIMUTH_TOL
-  };
-
-  rmath::range<rmath::radians> kRobotPosYHeading{
-    rmath::radians::kPI_OVER_TWO -
-        sfsm::calculators::lane_alignment::kAZIMUTH_TOL,
-    rmath::radians::kPI_OVER_TWO + sfsm::calculators::lane_alignment::kAZIMUTH_TOL
-  };
-
-  rmath::range<rmath::radians> kRobotNegYHeading{
-    rmath::radians::kTHREE_PI_OVER_TWO -
-        sfsm::calculators::lane_alignment::kAZIMUTH_TOL,
-    rmath::radians::kTHREE_PI_OVER_TWO +
-        sfsm::calculators::lane_alignment::kAZIMUTH_TOL
-  };
-  return { kRobotPosXHeading.contains(robot_azimuth.unsigned_normalize()),
-           kRobotNegXHeading.contains(robot_azimuth.unsigned_normalize()),
-           kRobotPosYHeading.contains(robot_azimuth.unsigned_normalize()),
-           kRobotNegYHeading.contains(robot_azimuth.unsigned_normalize()) };
-} /* self_orientation() */
 
 NS_END(perception, controller, silicon);

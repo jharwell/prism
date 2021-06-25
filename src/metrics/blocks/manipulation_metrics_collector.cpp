@@ -36,73 +36,42 @@ NS_START(silicon, metrics, blocks);
  * Constructors/Destructor
  ******************************************************************************/
 manipulation_metrics_collector::manipulation_metrics_collector(
-    const std::string& ofname_stem,
-    const rtypes::timestep& interval)
-    : base_metrics_collector(ofname_stem,
-                             interval,
-                             rmetrics::output_mode::ekAPPEND) {}
+    std::unique_ptr<rmetrics::base_metrics_sink> sink)
+    : base_metrics_collector(std::move(sink)) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-std::list<std::string>
-manipulation_metrics_collector::csv_header_cols(void) const {
-  auto merged = dflt_csv_header_cols();
-  auto cols = std::list<std::string>{
-    /* clang-format off */
-    "int_avg_arena_pickup_events",
-    "int_avg_arena_pickup_penalty",
-    "int_avg_ct_placement_events",
-    "int_avg_ct_placement_penalty",
-    /* clang-format on */
-  };
-  merged.splice(merged.end(), cols);
-  return merged;
-} /* csv_header_cols() */
-
-void manipulation_metrics_collector::reset(void) {
-  base_metrics_collector::reset();
-  reset_after_interval();
-} /* reset() */
-
-boost::optional<std::string>
-manipulation_metrics_collector::csv_line_build(void) {
-  if (!(timestep() % interval() == 0UL)) {
-    return boost::none;
-  }
-  std::string line;
-
-  line += csv_entry_intavg(m_interval.arena_pickup_events);
-  line += csv_entry_domavg(m_interval.arena_pickup_penalty,
-                           m_interval.arena_pickup_events);
-
-  line += csv_entry_intavg(m_interval.structure_place_events);
-  line += csv_entry_domavg(m_interval.structure_place_penalty,
-                           m_interval.structure_place_events);
-
-  return boost::make_optional(line);
-} /* csv_line_build() */
-
 void manipulation_metrics_collector::collect(
     const rmetrics::base_metrics& metrics) {
   const auto& m = dynamic_cast<const ccmetrics::manipulation_metrics&>(metrics);
-  m_interval.arena_pickup_events +=
+  m_data.interval.arena_pickup_events +=
       m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
-  m_interval.arena_pickup_penalty +=
+  m_data.interval.arena_pickup_penalty +=
       m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
 
-  m_interval.structure_place_events +=
+  m_data.interval.structure_place_events +=
       m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
-  m_interval.structure_place_penalty +=
+  m_data.interval.structure_place_penalty +=
+      m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
+
+  m_data.cum.arena_pickup_events +=
+      m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
+  m_data.cum.arena_pickup_penalty +=
+      m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
+
+  m_data.cum.structure_place_events +=
+      m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
+  m_data.cum.structure_place_penalty +=
       m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
 } /* collect() */
 
 void manipulation_metrics_collector::reset_after_interval(void) {
-  m_interval.arena_pickup_events = 0;
-  m_interval.arena_pickup_penalty = 0;
+  m_data.interval.arena_pickup_events = 0;
+  m_data.interval.arena_pickup_penalty = 0;
 
-  m_interval.structure_place_events = 0;
-  m_interval.structure_place_penalty = 0;
+  m_data.interval.structure_place_events = 0;
+  m_data.interval.structure_place_penalty = 0;
 } /* reset_after_interval() */
 
 NS_END(blocks, metrics, silicon);

@@ -43,8 +43,8 @@
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
 #include "silicon/structure/ds/ct_coord.hpp"
-#include "silicon/structure/metrics/structure_progress_metrics.hpp"
-#include "silicon/structure/metrics/structure_state_metrics.hpp"
+#include "silicon/structure/metrics/ct_progress_metrics.hpp"
+#include "silicon/structure/metrics/ct_state_metrics.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -73,8 +73,8 @@ class subtarget;
  * xdsize(), \ref ydsize() etc. \a includes these padded cells.
  */
 class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
-                          public metrics::structure_state_metrics,
-                          public metrics::structure_progress_metrics,
+                          public metrics::ct_state_metrics,
+                          public metrics::ct_progress_metrics,
                           public rer::client<structure3D> {
  public:
   using subtarget_vectorno = std::vector<subtarget*>;
@@ -87,8 +87,6 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   };
 
   using rds::grid3D_overlay<cds::cell3D>::operator[];
-
-  static constexpr const size_t kSUBTARGET_CELL_WIDTH = 2;
 
   structure3D(const config::structure3D_config* config,
               const carena::base_arena_map* map,
@@ -103,7 +101,7 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
     return m_occupied_cells;
   }
 
-  /* progress metrics */
+  /* structure progress metrics */
   bool is_complete(void) const override;
   size_t n_total_placed(void) const override;
   size_t n_interval_placed(void) const override;
@@ -271,6 +269,12 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
    */
   rmath::vector3d cell_loc_abs(const cds::cell3D& cell) const;
 
+  const rtypes::discretize_ratio& arena_grid_resolution(void) const {
+    return mc_arena_grid_res;
+  }
+
+
+
   /**
    * \brief Return the 0-based index of the \ref subtarget to which the
    * specified cell belongs.
@@ -315,10 +319,19 @@ class structure3D final : public rds::grid3D_overlay<cds::cell3D>,
   cell_spec_map_type cell_spec_map_init(void);
 
   /**
+   * \brief Perform initialization sanity checks to check:
+   *
+   * - The structure orientation
+   * - The unit dimension of blocks matches the resolution of the 3D grid
+   * - The real/virtual origin coordinates (X,Y) are a multiple of the 3D grid
+   *   resolution
+   */
+  bool initialization_checks(const config::structure3D_config* config) const;
+
+  /**
    * \brief Return if the specified orientation is a valid orientation for the
    * structure. Used as an initialization check.
    */
-
   bool orientation_valid(const rmath::radians& orientation) const;
 
   bool post_completion_check(void) const;

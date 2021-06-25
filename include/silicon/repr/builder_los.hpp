@@ -24,8 +24,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/ds/grid3D_overlay.hpp"
-
 #include "cosm/ds/block3D_vector.hpp"
 #include "cosm/repr/losQ3D.hpp"
 
@@ -34,10 +32,6 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace silicon::structure {
-class structure3D;
-} /* namespace silicon::structure */
-
 NS_START(silicon, repr);
 
 /*******************************************************************************
@@ -58,8 +52,9 @@ NS_START(silicon, repr);
  */
 class builder_los final : public crepr::losQ3D, public rer::client<builder_los> {
  public:
-  builder_los(const const_grid_view& c_view,
-              const rds::grid3D_overlay<cds::cell3D>* target);
+  builder_los(const rtypes::type_uuid& c_id,
+              const grid_view_type& c_view,
+              const rtypes::discretize_ratio& c_resolution);
 
   /* not copy constructible or copy assignable by default */
   builder_los(const builder_los&) = delete;
@@ -69,13 +64,6 @@ class builder_los final : public crepr::losQ3D, public rer::client<builder_los> 
    * \brief Get the list of 3D blocks currently in the LOS.
    */
   cds::block3D_vectorno blocks(void) const;
-
-  const structure::structure3D* target(void) const { return mc_target; }
-
- private:
-  /* clang-format off */
-  const structure::structure3D* mc_target;
-  /* clang-format on */
 };
 
 NS_END(repr, silicon);

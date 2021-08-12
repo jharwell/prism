@@ -31,7 +31,7 @@
 #include "rcppsw/mpl/typelist.hpp"
 
 #include "cosm/controller/operations/metrics_extract.hpp"
-#include "cosm/controller/operations/robot_los_update.hpp"
+#include "cosm/controller/operations/los_update.hpp"
 #include "cosm/hal/robot.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
@@ -103,7 +103,7 @@ class construction_loop_functions
 
   using losQ3D_updater_map_type =
       rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
-                                              ccops::robot_los_update,
+                                              ccops::los_update,
                                               rds::grid3D_overlay<cds::cell3D>,
                                               repr::builder_los>::type>;
 

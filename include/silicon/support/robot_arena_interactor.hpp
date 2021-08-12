@@ -31,6 +31,7 @@
 #include "silicon/silicon.hpp"
 #include "silicon/support/arena_block_pickup_interactor.hpp"
 #include "silicon/support/ct_block_place_interactor.hpp"
+#include "silicon/support/ct_complete_interactor.hpp"
 #include "silicon/support/interactor_status.hpp"
 #include "silicon/support/mpl/arena_block_pickup_spec.hpp"
 #include "silicon/support/mpl/ct_block_place_spec.hpp"
@@ -65,6 +66,7 @@ class robot_arena_interactor final
                          tv::env_dynamics* const envd,
                          smetrics::silicon_metrics_manager* metrics_manager)
       : ER_CLIENT_INIT("silicon.support.robot_arena_interactor"),
+        m_ct_complete(ct_manager),
         m_arena_pickup(map,
                        floor,
                        envd->penalty_handler(tv::block_op_src::ekARENA_PICKUP)),
@@ -84,6 +86,13 @@ class robot_arena_interactor final
    */
   interactor_status operator()(TControllerType& controller,
                                const rtypes::timestep& t) {
+    auto status = m_ct_complete(controller);
+
+    /* nothing more to do */
+    if (interactor_status::ekROBOT_STOPPED == status) {
+      return status;
+    }
+
     if (controller.is_carrying_block()) {
       return m_block_place(controller, t);
     } else { /* The robot has no block item */
@@ -98,6 +107,7 @@ class robot_arena_interactor final
       typename mpl::ct_block_place_spec<controller::typelist>;
 
   /* clang-format off */
+  ct_complete_interactor<TControllerType, arena_pickup_spec>        m_ct_complete;
   arena_block_pickup_interactor<TControllerType, arena_pickup_spec> m_arena_pickup;
   ct_block_place_interactor<TControllerType, block_place_spec>      m_block_place;
   /* clang-format on */

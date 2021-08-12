@@ -97,7 +97,7 @@ struct functor_maps_initializer {
     for (size_t i = 0; i < lf->ct_manager()->targetsno().size(); ++i) {
       auto& updater = lf->m_losQ3D_updaters[i];
       updater.emplace(typeid(controller),
-                      ccops::robot_los_update<T,
+                      ccops::los_update<T,
                                               rds::grid3D_overlay<cds::cell3D>,
                                               repr::builder_los>(
                           lf->ct_manager()->targetsno()[i]));
@@ -363,7 +363,7 @@ bool construction_loop_functions::robot_losQ3D_update(
             c->GetId().c_str(),
             c->type_index().name());
   auto applicator = ccops::applicator<controller::constructing_controller,
-                                      ccops::robot_los_update,
+                                      ccops::los_update,
                                       rds::grid3D_overlay<cds::cell3D>,
                                       srepr::builder_los>(c);
   boost::apply_visitor(applicator,

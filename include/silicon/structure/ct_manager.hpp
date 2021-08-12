@@ -100,7 +100,6 @@ class ct_manager : public rer::client<ct_manager> {
   /**
    * \brief The vector of all targets to be built in the arena.
    */
-
   const sds::ct_vectorno& targetsno(void) const { return m_targetsno; }
   const sds::ct_vectorro& targetsro(void) const { return m_targetsro; }
 
@@ -114,6 +113,8 @@ class ct_manager : public rer::client<ct_manager> {
     return m_envd->ct_penalty_handler(sstv::block_op_src::ekCT_BLOCK_MANIP,
                                       target_id);
   }
+  const sstv::env_dynamics* env_dynamics(void) const { return m_envd; }
+  sstv::env_dynamics* env_dynamics(void) { return m_envd; }
 
   const base_structure3D_builder*
   builder(const rtypes::type_uuid& target_id) const {
@@ -143,6 +144,11 @@ class ct_manager : public rer::client<ct_manager> {
    */
   void reset(void);
 
+  /**
+   * \brief Returns \c TRUE if all CTs are complete, and \c FALSE otherwise.
+   */
+  bool targets_complete(void) const;
+
  private:
   /**
    * \brief Determine if construction of the specified target is feasible.
@@ -160,13 +166,13 @@ class ct_manager : public rer::client<ct_manager> {
   structure3D* target_lookup(const rtypes::type_uuid& id) const;
 
   /* clang-format off */
-  carena::base_arena_map*    m_arena_map;
-  cpal::argos_sm_adaptor*    m_sm;
-  support::tv::env_dynamics* m_envd;
-  sds::ct_vectoro            m_targetso{};
-  sds::ct_vectorno           m_targetsno{};
-  sds::ct_vectorro           m_targetsro{};
-  builders_vectoro_type      m_builderso{};
+  carena::base_arena_map* m_arena_map;
+  cpal::argos_sm_adaptor* m_sm;
+  sstv::env_dynamics*     m_envd;
+  sds::ct_vectoro         m_targetso{};
+  sds::ct_vectorno        m_targetsno{};
+  sds::ct_vectorro        m_targetsro{};
+  builders_vectoro_type   m_builderso{};
   /* clang-format on */
 };
 

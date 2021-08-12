@@ -91,14 +91,25 @@ void ct_manager::update(const rtypes::timestep& t) {
 } /* update() */
 
 void ct_manager::reset(void) {
-  for (auto& builder : m_builderso) {
-    builder->reset();
-  } /* for(&builder..) */
-
-  for (auto& target : m_targetso) {
-    target->reset();
-  } /* for(&target..) */
+  std::for_each(m_builderso.begin(),
+                m_builderso.end(),
+                [&](auto& builder) {
+                  builder->reset();
+                });
+  std::for_each(m_targetso.begin(),
+                m_targetso.end(),
+                [&](auto& target) {
+                  target->reset();
+                });
 } /* reset() */
+
+bool ct_manager::targets_complete(void) const {
+  return std::all_of(std::begin(m_targetso),
+                     std::end(m_targetso),
+                     [&](auto& target) {
+                       return target->is_complete();
+                     });
+} /* targets_complete() */
 
 base_structure3D_builder*
 ct_manager::builder_lookup(const rtypes::type_uuid& target_id) const {

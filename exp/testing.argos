@@ -90,24 +90,24 @@
         <actuation_subsystem2D>
           <force_calculator>
             <avoidance_force lookahead="0.5"
-                             max="4"/>
+                             max="0.04"/>
             <arrival_force slowing_radius="0.2"
-                           slowing_speed_min="1.0"
-                           max="4"/>
-            <path_following_force max="4"
+                           slowing_speed_min="0.01"
+                           max="0.04"/>
+            <path_following_force max="0.04"
                                   radius="0.10"/>
             <wander_force circle_distance="4.0"
                           circle_radius="100.0"
                           max_angle_delta="5"
-                          max="4.5"
+                          max="0.045"
                           interval="1"
                           normal_dist="false"/>
-            <phototaxis_force max="8"/>
-            <polar_force max="12"/>
+            <phototaxis_force max="0.08"/>
+            <polar_force max="0.12"/>
           </force_calculator>
 
           <diff_drive soft_turn_max="30"
-                      max_speed="5.0" />
+                      max_speed="0.05" />
         </actuation_subsystem2D>
         <lane_alloc
             policy="lru"/>

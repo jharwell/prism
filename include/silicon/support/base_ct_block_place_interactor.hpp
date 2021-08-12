@@ -215,10 +215,10 @@ class base_ct_block_place_interactor
   }
 
   /* clang-format off */
-  sstructure::ct_manager*const m_ct_manager;
-  arena_map_type* const        m_arena_map;
-  metrics_manager_type * const m_metrics_manager;
-  argos::CFloorEntity*const    m_floor;
+  sstructure::ct_manager* m_ct_manager;
+  arena_map_type*         m_arena_map;
+  metrics_manager_type*   m_metrics_manager;
+  argos::CFloorEntity*    m_floor;
   /* clang-format on */
 };
 

@@ -29,6 +29,7 @@
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -55,6 +56,10 @@ lane_alignment::operator()(const srepr::construction_lane* lane) const {
 
 bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
                                 const rmath::radians& orientation) const {
+  ER_ASSERT(sstructure::orientation_valid(orientation),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(orientation).c_str());
+
   auto dist_diff = mc_sensing->rpos2D() - lane_point;
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
@@ -64,15 +69,16 @@ bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
              rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
     return (rtypes::spatial_dist::make(dist_diff.x()) <=
             kTRAJECTORY_ORTHOGONAL_TOL);
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(orientation).c_str());
   }
   return false;
 } /* verify_pos() */
 
 bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   rmath::radians angle_diff;
+  ER_ASSERT(sstructure::orientation_valid(orientation),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(orientation).c_str());
+
   if (rmath::radians::kZERO == orientation) {
     angle_diff =
         (rmath::radians::kZERO - mc_sensing->azimuth()).signed_normalize();
@@ -84,10 +90,8 @@ bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
     angle_diff = (rmath::radians::kTHREE_PI_OVER_TWO - mc_sensing->azimuth())
                  .signed_normalize();
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(orientation).c_str());
   }
+
   return angle_diff <= kAZIMUTH_TOL;
 } /* lane_alignment_verify_azimuth() */
 

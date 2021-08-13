@@ -29,10 +29,11 @@
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/ds/operations/cell3D_empty.hpp"
 
-#include "silicon/structure/calculators/ramp_block_extent.hpp"
-#include "silicon/structure/operations/validate_placement.hpp"
+#include "silicon/structure/operations/placement_validate.hpp"
 #include "silicon/structure/subtarget.hpp"
 #include "silicon/algorithm/constants.hpp"
+#include "silicon/structure/ds/spec_graph.hpp"
+#include "silicon/structure/repr/vshell.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -45,66 +46,37 @@ NS_START(silicon, structure);
 structure3D::structure3D(const config::structure3D_config* config,
                          const carena::base_arena_map* map,
                          size_t id)
-    : grid3D_overlay(config->anchor -
-                         /*
-                      * Subtract padding for the two layers of virtual cells
-                      * surrounding the structure so the origin of the real
-                      * structure is as configured in the input file.
-                      */
-                     rmath::vector3d(
-                         config->bounding_box.resolution.v() * vshell_sized(),
-                         config->bounding_box.resolution.v() * vshell_sized(),
-                         0.0),
-                     config->bounding_box.dims +
-                     /*
-                      * Add padding for the two layers of virtual cells
-                      * surrounding the structure (* 2 because padding is added
-                      * on both X,Y sides).
-                      */
-                         rmath::vector3d(config->bounding_box.resolution.v() *
-                                             vshell_sized() * 2,
-                                         config->bounding_box.resolution.v() *
-                                             vshell_sized() * 2,
-                                         0.0),
-                     config->bounding_box.resolution,
-                     map->grid_resolution()),
-      ER_CLIENT_INIT("silicon.structure.structure3D"),
+    : ER_CLIENT_INIT("silicon.structure.structure3D"),
       mc_id(id),
       mc_block_unit_dim(std::min(map->blocks()[0]->rdim2D().x(),
                                  map->blocks()[0]->rdim2D().y())),
       mc_unit_dim_factor(unit_dim_factor_calc(map)),
       mc_arena_grid_res(map->grid_resolution()),
-      mc_config(*config) {
-  ER_ASSERT(initialization_checks(config),
-            "Initialization sanity checks failed");
-  ER_INFO("Structure%s: vorigin=%s/%s, rorigin=%s/%s",
+      mc_config(*config),
+      m_spec(std::make_unique<ssds::spec_graph>(ssds::spec_graph::from_file(mc_config.graphml))),
+      m_vshell(&map->decoratee(),
+               config->anchor,
+               config->bounding_box,
+               mc_block_unit_dim) {
+
+  ER_INFO("Structure%s: vorigin=%s/%s,rorigin=%s/%s",
           rcppsw::to_string(mc_id).c_str(),
           rcppsw::to_string(voriginr()).c_str(),
           rcppsw::to_string(vorigind()).c_str(),
           rcppsw::to_string(roriginr()).c_str(),
           rcppsw::to_string(rorigind()).c_str());
 
-  ER_INFO("Structure%s: dims=%s/%s, rxrange=%s,ryrange=%s vxrange=%s,vyrange=%s",
+  ER_INFO("Structure%s: rxrspan=%s,vxrspan=%s ryrspanr=%s,vyrspan=%s",
           rcppsw::to_string(mc_id).c_str(),
-          rcppsw::to_string(dimsd()).c_str(),
-          rcppsw::to_string(dimsr()).c_str(),
-          rcppsw::to_string(xranger(false)).c_str(),
-          rcppsw::to_string(yranger(false)).c_str(),
-          rcppsw::to_string(xranger(true)).c_str(),
-          rcppsw::to_string(yranger(true)).c_str());
+          rcppsw::to_string(vshell()->xrspan(true)).c_str(),
+          rcppsw::to_string(vshell()->xrspan(false)).c_str(),
+          rcppsw::to_string(vshell()->yrspan(true)).c_str(),
+          rcppsw::to_string(vshell()->yrspan(false)).c_str());
 
-  for (size_t i = 0; i < xdsize(); ++i) {
-    for (size_t j = 0; j < ydsize(); ++j) {
-      for (size_t k = 0; k < zdsize(); ++k) {
-        rmath::vector3z c(i, j, k);
-        auto& cell = access(c);
-        cell.loc(c);
-      } /* for(k..) */
-    } /* for(j..) */
-  } /* for(i..) */
+  /* initialize spec map */
+  m_block_place_map = block_placement_map_init();
 
-  /* now that cell locations are populated, finish structure initialization */
-  m_cell_spec_map = cell_spec_map_init();
+  /* initialize subtargets */
   m_subtargetso = subtargetso_init();
   m_subtargetsno = subtargetsno_init();
 }
@@ -114,170 +86,52 @@ structure3D::~structure3D(void) = default;
 /*******************************************************************************
  * Initialization Functions
  ******************************************************************************/
-bool structure3D::initialization_checks(
-    const config::structure3D_config* config) const {
-  ER_CHECK(orientation_valid(orientation()),
-           "Bad structure orientation: '%s'",
-           rcppsw::to_string(orientation()).c_str());
-  ER_CHECK(rmath::is_equal(config->bounding_box.resolution.v() - mc_block_unit_dim,
-                           0.0),
-           "Resolution of 3D grid does not match block unit dimension (%s != "
-           "%f)",
-           rcppsw::to_string(config->bounding_box.resolution).c_str(),
-           mc_block_unit_dim);
-  ER_CHECK(rmath::is_multiple_of(voriginr().x(),
-                                 config->bounding_box.resolution.v()) &&
-           rmath::is_multiple_of(voriginr().y(),
-                                 config->bounding_box.resolution.v()),
-           "Virtual origin %s (X,Y) coordinates not a multiple of 3D grid resolution %f",
-           rcppsw::to_string(voriginr()).c_str(),
-           config->bounding_box.resolution.v());
-
-  ER_CHECK(rmath::is_multiple_of(roriginr().x(),
-                                 config->bounding_box.resolution.v()) &&
-           rmath::is_multiple_of(roriginr().y(),
-                                 config->bounding_box.resolution.v()),
-           "Real origin %s (X,Y) coordinates not a multiple of 3D grid resolution %f",
-           rcppsw::to_string(roriginr()).c_str(),
-           config->bounding_box.resolution.v());
-
-  return true;
-
-error:
-  return false;
-} /* initialization_checks() */
-
-bool structure3D::orientation_valid(const rmath::radians& orientation) const {
-  return (rmath::radians::kZERO == orientation ||
-          rmath::radians::kPI_OVER_TWO == orientation ||
-          rmath::radians::kPI == orientation ||
-          rmath::radians::kTHREE_PI_OVER_TWO == orientation);
-} /* orientation_valid() */
-
 size_t
 structure3D::unit_dim_factor_calc(const carena::base_arena_map* map) const {
-  ER_ASSERT(std::fmod(mc_block_unit_dim, map->grid_resolution().v()) <=
+  ER_ASSERT(std::fmod(mc_block_unit_dim.v(), map->grid_resolution().v()) <=
             std::numeric_limits<double>::epsilon(),
             "Block unit dimension (%f) not a multiple of arena grid resolution "
             "(%f)",
-            mc_block_unit_dim,
+            mc_block_unit_dim.v(),
             map->grid_resolution().v());
-  return static_cast<size_t>(mc_block_unit_dim / map->grid_resolution().v());
+  return static_cast<size_t>(mc_block_unit_dim.v() / map->grid_resolution().v());
 } /* unit_dim_factor_calc() */
 
-structure3D::cell_spec_map_type structure3D::cell_spec_map_init(void) {
-  cell_spec_map_type ret;
-  size_t shell = vshell_sized();
-  ER_DEBUG(
-      "Build cell spec map for structure%d: shell_size=%zu", mc_id.v(), shell);
-  for (size_t i = shell; i < xdsize() - shell; ++i) {
-    for (size_t j = shell; j < ydsize() - shell; ++j) {
+ssds::block_placement_map structure3D::block_placement_map_init(void) {
+  ssds::block_placement_map ret;
+  ER_DEBUG("Build block placement map for structure%d: shell_size=%zu",
+           mc_id.v(),
+           vshell()->sh_sized());
+
+  for (size_t i = 0; i < xdsize(); ++i) {
+    for (size_t j = 0; j < ydsize(); ++j) {
       for (size_t k = 0; k < zdsize(); ++k) {
-        /*
-         * We have to subtract the shell size to make the coordinates relative
-         * to the ACTUAL origin of the structure--NOT the origin of the
-         * structure shell.
-         */
-        rmath::vector3z c(i - shell, j - shell, k);
-        ret.insert({ c, cell_spec_calc(c) });
+        rmath::vector3z c(i, j, k);
+        auto* spec = m_spec->find(c);
+        if (nullptr != spec) {
+          ret[c] = ssds::block_placement_spec{spec, nullptr};
+        }
       } /* for(k..) */
     } /* for(j..) */
   } /* for(i..) */
   ER_DEBUG("Cell spec map for structure%d complete", mc_id.v());
   return ret;
-} /* cell_spec_map_init() */
-
-structure3D::cell_spec
-structure3D::cell_spec_calc(const rmath::vector3z& coord) const {
-  ER_DEBUG("Query spec for cell@%s", rcppsw::to_string(coord).c_str());
-  /*
-   * Direct key comparison for host cells. This is the default, but I explicitly
-   * define it here to clearly differentiate it from searching for blocks which
-   * match the specified location based on extents.
-   */
-  auto host_pred = [&](const auto& pair) { return pair.first == coord; };
-
-  /* easy case: cubes are 1x1x1, so they have no extents */
-  auto cube_it = std::find_if(
-      mc_config.cube_blocks.begin(), mc_config.cube_blocks.end(), host_pred);
-
-  /*
-   * Harder case: for ramps we need to compare the host cell location AND
-   * figure out if the passed location is part of a block extent, in order to
-   * return the correct cell target state.
-   */
-  auto extent_pred = [&](const auto& pair) {
-    auto extents = calculators::ramp_block_extent()(&pair.second);
-    auto sum =
-        std::accumulate(std::begin(extents),
-                        std::end(extents),
-                        std::string(),
-                        [&](const std::string& a, const rmath::vector3z& l) {
-                          return a + rcppsw::to_string(l) + ",";
-                        });
-
-    ER_TRACE("Checking block extent cells %s (%zu)", sum.c_str(), extents.size());
-    /*
-     * Check all extents for the current block to see if they match the location
-     * we were passed.
-     */
-    return extents.end() != std::find(extents.begin(), extents.end(), coord);
-  };
-
-  auto ramp_host_it = std::find_if(
-      mc_config.ramp_blocks.begin(), mc_config.ramp_blocks.end(), host_pred);
-  auto ramp_extent_it = std::find_if(
-      mc_config.ramp_blocks.begin(), mc_config.ramp_blocks.end(), extent_pred);
-
-  size_t count = (mc_config.ramp_blocks.end() != ramp_host_it) +
-                 (mc_config.ramp_blocks.end() != ramp_extent_it) +
-                 (mc_config.cube_blocks.end() != cube_it);
-  ER_ASSERT(count <= 1,
-            "Cell@%s config error: found in more than one block spec map",
-            rcppsw::to_string(coord).c_str());
-
-  if (mc_config.cube_blocks.end() != cube_it) {
-    return { cfsm::cell3D_state::ekST_HAS_BLOCK,
-             crepr::block_type::ekCUBE,
-             rmath::radians::kZERO,
-             1 };
-  } else if (mc_config.ramp_blocks.end() != ramp_host_it) {
-    return { cfsm::cell3D_state::ekST_HAS_BLOCK,
-             crepr::block_type::ekRAMP,
-             ramp_host_it->second.z_rotation,
-             calculators::ramp_block_extent::kEXTENT_SIZE };
-  } else if (mc_config.ramp_blocks.end() != ramp_extent_it) {
-    return { cfsm::cell3D_state::ekST_BLOCK_EXTENT,
-             crepr::block_type::ekNONE,
-             rmath::radians::kZERO,
-             0 };
-  } else {
-    return { cfsm::cell3D_state::ekST_EMPTY,
-             crepr::block_type::ekNONE,
-             rmath::radians::kZERO,
-             0 };
-  }
-} /* cell_spec_calc() */
+} /* block_placement_map_init() */
 
 structure3D::subtarget_vectoro structure3D::subtargetso_init(void) const {
   subtarget_vectoro ret;
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    for (size_t j = 0; j < ydsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS - vshell_sized();
-         ++j) {
+    for (size_t j = 0; j < ydsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS; ++j) {
       ER_INFO("Calculating subtarget %zu along Y slice axis", j);
       ret.push_back(std::make_unique<subtarget>(this, j));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    for (size_t i = 0; i < xdsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS - vshell_sized();
-         ++i) {
+    for (size_t i = 0; i < xdsize() / saconstants::kCT_SUBTARGET_WIDTH_CELLS; ++i) {
       ER_INFO("Calculating subtarget %zu along X slice axis", i);
       ret.push_back(std::make_unique<subtarget>(this, i));
     } /* for(i..) */
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation : %s",
-                      rcppsw::to_string(orientation()).c_str());
   }
   return ret;
 } /* subtargetso_init() */
@@ -304,44 +158,52 @@ bool structure3D::spec_exists(const crepr::base_block3D* const query) const {
   auto coord = ssds::ct_coord{ query->danchor3D(),
                                ssds::ct_coord::relativity::ekVORIGIN,
                                this };
-  return nullptr != cell_spec_retrieve(coord);
+  return nullptr != spec_retrieve(coord);
 } /* spec_exists() */
 
 bool structure3D::contains(const rmath::vector2d& loc,
                            bool include_virtual) const {
-  return xranger(include_virtual).contains(loc.x()) &&
-         yranger(include_virtual).contains(loc.y());
+  return vshell()->xrspan(include_virtual).contains(loc.x()) &&
+      vshell()->yrspan(include_virtual).contains(loc.y());
 } /* contains() */
 
 void structure3D::block_add(std::unique_ptr<crepr::base_block3D> block) {
   RCSW_UNUSED rtypes::type_uuid id = block->id();
   m_occupied_cells.push_back((block->danchor3D() - vorigind()) /
                              mc_unit_dim_factor);
-  m_placed.push_back(std::move(block));
+
+  /* add block to spec graph so robots can see it in their LOS */
+  m_spec->find(block->danchor3D())->block = block.get();
+
+  /* add block to map of block placements */
+  m_block_place_map[block->danchor3D() - vorigind()].block = std::move(block);
+
+  ++m_placed;
   ++m_placed_since_reset;
-  ER_INFO("Added block%d to structure (%zu total)", id.v(), m_placed.size());
+  ER_INFO("Added block%d to structure (%zu total)", id.v(), m_placed);
 } /* block_add() */
 
-const structure3D::cell_spec*
-structure3D::cell_spec_retrieve(const ssds::ct_coord& coord) const {
+const ssds::block_anchor_spec*
+structure3D::spec_retrieve(const ssds::ct_coord& coord) const {
   /*
    * If the coordinates are relative to the virtual origin, we have to translate
    * them to be relative to the REAL origin, as only cells that are ACTUALLY
-   * part of the structure's bounding box will have had specs calculated for
-   * them.
+   * part of the structure's bounding box can have specs.
    */
   auto rcoord = coord.to_real();
-  auto it = m_cell_spec_map.find(rcoord.offset());
-  if (m_cell_spec_map.end() != it) {
-    return &it->second;
+  auto it = m_block_place_map.find(rcoord.offset());
+  if (m_block_place_map.end() != it) {
+    return it->second.spec;
   }
   return nullptr;
-} /* cell_spec_retrieve() */
+} /* spec_retrieve() */
 
-rmath::vector3d structure3D::cell_loc_abs(const cds::cell3D& cell) const {
+rmath::vector3d structure3D::anchor_loc_abs(const ssds::ct_coord& anchor) const {
   return voriginr() +
-         rmath::zvec2dvec(cell.loc()) * unit_dim_factor() * mc_arena_grid_res.v();
-} /* cell_loc_abs() */
+         rmath::zvec2dvec(anchor.to_virtual().offset()) *
+      unit_dim_factor() *
+      mc_arena_grid_res.v();
+} /* anchor_loc_abs() */
 
 subtarget* structure3D::parent_subtarget(const ssds::ct_coord& coord) {
   size_t index = 0;
@@ -353,9 +215,6 @@ subtarget* structure3D::parent_subtarget(const ssds::ct_coord& coord) {
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
     index = rcoord.offset().x() / saconstants::kCT_SUBTARGET_WIDTH_CELLS;
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: %s",
-                      rcppsw::to_string(orientation()).c_str());
   }
   ER_ASSERT(
       index <= m_subtargetsno.size(), "Bad index %zu: no such subtarget", index);
@@ -363,19 +222,13 @@ subtarget* structure3D::parent_subtarget(const ssds::ct_coord& coord) {
 } /* parent_subtarget() */
 
 void structure3D::reset(void) {
-  m_placed.clear();
   m_placement_id = 0;
   reset_metrics();
 
-  for (size_t i = 0; i < xdsize(); ++i) {
-    for (size_t j = 0; j < ydsize(); ++j) {
-      for (size_t k = 0; k < zdsize(); ++k) {
-        rmath::vector3z coord(i, j, k);
-        cdops::cell3D_empty op(coord);
-        op.visit(access(coord));
-      } /* for(k..) */
-    } /* for(j..) */
-  } /* for(i..) */
+  /* remove all placed blocks */
+  for (auto &e : m_block_place_map) {
+    e.second.block = nullptr;
+  } /* for(&e..) */
 } /* reset() */
 
 void structure3D::reset_metrics(void) {
@@ -388,10 +241,10 @@ void structure3D::reset_metrics(void) {
 /*******************************************************************************
  * Progress Metrics
  ******************************************************************************/
-size_t structure3D::n_total_placed(void) const { return m_placed.size(); }
+size_t structure3D::n_total_placed(void) const { return m_placed; }
 size_t structure3D::n_interval_placed(void) const { return m_placed_since_reset; }
 
-size_t structure3D::manifest_size(void) const { return m_cell_spec_map.size(); }
+size_t structure3D::manifest_size(void) const { return m_spec->size(); }
 
 bool structure3D::is_complete(void) const {
   /* basic sanity checks */
@@ -404,40 +257,24 @@ bool structure3D::post_completion_check(void) const {
            n_total_placed(),
            manifest_size());
 
+  /*
+   * @todo This is inefficent and should be made better at some point.
+   */
   for (size_t i = 0; i < xdsize(); ++i) {
     for (size_t j = 0; j < ydsize(); ++j) {
       for (size_t k = 0; k < zdsize(); ++k) {
         auto coord = ssds::ct_coord{ rmath::vector3z{ i, j, k },
                                      ssds::ct_coord::relativity::ekVORIGIN,
                                      this };
-        const auto* spec = cell_spec_retrieve(coord);
+        const auto* spec = spec_retrieve(coord);
 
         if (nullptr == spec) {
           continue;
         }
-        auto& cell = access(coord.to_real().offset());
-        if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
-          ER_CHECK(cell.fsm().state_has_block(),
-                   "Cell@%s should not in HAS_BLOCK (%d)",
-                   rcppsw::to_string(cell.loc()).c_str(),
-                   cell.fsm().current_state());
-
-          ER_CHECK(spec->block_type == cell.block()->md()->type(),
-                   "Cell@%s spec block type mismatch: %d vs %d",
-                   rcppsw::to_string(cell.loc()).c_str(),
-                   rcppsw::as_underlying(spec->block_type),
-                   rcppsw::as_underlying(cell.block()->md()->type()));
-        } else if (cfsm::cell3D_state::ekST_BLOCK_EXTENT == spec->state) {
-          ER_CHECK(cell.fsm().state_in_block_extent(),
-                   "Cell@%s should not in BLOCK_EXTENT (%d)",
-                   rcppsw::to_string(cell.loc()).c_str(),
-                   cell.fsm().current_state());
-        } else if (cfsm::cell3D_state::ekST_EMPTY == spec->state) {
-          ER_CHECK(cell.fsm().state_is_empty(),
-                   "Cell@%s should be EMPTY (%d)",
-                   rcppsw::to_string(cell.loc()).c_str(),
-                   cell.fsm().current_state());
-        }
+        const auto& placement = m_block_place_map.find(coord.to_real().offset());
+        ER_CHECK(nullptr != placement->second.block,
+                 "Cell@%s should be the anchor for a block",
+                 rcppsw::to_string(coord.to_real().offset()).c_str());
       } /* for(k..) */
     } /* for(j..) */
   } /* for(i..) */
@@ -447,5 +284,33 @@ bool structure3D::post_completion_check(void) const {
 error:
   return false;
 } /* post_completion_check() */
+
+RCPPSW_WRAP_DEF(structure3D, roriginr, *m_vshell, const);
+RCPPSW_WRAP_DEF(structure3D, rorigind, *m_vshell, const);
+RCPPSW_WRAP_DEF(structure3D, voriginr, *m_vshell, const);
+RCPPSW_WRAP_DEF(structure3D, vorigind, *m_vshell, const);
+
+/* entity3D overrides */
+RCPPSW_WRAP_DEF_OVERRIDE(rcenter3D, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(ranchor3D, *m_vshell->real(), const);
+
+RCPPSW_WRAP_DEF_OVERRIDE(dcenter3D, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(danchor3D, *m_vshell->real(), const);
+
+RCPPSW_WRAP_DEF_OVERRIDE(xrspan, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(yrspan, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(zrspan, *m_vshell->real(), const);
+
+RCPPSW_WRAP_DEF_OVERRIDE(xrsize, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(yrsize, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(zrsize, *m_vshell->real(), const);
+
+RCPPSW_WRAP_DEF_OVERRIDE(xdspan, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(ydspan, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(zdspan, *m_vshell->real(), const);
+
+RCPPSW_WRAP_DEF_OVERRIDE(xdsize, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(ydsize, *m_vshell->real(), const);
+RCPPSW_WRAP_DEF_OVERRIDE(zdsize, *m_vshell->real(), const);
 
 NS_END(structure, silicon);

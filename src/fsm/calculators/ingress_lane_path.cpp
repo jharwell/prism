@@ -28,6 +28,7 @@
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,6 +51,10 @@ ingress_lane_path::operator()(const srepr::construction_lane* lane) const {
   auto pos = mc_sensing->rpos2D();
   auto ingress_pt = lane->geometry().ingress_pt();
 
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
+
   /* 1st point: robot's current location */
   std::vector<rmath::vector2d> path{ pos };
 
@@ -67,9 +72,6 @@ ingress_lane_path::operator()(const srepr::construction_lane* lane) const {
 
     /* 3rd point: ingress */
     path.push_back(ingress_pt.to_2D());
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return path;
 } /* operator()() */

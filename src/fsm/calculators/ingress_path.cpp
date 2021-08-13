@@ -29,6 +29,7 @@
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -56,22 +57,24 @@ ingress_path::operator()(const srepr::construction_lane* lane) const {
   /* 1st point: robot's current position */
   std::vector<rmath::vector2d> path = { mc_sensing->rpos2D() };
 
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
+
   if (rmath::radians::kZERO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ct->xrange().ub(), ingress_pt.y());
+    path.emplace_back(ct->xrspan().ub(), ingress_pt.y());
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ingress_pt.x(), ct->yrange().ub());
+    path.emplace_back(ingress_pt.x(), ct->yrspan().ub());
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ct->xrange().lb(), ingress_pt.y());
+    path.emplace_back(ct->xrspan().lb(), ingress_pt.y());
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ingress_pt.x(), ct->yrange().lb());
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
+    path.emplace_back(ingress_pt.x(), ct->yrspan().lb());
   }
+
   return path;
 } /* operator()() */
 

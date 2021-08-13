@@ -24,15 +24,22 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/ds/block3D_vector.hpp"
-#include "cosm/repr/losQ3D.hpp"
+#include "rcppsw/ds/graph/hgrid3D.hpp"
+#include "rcppsw/ds/graph/hgrid3D_view.hpp"
 
+#include "cosm/ds/block3D_vector.hpp"
+#include "cosm/repr/graph3D_los.hpp"
+#include "cosm/repr/base_graph_view_entity.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ds/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, repr);
+
+using los_spec = rdgraph::hgrid3D_spec<ssds::block_anchor_spec,
+                                       ssds::block_extent_spec>;
 
 /*******************************************************************************
  * Class Definitions
@@ -50,20 +57,16 @@ NS_START(silicon, repr);
  * arena, but it also exposes non-const access to the blocks within that part of
  * the arena by necessity for event processing.
  */
-class builder_los final : public crepr::losQ3D, public rer::client<builder_los> {
+class builder_los final : public rer::client<builder_los>,
+                          public crepr::graph3D_los<los_spec> {
  public:
   builder_los(const rtypes::type_uuid& c_id,
-              const grid_view_type& c_view,
-              const rtypes::discretize_ratio& c_resolution);
+              const graph_view_type& c_view,
+              const rtypes::lattice_parameter& c_unit);
 
   /* not copy constructible or copy assignable by default */
   builder_los(const builder_los&) = delete;
   builder_los& operator=(const builder_los&) = delete;
-
-  /**
-   * \brief Get the list of 3D blocks currently in the LOS.
-   */
-  cds::block3D_vectorno blocks(void) const;
 };
 
 NS_END(repr, silicon);

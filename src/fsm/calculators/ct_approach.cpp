@@ -28,6 +28,7 @@
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,6 +51,10 @@ ct_approach::ct_approach_vector
 ct_approach::operator()(const srepr::construction_lane* lane) const {
   ct_approach_vector ret;
   auto ingress_pt = lane->geometry().ingress_pt();
+
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
 
   auto angle_to_ingress =
       (mc_sensing->rpos2D() - ingress_pt.to_2D()).angle().unsigned_normalize();
@@ -101,9 +106,6 @@ ct_approach::operator()(const srepr::construction_lane* lane) const {
     ret.orthogonal_dist =
         rtypes::spatial_dist::make(ingress_pt.x() - mc_sensing->rpos2D().x());
     ret.x_ok = ret.orthogonal_dist <= mc_lane_alignment_tol;
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return ret;
 } /* operator()() */

@@ -238,12 +238,12 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
 } /* frontier_set_proximity() */
 
 double builder_prox_checker::trajectory_prox_dist(void) const {
-  auto cellsize = mc_perception->nearest_ct()->block_unit_dim();
+  auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
   return std::sqrt(cellsize * saconstants::kCT_TRAJECTORY_PROX_CELLS);
 } /* trajectory_prox_dist() */
 
 double builder_prox_checker::frontier_set_prox_dist(void) const {
-  auto cellsize = mc_perception->nearest_ct()->block_unit_dim();
+  auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
   return std::sqrt(cellsize * saconstants::kCT_FRONTIER_SET_PROX_CELLS);
 } /* frontier_set_prox_dist() */
 

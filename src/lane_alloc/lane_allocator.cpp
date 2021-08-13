@@ -30,6 +30,7 @@
 #include "silicon/lane_alloc/lru_allocator.hpp"
 #include "silicon/lane_alloc/interference_allocator.hpp"
 #include "silicon/lane_alloc/closest_allocator.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,6 +51,10 @@ lane_allocator::lane_allocator(const config::lane_alloc_config* config, rmath::r
 std::vector<lane_geometry>
 lane_allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
+
+    ER_ASSERT(sstructure::orientation_valid(target->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(target->orientation()).c_str());
 
   /*
    * For all orientations, the actual ingress points are in the cell that is one
@@ -88,9 +93,6 @@ lane_allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
 
       ret.emplace_back(target, ingress_virt, egress_virt);
     } /* for(i..) */
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(target->orientation()).c_str());
   }
   return ret;
 } /* lane_locs_calc() */

@@ -24,6 +24,7 @@
 #include "silicon/lane_alloc/lane_geometry.hpp"
 
 #include "silicon/controller/perception/ct_skel_info.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -45,42 +46,43 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
        * returns the real coordinates of the LL corner of the cell, per
        * convention.
        */
-      mc_cell_corr{ target->block_unit_dim() / 2.0,
-                    target->block_unit_dim() / 2.0,
+      mc_cell_corr{ target->block_unit_dim().v() / 2.0,
+                    target->block_unit_dim().v() / 2.0,
                     0.0 } {
-  auto l1 =
-      rmath::vector3z::l1norm(mc_egress_virt.offset(), mc_ingress_virt.offset());
-  if (rmath::radians::kZERO == target->orientation()) {
-    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
-    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+        ER_ASSERT(sstructure::orientation_valid(target->orientation()),
+                  "Bad orientation: '%s'",
+                  rcppsw::to_string(target->orientation()).c_str());
 
-    m_xrange = { 0, target->bbd(true).x() };
-    m_yrange = { mc_egress_virt.offset().y(), mc_egress_virt.offset().y() + l1 };
+        auto l1 =
+            rmath::vector3z::l1norm(mc_egress_virt.offset(), mc_ingress_virt.offset());
+        if (rmath::radians::kZERO == target->orientation()) {
+          m_ingress_pt = target->anchor_loc_abs(mc_ingress_virt) + mc_cell_corr;
+          m_egress_pt = target->anchor_loc_abs(mc_egress_virt) + mc_cell_corr;
 
-  } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
-    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
-    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+          m_xrange = { 0, target->bbd(true).x() };
+          m_yrange = { mc_egress_virt.offset().y(), mc_egress_virt.offset().y() + l1 };
 
-    m_xrange = { mc_ingress_virt.offset().x(),
-                 mc_ingress_virt.offset().x() + l1 };
-    m_yrange = { 0, target->bbd(true).y() };
-  } else if (rmath::radians::kPI == target->orientation()) {
-    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
-    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+        } else if (rmath::radians::kPI_OVER_TWO == target->orientation()) {
+          m_ingress_pt = target->anchor_loc_abs(mc_ingress_virt) + mc_cell_corr;
+          m_egress_pt = target->anchor_loc_abs(mc_egress_virt) + mc_cell_corr;
 
-    m_xrange = { 0, target->bbd(true).x() };
-    m_yrange = { mc_ingress_virt.offset().y(),
-                 mc_ingress_virt.offset().y() + l1 };
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
-    m_ingress_pt = target->cell_loc_abs(mc_ingress_virt.offset()) + mc_cell_corr;
-    m_egress_pt = target->cell_loc_abs(mc_egress_virt.offset()) + mc_cell_corr;
+          m_xrange = { mc_ingress_virt.offset().x(),
+                       mc_ingress_virt.offset().x() + l1 };
+          m_yrange = { 0, target->bbd(true).y() };
+        } else if (rmath::radians::kPI == target->orientation()) {
+          m_ingress_pt = target->anchor_loc_abs(mc_ingress_virt) + mc_cell_corr;
+          m_egress_pt = target->anchor_loc_abs(mc_egress_virt) + mc_cell_corr;
 
-    m_xrange = { mc_egress_virt.offset().x(), mc_egress_virt.offset().x() + l1 };
-    m_yrange = { 0, target->bbd(true).y() };
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(target->orientation()).c_str());
-  }
-}
+          m_xrange = { 0, target->bbd(true).x() };
+          m_yrange = { mc_ingress_virt.offset().y(),
+                       mc_ingress_virt.offset().y() + l1 };
+        } else if (rmath::radians::kTHREE_PI_OVER_TWO == target->orientation()) {
+          m_ingress_pt = target->anchor_loc_abs(mc_ingress_virt) + mc_cell_corr;
+          m_egress_pt = target->anchor_loc_abs(mc_egress_virt) + mc_cell_corr;
+
+          m_xrange = { mc_egress_virt.offset().x(), mc_egress_virt.offset().x() + l1 };
+          m_yrange = { 0, target->bbd(true).y() };
+        }
+      }
 
 NS_END(lane_alloc, silicon);

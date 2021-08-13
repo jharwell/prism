@@ -1,5 +1,5 @@
 /**
- * \file validate_placement.hpp
+ * \file spec_composability_validate.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_
 
 /*******************************************************************************
  * Includes
@@ -27,65 +27,58 @@
 #include <boost/variant/static_visitor.hpp>
 
 #include "rcppsw/er/client.hpp"
-#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
-#include "silicon/repr/placement_intent.hpp"
+#include "silicon/structure/repr/slice2D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::repr {
-class cube_block3D;
-class ramp_block3D;
-} /* namespace cosm::repr */
+NS_START(silicon, structure);
 
-namespace silicon::structure {
 class structure3D;
-} /* namespace silicon::structure */
 
-NS_START(silicon, structure, operations);
+NS_START(operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class validate_placement
+ * \class spec_composability_validate
  * \ingroup structure operations
  *
- * \brief Validate that the placement of a block on \ref structure3D at the
- * specified location with the specified rotation is OK, or if it violates
- * graphical invariants or other such restrictions.
+ * \brief Determine if the layers of the \ref structure3D are composable; that
+ * is, they can be stacked on top of each other without violating any
+ * graphical/topological invariants.
  */
-class validate_placement : public rer::client<validate_placement>,
-                           boost::static_visitor<bool> {
+class spec_composability_validate : public rer::client<spec_composability_validate> {
  public:
-  validate_placement(const structure3D* structure,
-                     const repr::placement_intent& intent)
-      : ER_CLIENT_INIT("silicon.structure.validate_placement"),
-        mc_structure(structure),
-        mc_intent(intent) {}
+  explicit spec_composability_validate(const structure3D* structure)
+      : ER_CLIENT_INIT("silicon.structure.operations.spec_composability_validate"),
+        mc_structure(structure) {}
 
   /* Not copy constructible or copy assignment by default  */
-  validate_placement(const validate_placement&) = delete;
-  validate_placement& operator=(const validate_placement&) = delete;
+  spec_composability_validate(const spec_composability_validate&) = delete;
+  spec_composability_validate& operator=(const spec_composability_validate&) = delete;
 
-  bool operator()(const crepr::cube_block3D* block) const;
-  bool operator()(const crepr::ramp_block3D* block) const;
+  bool operator()(void) const;
 
  private:
   /**
-   * \brief Validation checks common to all types of blocks.
+   * \brief Determine if the \p lower and \p upper layers at z, z+1, are
+   * composable that is, can be stacked/combined to produce a joint graph which
+   * is:
+   *
+   * - Physically feasible
    */
-  bool validate_common(void) const;
+  bool is_composable(const ssrepr::slice2D& lower,
+                     const ssrepr::slice2D& upper) const;
 
   /* clang-format off */
-  const structure3D*           mc_structure;
-  const repr::placement_intent mc_intent;
+  const structure3D* mc_structure;
   /* clang-format on */
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_PLACEMENT_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_ */

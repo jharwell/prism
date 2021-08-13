@@ -1,7 +1,7 @@
 /**
- * \file cell3D_block_place.cpp
+ * \file utils.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,42 +18,35 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE__UTILS_HPP_
+#define INCLUDE_SILICON_STRUCTURE__UTILS_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/cell3D_block_place.hpp"
+#include "rcppsw/math/radians.hpp"
 
-#include "cosm/ds/cell3D.hpp"
-
-#include "silicon/structure/structure3D.hpp"
+#include "silicon/silicon.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, operations, detail);
+NS_START(silicon, structure);
 
 /*******************************************************************************
- * Constructors/Destructor
+ * Class Definitions
  ******************************************************************************/
-cell3D_block_place::cell3D_block_place(const rmath::vector3z& loc,
-                                       crepr::base_block3D* block)
-    : ER_CLIENT_INIT("silicon.structure.operations.cell3D_block_place"),
-      cell3D_op(loc),
-      m_block(block) {}
+/**
+ * \brief Determine if the orientation of a structure, block placement, etc., is
+ * valid.
+ */
+static inline bool orientation_valid(const rmath::radians& orientation) {
+  return rmath::radians::kZERO == orientation ||
+      rmath::radians::kPI_OVER_TWO == orientation ||
+      rmath::radians::kPI == orientation ||
+      rmath::radians::kTHREE_PI_OVER_TWO == orientation;
+}
 
-/*******************************************************************************
- * Member Functions
- ******************************************************************************/
-void cell3D_block_place::visit(cds::cell3D& cell) {
-  cell.entity(m_block);
-  visit(cell.fsm());
-} /* visit() */
+NS_END(structure, silicon);
 
-void cell3D_block_place::visit(cfsm::cell3D_fsm& fsm) {
-  ER_ASSERT(!fsm.state_has_block() && !fsm.state_in_block_extent(),
-            "FSM in wrong state: %d",
-            fsm.current_state());
-  fsm.event_block_place();
-} /* visit() */
-
-NS_END(detail, operations, structure, silicon);
+#endif /* INCLUDE_SILICON_STRUCTURE__UTILS_HPP_ */

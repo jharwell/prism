@@ -78,7 +78,7 @@ class ct_complete_interactor
       stop_op.visit(controller);
 
       /* flush penalties */
-      m_ct_manager->env_dynamics()->unregister_controller(*controller);
+      m_ct_manager->env_dynamics()->unregister_controller(controller);
       return interactor_status_type::ekROBOT_STOPPED;
     }
     return interactor_status_type::ekNO_EVENT;

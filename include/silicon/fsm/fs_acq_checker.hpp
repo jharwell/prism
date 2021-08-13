@@ -31,6 +31,7 @@
 
 #include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
+#include "silicon/structure/ds/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -84,14 +85,14 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
     rmath::vector3d egress{};
   };
 
-  struct acq_cells {
-    const cds::cell3D* ingress{ nullptr };
-    const cds::cell3D* egress{ nullptr };
+  struct acq_specs {
+    const ssds::block_anchor_spec* ingress{ nullptr };
+    const ssds::block_anchor_spec* egress{ nullptr };
   };
 
   struct acq_result {
     acq_positions positions{};
-    acq_cells cells{};
+    acq_specs specs{};
     size_t lookahead{0};
   };
 

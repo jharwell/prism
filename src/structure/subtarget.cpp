@@ -25,6 +25,7 @@
 
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/algorithm/constants.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -57,6 +58,10 @@ bool subtarget::contains_cell(const rmath::vector3z& coord) const {
 
 rmath::vector3z
 subtarget::slice_axis_calc(const rmath::radians& orientation) const {
+  ER_ASSERT(sstructure::orientation_valid(orientation),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(orientation.c_str()));
+
   /* orientated in +X -> slice along Y */
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
@@ -66,8 +71,6 @@ subtarget::slice_axis_calc(const rmath::radians& orientation) const {
            rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
     return rmath::vector3z::X;
   }
-  ER_FATAL_SENTINEL("Bad orientation for slice axis calculation: '%s",
-                    rcppsw::to_string(orientation).c_str());
   return {};
 } /* slice_axis_calc() */
 
@@ -79,9 +82,9 @@ size_t subtarget::manifest_size_calc(const slice2D& slice,
       auto coord = ssds::ct_coord{ slice.access(i, j).loc(),
                                    ssds::ct_coord::relativity::ekVORIGIN,
                                    structure };
-      const auto* spec = structure->cell_spec_retrieve(coord);
+      const auto* spec = structure->spec_retrieve(coord);
 
-      count += cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state;
+      count += (nullptr != spec);
     } /* for(j..) */
   } /* for(i..) */
   return count;

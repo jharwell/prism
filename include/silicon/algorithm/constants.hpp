@@ -53,7 +53,6 @@ static constexpr size_t kCT_TRAJECTORY_PROX_CELLS = 2;
  */
 static constexpr const size_t kCT_SUBTARGET_WIDTH_CELLS = 2;
 
-
 NS_END(constants, algorithm, silicon);
 
 #endif /* INCLUDE_SILICON_ALGORITHM_CONSTANTS_HPP_ */

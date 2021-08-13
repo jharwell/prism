@@ -1,5 +1,5 @@
 /**
- * \file validate_spec.hpp
+ * \file constructability_check.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,68 +18,73 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_CONSTRUCTABILITY_CHECK_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_CONSTRUCTABILITY_CHECK_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <boost/variant/static_visitor.hpp>
-
 #include "rcppsw/er/client.hpp"
+#include "rcppsw/math/radians.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
+namespace silicon::structure::ds {
+class spec_graph;
+} /* namespace silicon::structure::ds */
+
+namespace silicon::structure::repr {
+class vshell;
+} /* namespace silicon::structure::repr */
+
 NS_START(silicon, structure, operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class validate_spec
+ * \class constructability_check
  * \ingroup structure operations
  *
- * \brief Validate that the spec used to create a \ref structure3D is valid;
- * that is, it satisfies the necessary properties in order to guarantee
+ * \brief Validate that the \ref spec_graph used to create a \ref structure3D is
+ * valid; that is, it satisfies the necessary properties in order to guarantee
  * construction by robots. This is a DIFFERENT operation that validating the
  * CURRENT state of a structure/whether or not a block placement at a given
- * location violates any of the properties (\ref validate_placement)
+ * location violates any of the properties (\ref block_placement_validate).
  *
  * The two operations may be merged once they mature, if it makes sense to do
  * so.
  *
- * This operation is done AFTER the \ref structure3D object is created, because
- * the implementation details of the validation operation are MUCH easier on the
- * structure as opposed to lists/maps of block locations.
+ * A constructible specification is one that:
+ *
+ * - Satisfies \ref geometry_check.
+ *
+ * - Has all construction lanes be traversable by all robots, satisfying \ref
+ *   traversability_check.
+ *
+ * - Has all structure layers be composable, satisfying \ref
+ *   composability_check.
+ *
+ * - Does not violate any topological constraints, satisfying \ref
+ *   topology_check.
  */
-class validate_spec : public rer::client<validate_spec>,
-                      public boost::static_visitor<bool> {
+class constructability_check : public rer::client<constructability_check> {
  public:
-  explicit validate_spec(const structure3D* structure)
-      : ER_CLIENT_INIT("silicon.structure.operations.validate_spec"),
-        mc_structure(structure) {}
+  constructability_check(void)
+      : ER_CLIENT_INIT("silicon.structure.operations.constructability_check") {}
 
   /* Not copy constructible or copy assignment by default  */
-  validate_spec(const validate_spec&) = delete;
-  validate_spec& operator=(const validate_spec&) = delete;
+  constructability_check(const constructability_check&) = delete;
+  constructability_check& operator=(const constructability_check&) = delete;
 
-  bool operator()(void) const;
-
- private:
-  struct n_vertices_ret_type {
-    size_t cube;
-    size_t ramp;
-  };
-
-  /* clang-format off */
-  const structure3D* mc_structure;
-  /* clang-format on */
+  bool operator()(const ssds::spec_graph* graph,
+                  const ssrepr::vshell* vshell,
+                  const rmath::radians& orientation) const;
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_VALIDATE_SPEC_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_CONSTRUCTABILITY_CHECK_HPP_ */

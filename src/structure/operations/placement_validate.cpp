@@ -1,5 +1,5 @@
 /**
- * \file validate_placement.cpp
+ * \file placement_validate.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,12 +21,13 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/validate_placement.hpp"
+#include "silicon/structure/operations/placement_validate.hpp"
 
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -36,7 +37,7 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-bool validate_placement::operator()(const crepr::cube_block3D* block) const {
+bool placement_validate::operator()(const crepr::cube_block3D* block) const {
   ER_CHECK(validate_common(),
            "Common validation for cube block%d with intent %s failed",
            block->id().v(),
@@ -52,7 +53,7 @@ error:
   return false;
 } /* operator() */
 
-bool validate_placement::operator()(const crepr::ramp_block3D* block) const {
+bool placement_validate::operator()(const crepr::ramp_block3D* block) const {
   ER_CHECK(validate_common(),
            "Common validation for ramp block%d with intent %s failed",
            block->id().v(),
@@ -73,43 +74,35 @@ error:
   return false;
 } /* operator() */
 
-bool validate_placement::validate_common(void) const {
+bool placement_validate::validate_common(void) const {
   /* all accesses into 3D array must be relative to virtual origin */
   ER_ASSERT(ssds::ct_coord::relativity::ekVORIGIN ==
-                mc_intent.site().relative_to(),
+            mc_intent.site().relative_to(),
             "Placement coordinates not relative to virtual origin");
 
   auto vcoord = mc_intent.site();
-  const auto& cell = mc_structure->access(vcoord.offset());
+  const auto* spec = mc_structure->spec_retrieve(vcoord);
 
-  /* all cell spec requests must be relative to real origin */
-  auto rcoord = mc_intent.site().to_real();
+  /* Site must be a block anchor point */
+  ER_CHECK(nullptr != spec,
+           "Cell@%s not a block anchor point",
+           rcppsw::to_string(vcoord).c_str());
 
-  /* Cell can't already have block */
-  ER_CHECK(!cell.fsm().state_has_block(),
-           "Cell@%s already in ekST_HAS_BLOCK",
-           rcppsw::to_string(cell.loc()).c_str());
+  /* Site can't already have block */
+  ER_CHECK(nullptr != spec->block,
+           "Cell@%s already block anchor point",
+           rcppsw::to_string(spec->coord).c_str());
 
-  /* Cell can't already be part of a block extent */
-  ER_CHECK(!cell.fsm().state_in_block_extent(),
-           "Cell@%s already in ekST_BLOCK_EXTENT",
-           rcppsw::to_string(cell.loc()).c_str());
+  /* check placement intent rotation valid */
+  ER_CHECK(orientation_valid(mc_intent.z_rot()),
+           "Bad rotation %s: must be 0,pi/2,pi,3pi/2",
+           rcppsw::to_string(mc_intent.z_rot()).c_str());
 
-  /* All valid placements must correspond to a cell spec */
-  ER_CHECK(nullptr != mc_structure->cell_spec_retrieve(rcoord),
-           "Cell@%s has no spec",
-           rcppsw::to_string(rcoord).c_str());
-
-  /* check rotation */
-  ER_CHECK(rmath::radians::kZERO == mc_intent.z_rot() ||
-           rmath::radians::kPI_OVER_TWO == mc_intent.z_rot() ||
-           rmath::radians::kPI == mc_intent.z_rot() ||
-           rmath::radians::kTHREE_PI_OVER_TWO == mc_intent.z_rot(),
-           "Bad rotation %s: must be %s or %s",
-           rcppsw::to_string(mc_intent.z_rot()).c_str(),
-           rcppsw::to_string(rmath::radians::kZERO).c_str(),
-           rcppsw::to_string(rmath::radians::kPI_OVER_TWO).c_str());
-
+  /* check placement intent rotation matches block rotation from spec */
+  ER_CHECK(mc_intent.z_rot() == spec->z_rot,
+           "Placement intent rotation %s != spec rotation %s",
+           rcppsw::to_string(mc_intent).c_str(),
+           rcppsw::to_string(spec->z_rot).c_str());
   /*
    * @todo check if the embodiment for this block would overlap with any other
    * blocks already placed on the structure.

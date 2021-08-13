@@ -18,8 +18,8 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_DS_CT_COORD_HPP_
-#define INCLUDE_SILICON_STRUCTURE_DS_CT_COORD_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_REPR_CT_COORD_HPP_
+#define INCLUDE_SILICON_STRUCTURE_REPR_CT_COORD_HPP_
 
 /*******************************************************************************
  * Includes
@@ -38,14 +38,14 @@ namespace silicon::structure {
 class structure3D;
 } /* namespace silicon::structure */
 
-NS_START(silicon, structure, ds);
+NS_START(silicon, structure, repr);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class ct_coord
- * \ingroup structure ds
+ * \ingroup structure repr
  *
  * \brief Representation of the location of a cell within a \ref
  * structure3D. Because of the real/virtual origin, offsets within the 3D grid
@@ -67,14 +67,11 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
 
   static ct_coord from_arena(rmath::vector3d pos,
                              const structure3D* ct);
-  static ct_coord to_virtual(const ct_coord& coord,
-                             const structure3D* ct);
-  static ct_coord to_real(const ct_coord& coord,
-                          const structure3D* ct);
+  static ct_coord to_virtual(const ct_coord& coord);
+  static ct_coord to_real(const ct_coord& coord);
 
   ct_coord(const rmath::vector3z& offset,
-           const relativity& relative_to,
-           const structure3D* ct);
+           const relativity& relative_to);
 
   ct_coord(void) : ER_CLIENT_INIT("silicon.structure.ct_coord") {}
 
@@ -87,11 +84,11 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
 
   /* operators */
   ct_coord operator-(const rmath::vector3z& other) const {
-    return ct_coord{m_offset - other, m_relative_to, mc_ct};
+    return ct_coord{m_offset - other, m_relative_to};
   }
 
   ct_coord operator+(const rmath::vector3z& other) const {
-    return ct_coord{m_offset + other, m_relative_to, mc_ct};
+    return ct_coord{m_offset + other, m_relative_to};
   }
 
   ct_coord to_real(void) const;
@@ -102,11 +99,10 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
   /* clang-format off */
   rmath::vector3z    m_offset{};
   relativity         m_relative_to{relativity::ekUNDEFINED};
-  const structure3D* mc_ct{nullptr};
   /* clang-format on */
 };
 
 
-NS_END(ds, structure, silicon);
+NS_END(repr, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_DS_CT_COORD_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_REPR_CT_COORD_HPP_ */

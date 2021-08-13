@@ -114,26 +114,37 @@ void construction_qt_user_functions::nearest_ct_render(
     const controller::constructing_controller* controller,
     const argos::CQuaternion& orientation) {
   const auto* ct = controller->perception()->nearest_ct();
-  auto bbd = ct->bbd(true);
-  size_t shell_size = ct->vshell_sized();
-  double correction = ct->block_unit_dim();
+  auto bbr = ct->bbd(true);
+  auto bbv = ct->bbd(true);
+
+  /*
+   * Because of all values in a given cell "snapping" to the LL corner, we need
+   * to correct for that to render the actual boundaries of the target.
+   */
+  auto corr_x = rmath::vector2d::X * ct->block_unit_dim().v();
+  auto corr_y = rmath::vector2d::Y * ct->block_unit_dim().v();
+
+  auto llr = ct->as_rcoord(rmath::vector3z(0, 0, 0));
+  auto ulr = ct->as_rcoord(rmath::vector3z(0, bbr.y(), 0));
+  auto urr = ct->as_rcoord(rmath::vector3z(bbr.x(), bbr.y(), 0));
+  auto lrr = ct->as_rcoord(rmath::vector3z(bbr.x(), 0, 0));
+
+  auto llv = ct->as_vcoord(rmath::vector3z(0, 0, 0));
+  auto ulv = ct->as_vcoord(rmath::vector3z(0, bbv.y(), 0));
+  auto urv = ct->as_vcoord(rmath::vector3z(bbv.x(), bbv.y(), 0));
+  auto lrv = ct->as_vcoord(rmath::vector3z(bbv.x(), 0, 0));
 
   std::vector<rmath::vector2d> ct_rpoints = {
-    ct->cell_loc_abs(rmath::vector3z(shell_size, shell_size, 0)).to_2D(),
-    ct->cell_loc_abs(rmath::vector3z(shell_size, bbd.y() - shell_size, 0)).to_2D(),
-    ct->cell_loc_abs(
-          rmath::vector3z(bbd.x() - shell_size, bbd.y() - shell_size, 0))
-        .to_2D(),
-    ct->cell_loc_abs(rmath::vector3z(bbd.x() - shell_size, shell_size, 0)).to_2D(),
+    ct->anchor_loc_abs(llr).to_2D(),
+    ct->anchor_loc_abs(ulr).to_2D() + corr_y,
+    ct->anchor_loc_abs(urr).to_2D() + corr_x + corr_y,
+    ct->anchor_loc_abs(lrr).to_2D() + corr_x
   };
   std::vector<rmath::vector2d> ct_vpoints = {
-    ct->cell_loc_abs(rmath::vector3z(0, 0, 0)).to_2D(),
-    ct->cell_loc_abs(rmath::vector3z(0, bbd.y() - 1, 0)).to_2D() +
-        rmath::vector2d(0.0, correction),
-    ct->cell_loc_abs(rmath::vector3z(bbd.x() - 1, bbd.y() - 1, 0)).to_2D() +
-        rmath::vector2d(correction, correction),
-    ct->cell_loc_abs(rmath::vector3z(bbd.x() - 1, 0, 0)).to_2D() +
-        rmath::vector2d(correction, 0.0)
+    ct->anchor_loc_abs(llr).to_2D(),
+    ct->anchor_loc_abs(ulr).to_2D() + corr_y,
+    ct->anchor_loc_abs(urr).to_2D() + corr_x + corr_y,
+    ct->anchor_loc_abs(lrr).to_2D() + corr_x
   };
   /* Draw BOTH virtual and real bounding boxes in 2D */
   cvis::polygon2D_visualizer v(this);

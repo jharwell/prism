@@ -30,6 +30,7 @@
 #include "silicon/fsm/builder_util_fsm.hpp"
 #include "silicon/fsm/calculators/lane_alignment.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -52,6 +53,10 @@ egress_lane_path::operator()(const srepr::construction_lane* lane) const {
   auto egress_pt = lane->geometry().egress_pt();
   std::vector<rmath::vector2d> path = { rpos };
 
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
+
   auto alignment = calculators::lane_alignment(mc_sensing)(lane);
   /*
      * We only have a path to the ingress lane if we are not currently in it
@@ -67,9 +72,6 @@ egress_lane_path::operator()(const srepr::construction_lane* lane) const {
     if (!alignment.egress) {
       path.push_back({ egress_pt.x(), rpos.y() });
     }
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return path;
 } /* operator()() */

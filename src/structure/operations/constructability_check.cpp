@@ -1,5 +1,5 @@
 /**
- * \file cell3D_block_extent.cpp
+ * \file constructability_check.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,38 +21,41 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/cell3D_block_extent.hpp"
+#include "silicon/structure/operations/constructability_check.hpp"
 
-#include "cosm/ds/cell3D.hpp"
-
-#include "silicon/structure/structure3D.hpp"
-
-/*******************************************************************************
- * Namespaces
- ******************************************************************************/
-NS_START(silicon, structure, operations, detail);
+#include "silicon/structure/operations/spec_composability_validate.hpp"
+#include "silicon/structure/operations/geometry_check.hpp"
+#include "silicon/structure/ds/spec_graph.hpp"
 
 /*******************************************************************************
- * Constructors/Destructor
+ * Namespaces/Decls
  ******************************************************************************/
-cell3D_block_extent::cell3D_block_extent(const rmath::vector3z& coord,
-                                         crepr::base_block3D* block)
-    : ER_CLIENT_INIT("silicon.structure.operations.cell3D_block_extent"),
-      cell3D_op(coord),
-      m_block(block) {}
+NS_START(silicon, structure, operations);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void cell3D_block_extent::visit(cds::cell3D& cell) {
-  cell.entity(m_block);
-  visit(cell.fsm());
-} /* visit() */
+bool constructability_check::operator()(const ssds::spec_graph* graph,
+                                        const ssrepr::vshell* vshell,
+                                        const rmath::radians& orientation) const {
+  spec_composability_validate composable(graph);
 
-void cell3D_block_extent::visit(cfsm::cell3D_fsm& fsm) {
-  ER_ASSERT(!fsm.state_has_block() && !fsm.state_in_block_extent(),
-            "FSM in wrong state");
-  fsm.event_block_extent();
-} /* visit() */
+  ER_CHECK(geometry_check()(graph, vshell, orientation),
+           "Geometry validation failed");
 
-NS_END(detail, operations, structure, silicon);
+  /* Second, inter-layer composability checks */
+  ER_CHECK(composable(), "Structure layers are not composable");
+
+  /* Third, topological checks:
+   *
+   * - No vertical topological holes (should be computable by the same algorithm
+   *   that computes holes for sliced layers on the Z-axis); eg just slice along
+   *   the Y axis. Maybe this should be part of composability checks?
+   */
+  return true;
+
+error:
+  return false;
+} /* operator() */
+
+NS_END(operations, structure, silicon);

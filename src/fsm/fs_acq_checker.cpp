@@ -25,11 +25,13 @@
 
 #include "rcppsw/math/radians.hpp"
 
-#include "cosm/ds/cell3D.hpp"
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
+#include "cosm/repr/base_block3D.hpp"
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/repr/builder_los.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -52,18 +54,14 @@ fs_acq_checker::fs_acq_checker(
 srepr::fs_configuration
 fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
   const auto* los = mc_perception->los();
-  const auto* ct = mc_perception->nearest_ct();
 
   if (nullptr == los) {
     return srepr::fs_configuration::ekNONE;
   }
 
-  ER_TRACE("Robot position: %s/%s LOS LL origin: %s/%s",
+  ER_TRACE("Robot position: %s/%s",
            rcppsw::to_string(mc_sensing->rpos3D()).c_str(),
-           rcppsw::to_string(mc_sensing->dpos3D()).c_str(),
-           rcppsw::to_string(los->abs_ll()).c_str(),
-           rcppsw::to_string(rmath::zvec2dvec(los->abs_ll(),
-                                              ct->grid_resolution().v())).c_str());
+           rcppsw::to_string(mc_sensing->dpos3D()).c_str());
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
@@ -95,8 +93,8 @@ fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
   auto robot_ct_cell = ct->to_vcoord(mc_sensing->rpos3D());
   const auto* los = mc_perception->los();
 
-  ER_ASSERT(robot_ct_cell.offset() >= los->abs_ll(),
-            "Robot CT cell not in LOS");
+  ER_ASSERT(boost::none != los->find(robot_ct_cell.offset()),
+            "Robot CT cell not in LOS?");
 
   auto rpos = mc_sensing->rpos3D();
   auto dpos = mc_sensing->dpos3D();
@@ -110,10 +108,6 @@ fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
   auto ingress_ct_cell = ct->to_vcoord(ret.positions.ingress);
   auto egress_ct_cell = ct->to_vcoord(ret.positions.egress);
 
-  auto ingress_los_cell = (ingress_ct_cell.offset() - los->abs_ll());
-  auto egress_los_cell = (egress_ct_cell.offset() - los->abs_ll());
-
-  auto robot_los_cell = (robot_ct_cell.offset() - los->abs_ll()).to_2D();
 
   ER_TRACE("Robot arena cell=%s,ingress arena cell=%s,egress arena cell=%s",
            rcppsw::to_string(dpos).c_str(),
@@ -125,28 +119,24 @@ fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
            rcppsw::to_string(ingress_ct_cell).c_str(),
            rcppsw::to_string(egress_ct_cell).c_str());
 
-  ER_TRACE("Robot LOS cell=%s,ingress LOS cell=%s,egress LOS cell=%s,lookahead=%zu",
-           rcppsw::to_string(robot_los_cell).c_str(),
-           rcppsw::to_string(ingress_los_cell).c_str(),
-           rcppsw::to_string(egress_los_cell).c_str(),
-           lookahead);
-
   /*
    * This is not an error because when we first enter the virtual shell of the
    * structure and get a LOS, our "lookahead" might exceed the size of the
    * LOS. In general once we are on the structure proper this should never
    * happen.
    */
-  if (!los->contains_rel(ingress_los_cell) || !los->contains_rel(egress_los_cell)) {
-    ER_CHECKW(los->contains_rel(ingress_los_cell),
-              "LOS does not contain ingress lane frontier cell candidate %s",
-              rcppsw::to_string(ingress_los_cell).c_str());
-    ER_CHECKW(los->contains_rel(egress_los_cell),
-              "LOS does not contain egress lane frontier cell candidate %s",
-              rcppsw::to_string(egress_los_cell).c_str());
+  if (auto ingress_vd = los->find(ingress_ct_cell.offset())) {
+    ret.specs.ingress = los->access(*ingress_vd);
   } else {
-    ret.cells.ingress = &los->access(ingress_los_cell);
-    ret.cells.egress = &los->access(egress_los_cell);
+    ER_WARN("LOS does not contain ingress lane frontier cell candidate %s",
+            rcppsw::to_string(ingress_ct_cell).c_str());
+  }
+
+  if (auto egress_vd = los->find(egress_ct_cell.offset())) {
+    ret.specs.egress = los->access(*egress_vd);
+  } else {
+    ER_WARN("LOS does not contain egress lane frontier cell candidate %s",
+            rcppsw::to_string(egress_ct_cell).c_str());
   }
 
   ret.lookahead = lookahead;
@@ -157,26 +147,26 @@ srepr::fs_configuration
 fs_acq_checker::configuration_calc(const acq_result& result,
                                    const srepr::construction_lane* lane,
                                    const srepr::builder_los* los) const {
-  if (nullptr != result.cells.ingress && nullptr != result.cells.egress) {
-    bool ingress_has_block = result.cells.ingress->state_has_block();
-    bool egress_has_block = result.cells.egress->state_has_block();
+  if (nullptr != result.specs.ingress && nullptr != result.specs.egress) {
+    bool ingress_has_block = nullptr != result.specs.ingress->block;
+    bool egress_has_block = nullptr != result.specs.egress->block;
 
     if (ingress_has_block && egress_has_block) {
       ER_INFO("LANE_FILLED encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.cells.ingress->loc()).c_str(),
-              rcppsw::to_string(result.cells.egress->loc()).c_str(),
+              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
       return srepr::fs_configuration::ekLANE_FILLED;
     } else if (ingress_has_block && !egress_has_block) {
       ER_INFO("LANE_GAP_EGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.cells.ingress->loc()).c_str(),
-              rcppsw::to_string(result.cells.egress->loc()).c_str(),
+              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
       return srepr::fs_configuration::ekLANE_GAP_EGRESS;
     } else if (!ingress_has_block && egress_has_block) {
       ER_INFO("LANE_GAP_INGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.cells.ingress->loc()).c_str(),
-              rcppsw::to_string(result.cells.egress->loc()).c_str(),
+              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
       return srepr::fs_configuration::ekLANE_GAP_INGRESS;
     }
@@ -197,6 +187,10 @@ fs_acq_checker::configuration_calc(const acq_result& result,
 bool fs_acq_checker::acq_empty_lane(const srepr::construction_lane* lane,
                                     const srepr::builder_los* los) const {
   const auto* ct = mc_perception->nearest_ct();
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
+
   /*
    * The origin of the LOS is always in the LL corner, regardless of lane
    * orientation, which simplifies calculations of empty lane acquisition a
@@ -215,9 +209,6 @@ bool fs_acq_checker::acq_empty_lane(const srepr::construction_lane* lane,
     return xspan.lb() <= ct->voriginr().x() + ct->vshell_sizer().v();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     return yspan.lb() <= ct->voriginr().y() + ct->vshell_sizer().v();
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return false;
 } /* acq_empty_lane() */
@@ -228,8 +219,12 @@ fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
     size_t lookahead) const {
   acq_positions ret;
 
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
+
   const auto* ct = mc_perception->nearest_ct();
-  auto cell_size = ct->block_unit_dim();
+  auto cell_size = ct->block_unit_dim().v();
 
   /*
    * For all targets, the origin of the structure is ALWAYS in the lower left
@@ -265,9 +260,6 @@ fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
     ret.egress = rpos + rmath::vector3d(-cell_size,
                                         -(lookahead * cell_size),
                                         0);
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
   return ret;
 } /* acq_positions_calc() */

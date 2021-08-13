@@ -1,7 +1,7 @@
 /**
- * \file validate_spec.cpp
+ * \file block_placement_map.hpp
  *
- * \copyright 2020 John Harwell, All rights reserved.
+ * \copyright 2021 John Harwell, All rights reserved.
  *
  * This file is part of SILICON.
  *
@@ -18,43 +18,52 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
+#ifndef INCLUDE_SILICON_STRUCTURE_DS_BLOCK_PLACEMENT_MAP_HPP_
+#define INCLUDE_SILICON_STRUCTURE_DS_BLOCK_PLACEMENT_MAP_HPP_
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/validate_spec.hpp"
+#include <map>
 
-#include "silicon/structure/operations/validate_spec_composability.hpp"
-#include "silicon/structure/operations/validate_spec_layers.hpp"
-#include "silicon/structure/structure3D.hpp"
+#include "rcppsw/patterns/decorator/decorator.hpp"
+
+#include "silicon/silicon.hpp"
+#include "silicon/structure/ds/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, operations);
+NS_START(silicon, structure, ds);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-bool validate_spec::operator()(void) const {
-  validate_spec_layers layers(mc_structure);
-  validate_spec_composability composable(mc_structure);
+/**
+ * \class block_placement_map
+ * \ingroup structure ds
+ *
+ * \brief Maps a
+ */
 
-  /* First, intra-layer checks */
-  ER_CHECK(layers(), "Intra-layer validation checks failed");
+class block_placement_map : public rpdecorator::decorator<
+  std::map<rmath::vector3z,
+           block_placement_spec>
+  > {
+ public:
+  RCPPSW_DECORATE_CT();
 
-  /* Second, inter-layer composability checks */
-  ER_CHECK(composable(), "Structure layers are not composable");
+  RCPPSW_DECORATE_DECLDEF(insert);
+  RCPPSW_DECORATE_DECLDEF(operator[]);
+  RCPPSW_DECORATE_DECLDEF(find, const);
+  RCPPSW_DECORATE_DECLDEF(find);
+  RCPPSW_DECORATE_DECLDEF(begin);
+  RCPPSW_DECORATE_DECLDEF(end);
+  RCPPSW_DECORATE_DECLDEF(begin, const);
+  RCPPSW_DECORATE_DECLDEF(end, const);
+  RCPPSW_DECORATE_DECLDEF(size, const);
+};
 
-  /* Third, topological checks:
-   *
-   * - No vertical topological holes (should be computable by the same algorithm
-   *   that computes holes for sliced layers on the Z-axis); eg just slice along
-   *   the Y axis. Maybe this should be part of composability checks?
-   */
-  return true;
+NS_END(ds, structure, silicon);
 
-error:
-  return false;
-} /* operator() */
-
-NS_END(operations, structure, silicon);
+#endif /* INCLUDE_SILICON_STRUCTURE_DS_BLOCK_PLACEMENT_MAP_HPP_ */

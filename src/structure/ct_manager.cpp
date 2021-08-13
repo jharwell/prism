@@ -28,7 +28,7 @@
 #include "silicon/structure/builder_factory.hpp"
 #include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
-#include "silicon/structure/operations/validate_spec.hpp"
+#include "silicon/structure/operations/spec_validate.hpp"
 #include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
@@ -134,14 +134,14 @@ structure3D* ct_manager::target_lookup(const rtypes::type_uuid& id) const {
 } /* target_lookup() */
 
 bool ct_manager::construction_feasible(const structure3D* target) const {
-  if (!ssops::validate_spec(target)()) {
+  if (!ssops::spec_validate(target)()) {
     ER_WARN("Construction target%s invalid",
             rcppsw::to_string(target->id()).c_str());
     return false;
   }
   for (const auto& existing_t : m_targetso) {
-    if (existing_t->xranger().overlaps_with(target->xranger()) &&
-        existing_t->yranger().overlaps_with(target->yranger())) {
+    if (existing_t->xrspan().overlaps_with(target->xrspan()) &&
+        existing_t->yrspan().overlaps_with(target->yrspan())) {
       ER_WARN("Construction target%s overlaps with target%s",
               rcppsw::to_string(target->id()).c_str(),
               rcppsw::to_string(existing_t->id()).c_str());

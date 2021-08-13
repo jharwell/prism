@@ -26,8 +26,6 @@
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 
-#include "silicon/structure/operations/cell3D_block_extent.hpp"
-#include "silicon/structure/operations/cell3D_block_place.hpp"
 #include "silicon/structure/structure3D.hpp"
 #include "silicon/structure/subtarget.hpp"
 
@@ -46,10 +44,6 @@ block_place::operator()(std::unique_ptr<cpal::embodied_cube_block> block) const 
           rcppsw::to_string(mc_intent).c_str());
 
   auto coord = mc_intent.site().to_virtual();
-  /* update host cell */
-  cell3D_block_place_visitor op(coord.offset(), block.get());
-  op.visit(m_structure->access(coord.offset()));
-
   /*
    * Set the new location for the block (equivalent to the absolute location of
    * the host cell in the arena).
@@ -57,9 +51,8 @@ block_place::operator()(std::unique_ptr<cpal::embodied_cube_block> block) const 
    * The discrete location does not match up to the real location, but ARGoS
    * does not use that, so that SHOULD be OK for now.
    */
-  rmath::vector3d cell_loc =
-      m_structure->cell_loc_abs(m_structure->access(coord.offset()));
-  block->ranchor3D(cell_loc + embodiment_offset_calc(block.get()));
+  rmath::vector3d anchor_loc = m_structure->anchor_loc_abs(coord);
+  block->ranchor3D(anchor_loc + embodiment_offset_calc(block.get()));
   block->danchor3D(m_structure->vorigind() + coord.offset());
 
   /* actually add the block to the structure */
@@ -78,10 +71,7 @@ block_place::operator()(std::unique_ptr<cpal::embodied_ramp_block> block) const 
           block->id().v(),
           rcppsw::to_string(mc_intent).c_str());
 
-  /* update host cell */
   auto coord = mc_intent.site().to_virtual();
-  cell3D_block_place_visitor host_op(coord.offset(), block.get());
-  host_op.visit(m_structure->access(coord.offset()));
 
   /*
    * Set the new location for the block (equivalent to the absolute location of
@@ -90,33 +80,9 @@ block_place::operator()(std::unique_ptr<cpal::embodied_ramp_block> block) const 
    * The discrete location does not match up to the real location, but ARGoS
    * does not use that, so that SHOULD be OK for now.
    */
-  rmath::vector3d cell_loc =
-      m_structure->cell_loc_abs(m_structure->access(coord.offset()));
-  block->ranchor3D(cell_loc + embodiment_offset_calc(block.get()));
+  rmath::vector3d anchor_loc = m_structure->anchor_loc_abs(coord);
+  block->ranchor3D(anchor_loc + embodiment_offset_calc(block.get()));
   block->danchor3D(m_structure->vorigind() + coord.offset());
-
-  /* update cells for block extent */
-  if (rmath::radians::kZERO == mc_intent.z_rot()) {
-    auto ub = static_cast<size_t>(coord.offset().x() +
-                                  block->rdim3D().x() / block->rdim3D().y());
-    for (size_t x = coord.offset().x() + 1; x < ub; ++x) {
-      rmath::vector3z extent_loc(x, coord.offset().y(), coord.offset().z());
-      cell3D_block_extent_visitor op(extent_loc, block.get());
-      op.visit(m_structure->access(extent_loc));
-    } /* for(x..) */
-  } else if (rmath::radians::kPI_OVER_TWO == mc_intent.z_rot()) {
-    auto ub = static_cast<size_t>(coord.offset().y() +
-                                  block->rdim3D().x() / block->rdim3D().y());
-    for (size_t y = coord.offset().y() + 1; y < ub; ++y) {
-      rmath::vector3z extent_loc(coord.offset().x(), y, coord.offset().z());
-      cell3D_block_extent_visitor op(extent_loc, block.get());
-      op.visit(m_structure->access(extent_loc));
-    } /* for(y..) */
-  } else {
-    ER_FATAL_SENTINEL("Bad Z rotation %s for block%d specified",
-                      rcppsw::to_string(mc_intent.z_rot()).c_str(),
-                      block->id().v());
-  }
 
   /* actually add the block to the structure */
   auto* ret = block.get();

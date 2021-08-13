@@ -83,9 +83,13 @@ static_structure3D_builder::build(const rtypes::timestep& t,
 
   size_t start = 0;
   bool single = true;
+  size_t volume = target()->vshell()->real()->xdsize() *
+                  target()->vshell()->real()->ydsize() *
+                  target()->vshell()->real()->zdsize();
+
   while (m_static_state.n_built_interval <
          mc_config.static_build_interval_count) {
-    if (m_static_state.n_cells >= target()->volumetric_size(false)) {
+    if (m_static_state.n_cells >= volume) {
       ER_ASSERT(target()->is_complete(),
                 "Structure incomplete after processing all cells!");
       return static_build_status::ekFINISHED;
@@ -102,8 +106,8 @@ static_structure3D_builder::build(const rtypes::timestep& t,
 bool static_structure3D_builder::build_single(const cds::block3D_vectorno& blocks,
                                               size_t search_start) {
   /* Get target real X/Y size, as virtual cells are always empty */
-  size_t xsize = target()->xranged(false).span();
-  size_t ysize = target()->yranged(false).span();
+  size_t xsize = target()->xrspan().span();
+  size_t ysize = target()->yrspan().span();
 
   size_t index = m_static_state.n_cells;
 
@@ -124,21 +128,21 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
            rcppsw::to_string(target()->rorigind() + c.offset()).c_str());
 
   bool ret = false;
-  const auto* spec = target()->cell_spec_retrieve(c);
+  const auto* spec = target()->spec_retrieve(c);
 
-  if (cfsm::cell3D_state::ekST_HAS_BLOCK == spec->state) {
+  if (nullptr != spec) {
     ER_DEBUG("Build for block ct cell@%s (%zu/%zu for interval)",
              rcppsw::to_string(c.offset()).c_str(),
              m_static_state.n_built_interval,
              mc_config.static_build_interval_count);
 
-    auto* block = build_block_find(spec->block_type, blocks, search_start);
+    auto* block = build_block_find(spec->type, blocks, search_start);
     ER_ASSERT(block,
               "Could not find a block of type %d for ct cell@%s",
               rcppsw::as_underlying(spec->block_type),
               rcppsw::to_string(c.offset()).c_str());
 
-    repr::placement_intent intent(c.to_virtual(), spec->z_rotation);
+    repr::placement_intent intent(c.to_virtual(), spec->z_rot);
 
     ret = place_block(block, intent);
     ER_ASSERT(ret,

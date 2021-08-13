@@ -43,6 +43,7 @@ namespace config {}
 namespace operations {}
 namespace ds {}
 namespace metrics {}
+namespace repr {}
 } /* namespace structure */
 
 namespace fsm {}
@@ -80,6 +81,7 @@ namespace ssmetrics = sstructure::metrics;
 namespace ssops = sstructure::operations;
 namespace ssconfig = sstructure::config;
 namespace ssds = sstructure::ds;
+namespace ssrepr = sstructure::repr;
 
 namespace salgorithm = silicon::algorithm;
 namespace saconstants = salgorithm::constants;

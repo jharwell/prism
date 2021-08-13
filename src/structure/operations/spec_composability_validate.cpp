@@ -1,5 +1,5 @@
 /**
- * \file validate_layer_spec.cpp
+ * \file spec_composability_validate.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/validate_spec_composability.hpp"
+#include "silicon/structure/operations/spec_composability_validate.hpp"
 
 #include "silicon/structure/ds/ct_coord.hpp"
 #include "silicon/structure/structure3D.hpp"
@@ -34,7 +34,7 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool validate_spec_composability::operator()() const {
+bool spec_composability_validate::operator()() const {
   for (size_t z = 0; z < mc_structure->zdsize() - 1; ++z) {
     auto lower = slice2D(
         slice2D::coords_calc(rmath::vector3z::Z, mc_structure, z), mc_structure);
@@ -53,12 +53,12 @@ error:
   return false;
 } /* operator()() */
 
-bool validate_spec_composability::is_composable(const slice2D& lower,
+bool spec_composability_validate::is_composable(const slice2D& lower,
                                                 const slice2D& upper) const {
   /*
    * @todo For right now, we disallow ALL holes in structures, because even
-   * sibreample holes are not feasible unless beam blocks exist, which they do
-   * not yet. This may be relaxed at some point in the future.
+   * simple holes are not feasible unless beam blocks exist, which they do not
+   * yet. This may be relaxed at some point in the future.
    */
   if (!lower.topological_holes().empty() || !upper.topological_holes().empty()) {
     ER_ERR("One or both layers contain topological holes");
@@ -72,8 +72,8 @@ bool validate_spec_composability::is_composable(const slice2D& lower,
       auto coordu = ssds::ct_coord{ upper.access(i, j).loc(),
                                     ssds::ct_coord::relativity::ekVORIGIN,
                                     mc_structure };
-      const auto* specl = mc_structure->cell_spec_retrieve(coordl);
-      const auto* specu = mc_structure->cell_spec_retrieve(coordu);
+      const auto* specl = mc_structure->spec_retrieve(coordl);
+      const auto* specu = mc_structure->spec_retrieve(coordu);
       /*
        * If the lower layer cell at (i,j) contained a cube, you can have
        * anything in the upper layer cell at (i,j).

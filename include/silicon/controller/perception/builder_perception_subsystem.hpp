@@ -82,24 +82,12 @@ class builder_perception_subsystem : public csperception::rlos_perception_subsys
   virtual void update(void);
 
   const rtypes::discretize_ratio& arena_resolution(void) const { return mc_arena_res; }
-  const rmath::ranged& arena_xrange(void) const { return mc_arena_xrange; }
-  const rmath::ranged& arena_yrange(void) const { return mc_arena_yrange; }
+  const rmath::ranged& arena_xrspan(void) const { return mc_arena_xrspan; }
+  const rmath::ranged& arena_yrspan(void) const { return mc_arena_yrspan; }
 
   const builder_prox_checker* builder_prox(void) const {
     return & mc_builder_prox;
   }
-
-  /**
-   * \brief Return the X range of the nearest known construction target, or
-   * empty if there are no known targets.
-   */
-  boost::optional<rmath::ranged> ct_xrange(void) const;
-
-  /**
-   * \brief Return the Y range of the nearest known construction target, or
-   * empty if there are no known targets.
-   */
-  boost::optional<rmath::ranged> ct_yrange(void) const;
 
   /**
    * \brief Find the nearest known construction target to the specified
@@ -133,8 +121,8 @@ class builder_perception_subsystem : public csperception::rlos_perception_subsys
  private:
   /* clang-format off */
   const rtypes::discretize_ratio          mc_arena_res;
-  const rmath::ranged                     mc_arena_xrange;
-  const rmath::ranged                     mc_arena_yrange;
+  const rmath::ranged                     mc_arena_xrspan;
+  const rmath::ranged                     mc_arena_yrspan;
   const csubsystem::sensing_subsystemQ3D* mc_sensing;
   const builder_prox_checker              mc_builder_prox;
 

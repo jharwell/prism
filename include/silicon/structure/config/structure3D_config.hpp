@@ -24,13 +24,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <map>
 #include <string>
 
 #include "rcppsw/config/base_config.hpp"
 #include "rcppsw/math/vector3.hpp"
-
-#include "cosm/ds/config/grid3D_config.hpp"
 
 #include "silicon/silicon.hpp"
 
@@ -42,15 +39,6 @@ NS_START(silicon, structure, config);
 /*******************************************************************************
  * Struct Definitions
  ******************************************************************************/
-struct ramp_block_loc_spec {
-  rmath::vector3z loc{};
-  rmath::radians z_rotation{};
-};
-
-struct cube_block_loc_spec {
-  rmath::vector3z loc{};
-};
-
 /**
  * \struct structure3D_config
  * \ingroup structure config
@@ -58,18 +46,10 @@ struct cube_block_loc_spec {
  * \brief Parsed configuration for the \ref structure3D object.
  */
 struct structure3D_config final : public rconfig::base_config {
-  rmath::vector3d              anchor{};
-  rmath::radians               orientation{};
-  cds::config::grid3D_config   bounding_box{};
-
-  /*
-   * We use maps with somewhat redundant (key, value) pairs in order to make the
-   * process of determining "what kind of block should this (i,j,k) location
-   * contain when the structure is completed?" efficient. Just using vectors
-   * requires a linear scan for every single passed location.
-   */
-  std::map<rmath::vector3z, cube_block_loc_spec> cube_blocks{};
-  std::map<rmath::vector3z, ramp_block_loc_spec> ramp_blocks{};
+  rmath::vector3d anchor{};
+  rmath::radians  orientation{};
+  rmath::vector3z bounding_box{};
+  std::string     graphml{};
 };
 
 NS_END(config, structure, silicon);

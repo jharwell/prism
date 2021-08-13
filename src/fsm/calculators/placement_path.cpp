@@ -29,6 +29,7 @@
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -54,7 +55,11 @@ placement_path::operator()(const srepr::construction_lane* lane,
   auto rpos = mc_sensing->rpos2D();
   const auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = { rpos };
-  double cell_size = ct->block_unit_dim();
+  double cell_size = ct->block_unit_dim().v();
+
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
@@ -86,9 +91,6 @@ placement_path::operator()(const srepr::construction_lane* lane,
     forward1p5 = {rpos.x(), rpos.y() - cell_size * 1.5};
     forward1 = {rpos.x(), rpos.y() - cell_size};
     right1 = {rpos.x() - cell_size, rpos.y() - cell_size * 1.25 };
-  } else {
-    ER_FATAL_SENTINEL("Bad orientation: '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
   }
 
   /*

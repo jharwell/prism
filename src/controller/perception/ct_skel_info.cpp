@@ -24,6 +24,7 @@
 #include "silicon/controller/perception/ct_skel_info.hpp"
 
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/repr/vshell.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -50,37 +51,27 @@ rmath::vector3z ct_skel_info::vorigind(void) const {
 } /* vorigind() */
 
 size_t ct_skel_info::vshell_sized(void) const {
-  return m_target->vshell_sized();
+  return m_target->vshell()->sh_sized();
 } /* vshell_sized() */
 
 rtypes::spatial_dist ct_skel_info::vshell_sizer(void) const {
-  return m_target->vshell_sizer();
+  return m_target->vshell()->sh_sizer();
 } /* vshell_sizer() */
 
 rmath::vector3d ct_skel_info::center(void) const {
-  return m_target->voriginr() + rmath::vector3d(m_target->xrsize() / 2.0,
-                                                m_target->yrsize() / 2.0,
-                                                m_target->zrsize() / 2.0);
+  return m_target->rcenter3D();
 } /* center() */
 
 rmath::vector3d ct_skel_info::bbr(bool include_virtual) const {
-  /*
-   * *2 because the layers of virtual cells are no both sizes of the structure
-   * in X and Y.
-   */
-  return { m_target->xrsize() - m_target->vshell_sizer().v() * 2 * !include_virtual,
-           m_target->yrsize() - m_target->vshell_sizer().v() *2 * !include_virtual,
-           m_target->zrsize() };
+  return { m_target->vshell()->xrspan(include_virtual).span(),
+           m_target->vshell()->yrspan(include_virtual).span(),
+           m_target->vshell()->zrspan().span() };
 } /* bbr() */
 
 rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
-  /*
-   * *2 because the layers of virtual cells are no both sizes of the structure
-   * in X and Y.
-   */
-  return { m_target->xdsize() - m_target->vshell_sized() * 2 * !include_virtual,
-           m_target->ydsize() - m_target->vshell_sized() * 2 * !include_virtual,
-           m_target->zdsize() };
+  return { m_target->vshell()->xdspan(include_virtual).span(),
+           m_target->vshell()->ydspan(include_virtual).span(),
+           m_target->vshell()->zdspan().span() };
 } /* bbd() */
 
 ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3d& arena_pos) const {
@@ -90,6 +81,10 @@ ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3d& arena_pos) const {
 
 ssds::ct_coord ct_skel_info::as_vcoord(const rmath::vector3z& coord) const {
   return { coord, ssds::ct_coord::relativity::ekVORIGIN, m_target };
+} /* to_vcoord() */
+
+ssds::ct_coord ct_skel_info::as_rcoord(const rmath::vector3z& coord) const {
+  return { coord, ssds::ct_coord::relativity::ekRORIGIN, m_target };
 } /* to_vcoord() */
 
 ssds::ct_coord
@@ -111,23 +106,24 @@ const rmath::radians& ct_skel_info::orientation(void) const {
   return m_target->orientation();
 } /* orientation() */
 
-rmath::vector3d ct_skel_info::cell_loc_abs(const rmath::vector3z& coord) const {
-  return m_target->cell_loc_abs(m_target->access(coord));
-} /* cell_loc_abs() */
+rmath::vector3d
+ct_skel_info::anchor_loc_abs(const ssds::ct_coord& anchor) const {
+  return m_target->anchor_loc_abs(anchor);
+} /* anchor_loc_abs() */
 
 rtypes::type_uuid ct_skel_info::id(void) const {
   return m_target->id();
 } /* id() */
 
-rmath::ranged ct_skel_info::xrange(void) const {
-  return m_target->xranger(true);
-} /* xrange() */
+rmath::ranged ct_skel_info::xrspan(void) const {
+  return m_target->vshell()->xrspan(true); /* include virtual */
+} /* xrspan() */
 
-rmath::ranged ct_skel_info::yrange(void) const {
-  return m_target->yranger(true);
-} /* yrange() */
+rmath::ranged ct_skel_info::yrspan(void) const {
+  return m_target->vshell()->yrspan(true); /* include virtual */
+} /* yrspan() */
 
-double ct_skel_info::block_unit_dim(void) const {
+rtypes::spatial_dist ct_skel_info::block_unit_dim(void) const {
   return m_target->block_unit_dim();
 } /* block_unit_dim() */
 
@@ -136,7 +132,7 @@ size_t ct_skel_info::unit_dim_factor(void) const {
 } /* unit_dim_factor() */
 
 const rtypes::discretize_ratio& ct_skel_info::grid_resolution(void) const {
-  return m_target->resolution();
+  return m_target->vshell()->real()->resolution();
 } /* grid_resolution() */
 
 NS_END(perception, controller, silicon);

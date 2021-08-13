@@ -22,6 +22,7 @@
  * Includes
  ******************************************************************************/
 #include "silicon/structure/config/xml/structure3D_parser.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -36,54 +37,37 @@ void structure3D_parser::parse(const ticpp::Element& node) {
   m_config = std::make_unique<config_type>();
 
   XML_PARSE_ATTR(node, m_config, anchor);
-  XML_PARSE_ATTR(node, m_config, orientation);
+  XML_PARSE_ATTR(node, m_config, bounding_box);
+  XML_PARSE_ATTR(node, m_config, graphml);
+
+  std::string orientation;
+  node_attr_get(node, "orientation", orientation);
 
   /*
-   * Since we don't know (for sure), and in general should not rely upon, the #
-   * of decimal places used in the specification for structure orientation in
-   * the input file, we round it to the nearest cardinal direction, if it is
-   * specified with a reasonable # of decimals and is close enough to one.
+   * We use strings rather than numerical radian values because that is much
+   * clearer and less prone, given that SILICON only supports the 4 cardinal
+   * directions anyway.
    */
-  if (rmath::radians::kZERO.is_equal(m_config->orientation, 0.001)) {
+  if ("0" == orientation) {
     m_config->orientation = rmath::radians::kZERO;
-  } else if (rmath::radians::kPI_OVER_TWO.is_equal(m_config->orientation,
-                                                   0.001)) {
+  } else if ("PI/2" == orientation) {
     m_config->orientation = rmath::radians::kPI_OVER_TWO;
-  } else if (rmath::radians::kPI.is_equal(m_config->orientation, 0.001)) {
+  } else if ("PI" == orientation) {
     m_config->orientation = rmath::radians::kPI;
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO.is_equal(m_config->orientation,
-                                                         0.001)) {
+  } else if ("3PI/2" == orientation) {
     m_config->orientation = rmath::radians::kTHREE_PI_OVER_TWO;
-  }
-
-  m_grid.parse(node);
-
-  m_config->bounding_box =
-      *m_grid.config_get<cds::config::xml::grid3D_parser::config_type>();
-
-  if (nullptr != node.FirstChild("cube_blocks", false)) {
-    auto cube_blocks = node_get(node, "cube_blocks");
-    ticpp::Iterator<ticpp::Element> node_it;
-
-    for (node_it = cube_blocks.FirstChildElement(); node_it != node_it.end();
-         ++node_it) {
-      rmath::vector3z tmp;
-      node_attr_get(*node_it, "cell", tmp);
-      m_config->cube_blocks[tmp] = { tmp };
-    } /* for(node_it..) */
-  }
-
-  if (nullptr != node.FirstChild("ramp_blocks", false)) {
-    auto ramp_blocks = node_get(node, "ramp_blocks");
-    ticpp::Iterator<ticpp::Element> node_it;
-
-    for (node_it = ramp_blocks.FirstChildElement(); node_it != node_it.end();
-         ++node_it) {
-      rmath::vector3z tmp;
-      node_attr_get(*node_it, "cell", tmp);
-      m_config->ramp_blocks[tmp] = { tmp, m_config->orientation };
-    } /* for(node_it..) */
+  } else {
+    m_config->orientation = rmath::radians(-1);
   }
 } /* parse() */
+
+bool structure3D_parser::validate(void) const {
+  RCPPSW_CHECK(orientation_valid(m_config->orientation));
+
+  return true;
+
+error:
+  return false;
+} /* validate() */
 
 NS_END(xml, config, structure, silicon);

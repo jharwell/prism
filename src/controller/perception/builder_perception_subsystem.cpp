@@ -45,8 +45,8 @@ builder_perception_subsystem::builder_perception_subsystem(
     const csubsystem::sensing_subsystemQ3D* const sensing)
     : rlos_perception_subsystem(config),
       mc_arena_res(config->grid2D.resolution),
-      mc_arena_xrange(0.0, config->grid2D.dims.x()),
-      mc_arena_yrange(0.0, config->grid2D.dims.y()),
+      mc_arena_xrspan(0.0, config->grid2D.dims.x()),
+      mc_arena_yrspan(0.0, config->grid2D.dims.y()),
       mc_sensing(sensing),
       mc_builder_prox(this, mc_sensing),
       m_receptor(nullptr) {}
@@ -59,24 +59,6 @@ builder_perception_subsystem::~builder_perception_subsystem(void) = default;
 void builder_perception_subsystem::update() {
   /* Open to extension (I will probably need to put stuff here eventually...) */
 } /* update() */
-
-boost::optional<rmath::ranged>
-builder_perception_subsystem::ct_xrange(void) const {
-  const auto* target = nearest_ct();
-  if (nullptr != target) {
-    return boost::make_optional(target->xrange());
-  }
-  return boost::none;
-} /* ct_xrange() */
-
-boost::optional<rmath::ranged>
-builder_perception_subsystem::ct_yrange(void) const {
-  const auto* target = nearest_ct();
-  if (nullptr != target) {
-    return boost::make_optional(target->yrange());
-  }
-  return boost::none;
-} /* ct_yrange() */
 
 const scperception::ct_skel_info*
 builder_perception_subsystem::nearest_ct(void) const {

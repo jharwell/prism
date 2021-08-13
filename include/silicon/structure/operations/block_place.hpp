@@ -61,7 +61,7 @@ NS_START(operations);
 class block_place : public rer::client<block_place>,
                     boost::static_visitor<void> {
  public:
-  block_place(const repr::placement_intent& intent,
+  block_place(const srepr::placement_intent& intent,
               structure3D* structure)
       : ER_CLIENT_INIT("silicon.structure.operations.block_place"),
         mc_intent(intent),
@@ -109,7 +109,7 @@ class block_place : public rer::client<block_place>,
   rmath::vector3d embodiment_offset_calc(const crepr::base_block3D* block) const;
 
   /* clang-format off */
-  const repr::placement_intent   mc_intent;
+  const srepr::placement_intent  mc_intent;
 
   structure3D*                   m_structure;
   /* clang-format on */

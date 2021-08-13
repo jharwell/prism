@@ -98,8 +98,8 @@ struct functor_maps_initializer {
       auto& updater = lf->m_losQ3D_updaters[i];
       updater.emplace(typeid(controller),
                       ccops::los_update<T,
-                                              rds::grid3D_overlay<cds::cell3D>,
-                                              repr::builder_los>(
+                      rds::grid3D_overlay<cds::cell3D>,
+                      repr::builder_los>(
                           lf->ct_manager()->targetsno()[i]));
     } /* for(i..) */
   }

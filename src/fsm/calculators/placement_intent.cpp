@@ -29,6 +29,7 @@
 
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"
 #include "silicon/repr/construction_lane.hpp"
+#include "silicon/structure/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -53,6 +54,10 @@ placement_intent::operator()(const srepr::construction_lane* lane) const {
   const auto* ct = mc_perception->nearest_ct();
   auto dpos = mc_sensing->dpos3D();
   auto rpos = mc_sensing->rpos3D();
+
+  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+            "Bad orientation: '%s'",
+            rcppsw::to_string(lane->orientation()).c_str());
 
   /**
    * The CT cell the robot is in is calculated relative to the origin of the
@@ -86,19 +91,16 @@ placement_intent::operator()(const srepr::construction_lane* lane) const {
   rmath::vector3d placement_pos;
   if (rmath::radians::kZERO == lane->orientation()) {
     /* intent is one cell +X from robot's current position  */
-    placement_pos = rpos + rmath::vector3d::X * ct->block_unit_dim();
+    placement_pos = rpos + rmath::vector3d::X * ct->block_unit_dim().v();
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* intent is one cell +Y from robot's current position  */
-    placement_pos = rpos + rmath::vector3d::Y * ct->block_unit_dim();
+    placement_pos = rpos + rmath::vector3d::Y * ct->block_unit_dim().v();
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* intent is one cell -X from robot's current position  */
-    placement_pos = rpos - rmath::vector3d::X * ct->block_unit_dim();
+    placement_pos = rpos - rmath::vector3d::X * ct->block_unit_dim().v();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* intent is one cell -Y from robot's current position  */
-    placement_pos = rpos - rmath::vector3d::Y * ct->block_unit_dim();
-  } else {
-    ER_FATAL_SENTINEL("Bad lane orientation '%s'",
-                      rcppsw::to_string(lane->orientation()).c_str());
+    placement_pos = rpos - rmath::vector3d::Y * ct->block_unit_dim().v();
   }
   auto placement_ct_cell = ct->to_vcoord(placement_pos);
 

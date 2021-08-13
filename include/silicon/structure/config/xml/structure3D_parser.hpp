@@ -59,6 +59,7 @@ class structure3D_parser final : public rconfig::xml::xml_config_parser {
   inline static const std::string kXMLRoot = "structure3D";
 
   void parse(const ticpp::Element& node) override RCPPSW_COLD;
+  bool validate(void) const override RCSW_CONST;
 
   std::string xml_root(void) const override RCPPSW_COLD { return kXMLRoot; }
 

@@ -25,7 +25,7 @@
  * Includes
  ******************************************************************************/
 #include "silicon/structure/metrics/subtarget_metrics.hpp"
-#include "silicon/structure/slice2D.hpp"
+#include "silicon/structure/repr/slice2D.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -88,17 +88,17 @@ class subtarget : public rer::client<subtarget>,
    */
   rmath::vector3z slice_axis_calc(const rmath::radians& orientation) const;
 
-  size_t manifest_size_calc(const slice2D& slice,
+  size_t manifest_size_calc(const ssrepr::slice2D& slice,
                             const structure3D* structure) const;
 
   /* clang-format off */
-  const size_t  mc_id;
-  const slice2D mc_entry;
-  const slice2D mc_exit;
-  const size_t  mc_manifest_size{0};
+  const size_t          mc_id;
+  const ssrepr::slice2D mc_entry;
+  const ssrepr::slice2D mc_exit;
+  const size_t          mc_manifest_size{0};
 
-  size_t        m_total_placed{0};
-  size_t        m_interval_placed{0};
+  size_t                m_total_placed{0};
+  size_t                m_interval_placed{0};
   /* clang-format on */
 };
 

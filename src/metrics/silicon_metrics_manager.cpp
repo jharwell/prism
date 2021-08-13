@@ -235,7 +235,9 @@ void silicon_metrics_manager::register_with_target_dims(
       rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE },
   };
 
-  auto extra_args = std::make_tuple(structure->dimsd());
+  auto extra_args = std::make_tuple(rmath::vector3z{structure->xdsize(),
+                    structure->ydsize(),
+                    structure->zdsize()});
   rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
                                                              creatable_set,
                                                              this,

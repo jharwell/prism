@@ -32,7 +32,7 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace silicon::structure::ds {
-class spec_graph;
+class connectivity_graph;
 } /* namespace silicon::structure */
 
 namespace silicon::structure::repr {
@@ -49,7 +49,7 @@ NS_START(silicon, structure, operations);
  * \ingroup structure operations
  *
  * \brief Perform basic geometry checks as part of determining if a \ref
- * spec_graph corresponds to a constructible \ref structure3D.
+ * connectivity_graph corresponds to a constructible \ref structure3D.
  *
  * These include:
  *
@@ -68,14 +68,14 @@ class geometry_check : public rer::client<geometry_check> {
   geometry_check(const geometry_check&) = delete;
   const geometry_check& operator=(const geometry_check&) = delete;
 
-  bool operator()(const ssds::spec_graph* spec,
+  bool operator()(const ssds::connectivity_graph* spec,
                   const ssrepr::vshell* vshell,
                   const rmath::radians& orientation) const;
 
  private:
   /**
    * \brief Perform geometry checks on a single layer within the \ref
-   * spec_graph.
+   * connectivity_graph.
    */
   bool layer_check(const ssrepr::slice2D& layer,
                    const rmath::radians& orientation) const;

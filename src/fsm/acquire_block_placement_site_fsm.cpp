@@ -25,7 +25,6 @@
 
 #include "rcppsw/utils/maskable_enum.hpp"
 
-#include "cosm/ds/cell3D.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 

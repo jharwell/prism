@@ -38,7 +38,7 @@
 #include "silicon/silicon.hpp"
 #include "silicon/structure/base_structure3D_builder.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 #include "silicon/structure/static_build_status.hpp"
 
 /*******************************************************************************

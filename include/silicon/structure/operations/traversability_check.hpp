@@ -31,7 +31,7 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace silicon::structure::ds {
-class spec_graph;
+class connectivity_graph;
 } /* namespace silicon::structure::ds */
 
 NS_START(silicon, structure, operations);
@@ -44,7 +44,7 @@ NS_START(silicon, structure, operations);
  * \ingroup structure operations
  *
  * \brief Perform traversability checks as part of determining if a \ref
- * spec_graph corresponds to a constructible \ref structure3D by checking if
+ * connectivity_graph corresponds to a constructible \ref structure3D by checking if
  * every \ref slice2D along the Z axis is traversible by a robot.
  */
 class traversability_check : public rer::client<traversability_check> {
@@ -58,34 +58,10 @@ class traversability_check : public rer::client<traversability_check> {
   traversability_check(traversability_check&&) = delete;
   traversability_check& operator=(traversability_check&&) = delete;
 
-  bool operator()(const ssds::spec_graph* spec,
-                  const ssrepr::vshell* vshell,
-                  const rmath::radians& orientation) const;
+  bool operator()(const ssds::connectivity_graph* spec,
+                  const ssrepr::vshell* vshell) const;
 
  private:
-  /**
-   * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the first slice dimension in the negative direction for all values.
-   */
-  bool is_traversable_d1_neg(void) const;
-
-  /**
-   * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the second slice dimension in the negative direction for all values.
-   */
-  bool is_traversable_d2_neg(void) const;
-
-  /**
-   * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the first slice dimension in the positive direction for all values.
-   */
-  bool is_traversable_d1_pos(void) const;
-
-  /**
-   * \brief Determine if the layer is traversable by robots entering/exiting
-   * from the second slice dimension in the positive direction for all values.
-   */
-  bool is_traversable_d2_pos(void) const;
 };
 
 NS_END(operations, structure, silicon);

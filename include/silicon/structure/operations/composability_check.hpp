@@ -1,5 +1,5 @@
 /**
- * \file spec_composability_validate.hpp
+ * \file composability_check.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,14 +18,12 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_
-#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_OPERATIONS_COMPOSABILITY_CHECK_HPP_
+#define INCLUDE_SILICON_STRUCTURE_OPERATIONS_COMPOSABILITY_CHECK_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <boost/variant/static_visitor.hpp>
-
 #include "rcppsw/er/client.hpp"
 
 #include "silicon/silicon.hpp"
@@ -34,51 +32,46 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure);
-
-class structure3D;
-
-NS_START(operations);
+NS_START(silicon, structure, operations);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class spec_composability_validate
+ * \class composability_check
  * \ingroup structure operations
  *
- * \brief Determine if the layers of the \ref structure3D are composable; that
- * is, they can be stacked on top of each other without violating any
- * graphical/topological invariants.
+ * \brief Determine if the layers of the \ref structure3D specified by the \ref
+ * ssds::connectivity_graph are composable; that is, they can be stacked on top
+ * of each other in a physically realizable way.
  */
-class spec_composability_validate : public rer::client<spec_composability_validate> {
+class composability_check : public rer::client<composability_check> {
  public:
-  explicit spec_composability_validate(const structure3D* structure)
-      : ER_CLIENT_INIT("silicon.structure.operations.spec_composability_validate"),
-        mc_structure(structure) {}
+  composability_check(void);
 
   /* Not copy constructible or copy assignment by default  */
-  spec_composability_validate(const spec_composability_validate&) = delete;
-  spec_composability_validate& operator=(const spec_composability_validate&) = delete;
+  composability_check(const composability_check&) = delete;
+  composability_check& operator=(const composability_check&) = delete;
 
-  bool operator()(void) const;
+  bool operator()(const ssds::connectivity_graph* graph,
+                  const ssrepr::vshell* vshell) const;
 
  private:
   /**
    * \brief Determine if the \p lower and \p upper layers at z, z+1, are
-   * composable that is, can be stacked/combined to produce a joint graph which
+   * composable, that is, can be stacked/combined to produce a joint graph which
    * is:
    *
    * - Physically feasible
    */
   bool is_composable(const ssrepr::slice2D& lower,
-                     const ssrepr::slice2D& upper) const;
+                     const ssrepr::slice2D& upper,
+                     const ssrepr::vshell* vshell) const;
 
-  /* clang-format off */
-  const structure3D* mc_structure;
-  /* clang-format on */
+  bool has_overhangs(const ssrepr::slice2D& lower,
+                     const ssrepr::slice2D& upper) const;
 };
 
 NS_END(operations, structure, silicon);
 
-#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_SPEC_COMPOSABILITY_VALIDATE_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_OPERATIONS_COMPOSABILITY_CHECK_HPP_ */

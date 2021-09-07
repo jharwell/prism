@@ -37,7 +37,7 @@
 
 #include "silicon/repr/placement_intent.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

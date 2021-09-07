@@ -50,7 +50,7 @@ NS_START(silicon, structure, repr);
  *
  * \brief Contains all the information need to fully specify the placement of a
  * given block at its anchor point on a \ref structure3D. These are the vertices
- * in the \ref spec_graph.
+ * in the \ref connectivity_graph.
  */
 struct block_anchor_spec : public rdgraph::hgrid3D_vertex_property {
   /**
@@ -80,7 +80,7 @@ struct block_anchor_spec : public rdgraph::hgrid3D_vertex_property {
  *
  * \brief Contains all the information need to fully specify the extent of a
  * block in a given direction, given its \ref block_anchor_spec. These are
- * attached to the edges the \ref spec_graph.
+ * attached to the edges the \ref connectivity_graph.
  */
 struct block_extent_spec {
   size_t weight{ 0 };
@@ -95,8 +95,8 @@ struct block_extent_spec {
  * block.
  */
 struct block_placement_spec {
-  const block_anchor_spec* spec;
-  std::unique_ptr<crepr::base_block3D> block;
+  const block_anchor_spec* spec{nullptr};
+  std::unique_ptr<crepr::base_block3D> block{nullptr};
 };
 
 NS_END(repr, structure, silicon);

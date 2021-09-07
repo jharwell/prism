@@ -37,9 +37,8 @@ NS_START(silicon, controller, operations, detail);
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-ct_block_place::ct_block_place(const rtypes::type_uuid& robot_id,
-                               const rmath::vector3z& pos)
-    : cell3D_op(pos), mc_robot_id(robot_id) {}
+ct_block_place::ct_block_place(const rtypes::type_uuid& robot_id)
+    : mc_robot_id(robot_id) {}
 
 /*******************************************************************************
  * Single Target Construction

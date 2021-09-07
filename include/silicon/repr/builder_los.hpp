@@ -31,15 +31,15 @@
 #include "cosm/repr/graph3D_los.hpp"
 #include "cosm/repr/base_graph_view_entity.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/block_spec.hpp"
+#include "silicon/structure/repr/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 NS_START(silicon, repr);
 
-using los_spec = rdgraph::hgrid3D_spec<ssds::block_anchor_spec,
-                                       ssds::block_extent_spec>;
+using los_spec = rdgraph::hgrid3D_spec<ssrepr::block_anchor_spec,
+                                       ssrepr::block_extent_spec>;
 
 /*******************************************************************************
  * Class Definitions
@@ -62,7 +62,7 @@ class builder_los final : public rer::client<builder_los>,
  public:
   builder_los(const rtypes::type_uuid& c_id,
               const graph_view_type& c_view,
-              const rtypes::lattice_parameter& c_unit);
+              const rtypes::spatial_dist& c_unit);
 
   /* not copy constructible or copy assignable by default */
   builder_los(const builder_los&) = delete;

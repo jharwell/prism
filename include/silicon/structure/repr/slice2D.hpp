@@ -29,7 +29,7 @@
 
 #include "cosm/repr/graph3D_view_entity.hpp"
 
-#include "silicon/structure/ds/spec_graph.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 #include "silicon/structure/repr/slice2D_spec.hpp"
 
 /*******************************************************************************
@@ -48,28 +48,25 @@ class vshell;
  * \brief A 2D slice of a \ref structure3D along the X, Y, or Z axis.
  */
 class slice2D : public rer::client<slice2D>,
-                public crepr::graph3D_view_entity<typename ssds::spec_graph::decoratee_type,
-                                                  typename ssds::spec_graph::view_type> {
+                public crepr::graph3D_view_entity<typename ssds::connectivity_graph::decoratee_type,
+                                                  typename ssds::connectivity_graph::view_type> {
  public:
   /**
    * \brief Given the axis for slicing, calculate the necessary info to create a
-   * 2D slice (bounding box of vertices) of a \ref ssds::spec_graph.
+   * 2D slice (bounding box of vertices) of a \ref ssds::connectivity_graph.
    */
   static slice2D_spec spec_calc(const rmath::vector3z& axis,
                                 size_t axis_offset,
                                 const ssrepr::vshell* vshell);
 
-  slice2D(const slice2D_spec& spec, const ssds::spec_graph* graph);
+  slice2D(const slice2D_spec& spec, const ssds::connectivity_graph* graph);
 
   /* Not copy constructable/assignable by default */
   slice2D(const slice2D&) = delete;
   const slice2D& operator=(const slice2D&) = delete;
 
-  /**
-   * \brief Return \c TRUE if the slice contains the specified coordinates, and
-   * \c FALSE otherwise.
-   */
-  bool contains(const rmath::vector3z& coord) const;
+  bool cells_are_adjacent(const rmath::vector3z& cell1,
+                          const rmath::vector3z& cell2) const;
 
  private:
   /* clang-format off */

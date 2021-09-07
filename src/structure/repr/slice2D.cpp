@@ -27,7 +27,7 @@
 
 #include "silicon/structure/utils.hpp"
 #include "silicon/structure/repr/vshell.hpp"
-#include "silicon/structure/ds/spec_graph.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -37,7 +37,7 @@ NS_START(silicon, structure, repr);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-slice2D::slice2D(const slice2D_spec& spec, const ssds::spec_graph* graph)
+slice2D::slice2D(const slice2D_spec& spec, const ssds::connectivity_graph* graph)
     : ER_CLIENT_INIT("silicon.structure.slice2D"),
       /*
        * @bug this assumes that the calculated center of the subgraph graph is
@@ -55,45 +55,35 @@ slice2D::slice2D(const slice2D_spec& spec, const ssds::spec_graph* graph)
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool slice2D::contains(const rmath::vector3z& c) const {
-  return boost::none != decoratee().find(c);
-} /* contains() */
+bool slice2D::cells_are_adjacent(const rmath::vector3z& cell1,
+                                 const rmath::vector3z& cell2) const {
+  ER_ASSERT(contains(cell1) && contains(cell2),
+            "Slice %s does not contain %s and %s",
+            rcppsw::to_string(mc_spec).c_str(),
+            rcppsw::to_string(cell1).c_str(),
+            rcppsw::to_string(cell2).c_str());
 
-size_t slice2D::d1(void) const {
-  if (rmath::vector3z::X == mc_spec.axis()) {
-    /* d1=y, d2=z */
-    return view().ur().y() - view().ll().y();
+  bool d1plus1_neighbor, d1minus1_neighbor, d2plus1_neighbor, d2minus1_neighbor;
+  if (rmath::vector3z::Z == mc_spec.axis()) {
+    d1plus1_neighbor = (cell1 + rmath::vector3z::X == cell2);
+    d1minus1_neighbor = (cell1 - rmath::vector3z::X == cell2);
+    d2plus1_neighbor = (cell1 + rmath::vector3z::Y == cell2);
+    d2minus1_neighbor = (cell1 - rmath::vector3z::Y == cell2);
   } else if (rmath::vector3z::Y == mc_spec.axis()) {
-    /* d1=x, d2=z */
-    return view().ur().x() - view().ll().x();
+    d1plus1_neighbor = (cell1 + rmath::vector3z::X == cell2);
+    d1minus1_neighbor = (cell1 - rmath::vector3z::X == cell2);
+    d2plus1_neighbor = (cell1 + rmath::vector3z::Z == cell2);
+    d2minus1_neighbor = (cell1 - rmath::vector3z::Z == cell2);
   } else {
-    /* d1=x, d2=y */
-    return view().ur().x() - view().ll().x();
+    d1plus1_neighbor = (cell1 + rmath::vector3z::Y == cell2);
+    d1minus1_neighbor = (cell1 - rmath::vector3z::Y == cell2);
+    d2plus1_neighbor = (cell1 + rmath::vector3z::Z == cell2);
+    d2minus1_neighbor = (cell1 - rmath::vector3z::Z == cell2);
   }
-} /* d1() */
 
-size_t slice2D::d2(void) const {
-if (rmath::vector3z::X == mc_spec.axis()) {
-    /* d1=y, d2=z */
-    return view().ur().z() - view().ll().z();
-  } else if (rmath::vector3z::Y == mc_spec.axis()) {
-    /* d1=x, d2=z */
-    return view().ur().z() - view().ll().z();
-  } else {
-    /* d1=x, d2=y */
-    return view().ur().y() - view().ll().y();
-  }
-} /* d2() */
-
-const cds::cell3D& slice2D::access(size_t d1, size_t d2) const {
-  if (rmath::vector3z::X == mc_coords.axis) {
-    return mc_view[0][d1][d2];
-  } else if (rmath::vector3z::Y == mc_coords.axis) {
-    return mc_view[d1][0][d2];
-  } else {
-    return mc_view[d1][d2][0];
-  }
-} /* access() */
+  return d1plus1_neighbor || d1minus1_neighbor || d2plus1_neighbor ||
+         d2minus1_neighbor;
+} /* cells_are_adjacent() */
 
 /*******************************************************************************
  * Non-Member Functions

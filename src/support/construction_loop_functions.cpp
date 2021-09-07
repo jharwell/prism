@@ -44,6 +44,7 @@
 #include "silicon/support/robot_arena_interactor.hpp"
 #include "silicon/support/robot_configurer.hpp"
 #include "silicon/support/tv/tv_manager.hpp"
+#include "silicon/structure/ds/block_anchor_index.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -91,16 +92,17 @@ struct functor_maps_initializer {
             lf->config()->config_get<config::visualization_config>(),
             lf->ct_manager()->targetsro()));
     /*
-     * We need to set up the Q3D LOS updaters for EVERY possible construction
+     * We need to set up the LOS updaters for EVERY possible construction
      * target for EVERY controller type.
      */
     for (size_t i = 0; i < lf->ct_manager()->targetsno().size(); ++i) {
-      auto& updater = lf->m_losQ3D_updaters[i];
+      auto& updater = lf->m_los_updaters[i];
       updater.emplace(typeid(controller),
-                      ccops::los_update<T,
-                      rds::grid3D_overlay<cds::cell3D>,
+                      ccops::graph_los_update<T,
+                      ssds::connectivity_graph,
                       repr::builder_los>(
-                          lf->ct_manager()->targetsno()[i]));
+                          lf->ct_manager()->targetsno()[i]->spec(),
+                          lf->ct_manager()->targetsno()[i]->block_unit_dim()));
     } /* for(i..) */
   }
 
@@ -168,7 +170,7 @@ void construction_loop_functions::private_init(void) {
    * types.
    */
   for (size_t i = 0; i < ct_manager()->targetsno().size(); ++i) {
-    m_losQ3D_updaters.push_back(losQ3D_updater_map_type());
+    m_los_updaters.push_back(los_updater_map_type());
   } /* for(i..) */
 
   /* only needed for initialization, so not a member */
@@ -294,7 +296,7 @@ void construction_loop_functions::robot_pre_step(chal::robot& robot) {
                              arena_map()->grid_resolution());
 
   /* update robot LOS */
-  robot_losQ3D_update(controller);
+  robot_los_update(controller);
 } /* robot_pre_step() */
 
 void construction_loop_functions::robot_post_step(chal::robot& robot) {
@@ -345,7 +347,7 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
   controller->block_manip_recorder()->reset();
 } /* robot_post_step() */
 
-bool construction_loop_functions::robot_losQ3D_update(
+bool construction_loop_functions::robot_los_update(
     controller::constructing_controller* const c) const {
   auto* target = robot_target(c);
   if (nullptr == target) {
@@ -357,19 +359,21 @@ bool construction_loop_functions::robot_losQ3D_update(
                                          ct_manager()->targetsno().end(),
                                          target));
 
-  auto updater_it = m_losQ3D_updaters[index].find(c->type_index());
-  ER_ASSERT(m_losQ3D_updaters[index].end() != updater_it,
+  auto updater_it = m_los_updaters[index].find(c->type_index());
+  ER_ASSERT(m_los_updaters[index].end() != updater_it,
             "Controller '%s' type '%s' not in construction LOS update map",
             c->GetId().c_str(),
             c->type_index().name());
   auto applicator = ccops::applicator<controller::constructing_controller,
-                                      ccops::los_update,
-                                      rds::grid3D_overlay<cds::cell3D>,
+                                      ccops::graph_los_update,
+                                      ssds::connectivity_graph,
                                       srepr::builder_los>(c);
-  boost::apply_visitor(applicator,
-                       m_losQ3D_updaters[index].find(c->type_index())->second);
+  auto nearest_vd = target->anchor_index()->nearest(rds::make_rtree_point(c->dpos3D()), 1)[0];
+  auto visitor = std::bind(applicator, std::placeholders::_1, nearest_vd);
+  boost::apply_visitor(visitor,
+                       m_los_updaters[index].find(c->type_index())->second);
   return true;
-} /* robot_losQ3D_update() */
+} /* robot_los_update() */
 
 structure::structure3D* construction_loop_functions::robot_target(
     const controller::constructing_controller* c) const {
@@ -377,9 +381,9 @@ structure::structure3D* construction_loop_functions::robot_target(
    * Figure out if the robot is current within the 2D bounds of any
    * structure, OR if it is JUST outside the 2D bounds of any structure.
    *
-   * If it is, then compute and send it a Q3D LOS from the structure, if it is
-   * not, then clear out the robot's old LOS so it does not refer to out of date
-   * info anymore, and we will get a segfault if it tries to.
+   * If it is, then compute and send it a LOS from the structure, if it is not,
+   * then clear out the robot's old LOS so it does not refer to out of date info
+   * anymore, and we will get a segfault if it tries to.
    *
    * We check if the robot is currently inside the a given target's boundaries
    * INCLUDING the virtual cells that surround it; this is necessary so that

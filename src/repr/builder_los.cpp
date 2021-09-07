@@ -33,7 +33,7 @@ NS_START(silicon, repr);
  ******************************************************************************/
 builder_los::builder_los(const rtypes::type_uuid& c_id,
                          const graph_view_type& c_view,
-                         const rtypes::lattice_parameter& c_unit)
+                         const rtypes::spatial_dist& c_unit)
     : ER_CLIENT_INIT("silicon.repr.builder_los"),
       graph3D_los(c_id, c_view, c_unit) {}
 

@@ -25,7 +25,6 @@
 
 #include "rcppsw/math/angles.hpp"
 
-#include "cosm/ds/cell3D.hpp"
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "silicon/controller/perception/perception_receptor.hpp"

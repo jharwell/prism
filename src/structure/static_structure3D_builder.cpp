@@ -34,6 +34,7 @@
 #include "silicon/structure/builder_factory.hpp"
 #include "silicon/structure/operations/block_place.hpp"
 #include "silicon/structure/structure3D.hpp"
+#include "silicon/structure/repr/vshell.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -106,8 +107,8 @@ static_structure3D_builder::build(const rtypes::timestep& t,
 bool static_structure3D_builder::build_single(const cds::block3D_vectorno& blocks,
                                               size_t search_start) {
   /* Get target real X/Y size, as virtual cells are always empty */
-  size_t xsize = target()->xrspan().span();
-  size_t ysize = target()->yrspan().span();
+  size_t xsize = target()->xdspan().span();
+  size_t ysize = target()->ydspan().span();
 
   size_t index = m_static_state.n_cells;
 
@@ -119,8 +120,8 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
   size_t j = index / xsize;
   size_t k = index / (xsize * ysize);
 
-  ssds::ct_coord c{ rmath::vector3z(i, j, k),
-                    ssds::ct_coord::relativity::ekRORIGIN,
+  ssrepr::ct_coord c{ rmath::vector3z(i, j, k),
+                    ssrepr::ct_coord::relativity::ekRORIGIN,
                     target() };
 
   ER_DEBUG("Static build for ct cell@%s, abs cell@%s",
@@ -139,15 +140,15 @@ bool static_structure3D_builder::build_single(const cds::block3D_vectorno& block
     auto* block = build_block_find(spec->type, blocks, search_start);
     ER_ASSERT(block,
               "Could not find a block of type %d for ct cell@%s",
-              rcppsw::as_underlying(spec->block_type),
+              rcppsw::as_underlying(spec->type),
               rcppsw::to_string(c.offset()).c_str());
 
-    repr::placement_intent intent(c.to_virtual(), spec->z_rot);
+    srepr::placement_intent intent(c.to_virtual(), spec->z_rot);
 
     ret = place_block(block, intent);
     ER_ASSERT(ret,
               "Failed to build block of type %d for ct cell@%s",
-              rcppsw::as_underlying(spec->block_type),
+              rcppsw::as_underlying(spec->type),
               rcppsw::to_string(c.offset()).c_str());
     ++m_static_state.n_built_interval;
 

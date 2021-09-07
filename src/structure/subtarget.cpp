@@ -35,19 +35,16 @@ NS_START(silicon, structure);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-subtarget::subtarget(const structure3D* structure, size_t id)
+subtarget::subtarget(const structure3D* ct, size_t id)
     : ER_CLIENT_INIT("silicon.structure.subtarget"),
-      mc_id(id),
-      mc_entry(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
-                                    structure,
-                                    id * saconstants::kCT_SUBTARGET_WIDTH_CELLS),
-               structure),
-      mc_exit(slice2D::coords_calc(slice_axis_calc(structure->orientation()),
-                                   structure,
-                                   id * saconstants::kCT_SUBTARGET_WIDTH_CELLS + 1),
-              structure),
-      mc_manifest_size(manifest_size_calc(mc_entry, structure) +
-                       manifest_size_calc(mc_exit, structure)) {}
+      mc_entry(ssrepr::slice2D::spec_calc(slice_axis_calc(ct->orientation()),
+                                          id * saconstants::kCT_SUBTARGET_WIDTH_CELLS,
+                                          ct->vshell()),
+               ct->spec()),
+      mc_exit(ssrepr::slice2D::spec_calc(slice_axis_calc(ct->orientation()),
+                                         id * saconstants::kCT_SUBTARGET_WIDTH_CELLS + 1,
+                                         ct->vshell()),
+              ct->spec()) {}
 
 /*******************************************************************************
  * Member Functions
@@ -60,7 +57,7 @@ rmath::vector3z
 subtarget::slice_axis_calc(const rmath::radians& orientation) const {
   ER_ASSERT(sstructure::orientation_valid(orientation),
             "Bad orientation: '%s'",
-            rcppsw::to_string(orientation.c_str()));
+            rcppsw::to_string(orientation).c_str());
 
   /* orientated in +X -> slice along Y */
   if (rmath::radians::kZERO == orientation ||
@@ -73,21 +70,5 @@ subtarget::slice_axis_calc(const rmath::radians& orientation) const {
   }
   return {};
 } /* slice_axis_calc() */
-
-size_t subtarget::manifest_size_calc(const slice2D& slice,
-                                     const structure3D* structure) const {
-  size_t count = 0;
-  for (size_t i = 0; i < slice.d1(); ++i) {
-    for (size_t j = 0; j < slice.d2(); ++j) {
-      auto coord = ssds::ct_coord{ slice.access(i, j).loc(),
-                                   ssds::ct_coord::relativity::ekVORIGIN,
-                                   structure };
-      const auto* spec = structure->spec_retrieve(coord);
-
-      count += (nullptr != spec);
-    } /* for(j..) */
-  } /* for(i..) */
-  return count;
-} /* manifest_size_calc() */
 
 NS_END(structure, silicon);

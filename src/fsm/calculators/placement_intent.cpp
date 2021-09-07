@@ -87,7 +87,7 @@ placement_intent::operator()(const srepr::construction_lane* lane) const {
    * the final value is achieved. Otherwise, you run the risk of off-by-one
    * errors if the arena and/or ct resolution is != 1.0.
    */
-  ssds::ct_coord coord;
+  ssrepr::ct_coord coord;
   rmath::vector3d placement_pos;
   if (rmath::radians::kZERO == lane->orientation()) {
     /* intent is one cell +X from robot's current position  */

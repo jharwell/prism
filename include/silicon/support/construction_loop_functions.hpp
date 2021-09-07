@@ -31,11 +31,12 @@
 #include "rcppsw/mpl/typelist.hpp"
 
 #include "cosm/controller/operations/metrics_extract.hpp"
-#include "cosm/controller/operations/los_update.hpp"
+#include "cosm/controller/operations/graph_los_update.hpp"
 #include "cosm/hal/robot.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/support/base_loop_functions.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -101,10 +102,10 @@ class construction_loop_functions
       rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
                                               robot_arena_interactor>::type>;
 
-  using losQ3D_updater_map_type =
+  using los_updater_map_type =
       rds::type_map<rmpl::typelist_wrap_apply<controller::typelist,
-                                              ccops::los_update,
-                                              rds::grid3D_overlay<cds::cell3D>,
+                                              ccops::graph_los_update,
+                                              ssds::connectivity_graph,
                                               repr::builder_los>::type>;
 
   using metric_extraction_map_type = rds::type_map<
@@ -112,7 +113,7 @@ class construction_loop_functions
                                 ccops::metrics_extract,
                                 metrics::silicon_metrics_manager>::type>;
 
-  using losQ3D_updater_vector = std::vector<losQ3D_updater_map_type>;
+  using los_updater_vector = std::vector<los_updater_map_type>;
 
   /**
    * \brief These are friend classes because they are basically just pieces of
@@ -161,10 +162,10 @@ class construction_loop_functions
    * In this project, robots do not have intelligence when foraging for objects,
    * hence no LOS, because that is not the focus of it--construction is.
    *
-   * \return \c TRUE if the Q3D LOS for a robot was updated (i.e. the robot WAS
+   * \return \c TRUE if the  LOS for a robot was updated (i.e. the robot WAS
    * on a structure somewhere), and \c FALSE otherwise.
    */
-  bool robot_losQ3D_update(controller::constructing_controller* c) const;
+  bool robot_los_update(controller::constructing_controller* c) const;
 
   structure::structure3D*
   robot_target(const controller::constructing_controller* c) const;
@@ -173,7 +174,7 @@ class construction_loop_functions
   std::unique_ptr<metrics::silicon_metrics_manager> m_metrics_manager;
   std::unique_ptr<interactor_map_type>              m_interactor_map;
   std::unique_ptr<metric_extraction_map_type>       m_metrics_map;
-  losQ3D_updater_vector                             m_losQ3D_updaters{};
+  los_updater_vector                                m_los_updaters{};
   /* clang-format on */
 };
 

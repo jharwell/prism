@@ -26,8 +26,7 @@
  ******************************************************************************/
 #include "rcppsw/patterns/visitor/visitor.hpp"
 #include "rcppsw/types/type_uuid.hpp"
-
-#include "cosm/ds/operations/cell3D_op.hpp"
+#include "rcppsw/math/vector3.hpp"
 
 #include "silicon/controller/controller_fwd.hpp"
 #include "silicon/fsm/fsm_fwd.hpp"
@@ -44,9 +43,9 @@ NS_START(silicon, controller, operations, detail);
  * \class ct_block_place
  * \ingroup operations detail
  *
- * \brief Fired whenever a robot places a block on a construction target.
+ * \brief Fired whenever a block is placed on a construction target.
  */
-class ct_block_place : public cdops::cell3D_op {
+class ct_block_place {
  private:
   struct visit_typelist_impl {
     using controllers = controller::typelist;
@@ -57,7 +56,7 @@ class ct_block_place : public cdops::cell3D_op {
  public:
   using visit_typelist = visit_typelist_impl::value;
 
-  ~ct_block_place(void) override = default;
+  ~ct_block_place(void) = default;
 
   ct_block_place(const ct_block_place&) = delete;
   ct_block_place& operator=(const ct_block_place&) = delete;
@@ -67,8 +66,7 @@ class ct_block_place : public cdops::cell3D_op {
   void visit(fsm::fcrw_bst_fsm& fsm);
 
  protected:
-  ct_block_place(const rtypes::type_uuid& robot_id,
-                 const rmath::vector3z& pos);
+  explicit ct_block_place(const rtypes::type_uuid& robot_id);
 
  private:
   /* clang-format on */

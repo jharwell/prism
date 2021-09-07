@@ -33,7 +33,7 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace silicon::structure::ds {
-class spec_graph;
+class connectivity_graph;
 } /* namespace silicon::structure::ds */
 
 namespace silicon::structure::repr {
@@ -49,7 +49,7 @@ NS_START(silicon, structure, operations);
  * \class constructability_check
  * \ingroup structure operations
  *
- * \brief Validate that the \ref spec_graph used to create a \ref structure3D is
+ * \brief Validate that the \ref connectivity_graph used to create a \ref structure3D is
  * valid; that is, it satisfies the necessary properties in order to guarantee
  * construction by robots. This is a DIFFERENT operation that validating the
  * CURRENT state of a structure/whether or not a block placement at a given
@@ -80,7 +80,7 @@ class constructability_check : public rer::client<constructability_check> {
   constructability_check(const constructability_check&) = delete;
   constructability_check& operator=(const constructability_check&) = delete;
 
-  bool operator()(const ssds::spec_graph* graph,
+  bool operator()(const ssds::connectivity_graph* graph,
                   const ssrepr::vshell* vshell,
                   const rmath::radians& orientation) const;
 };

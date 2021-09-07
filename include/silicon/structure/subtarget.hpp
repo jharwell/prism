@@ -51,7 +51,7 @@ class subtarget : public rer::client<subtarget>,
    * \param id The UUID of the subtarget/construction lane among all
    *           lanes/subtargets.
    */
-  subtarget(const structure3D* structure, size_t id);
+  subtarget(const structure3D* ct, size_t id);
 
   /* Not copy constructable/assignable by default */
   subtarget(const subtarget&) = delete;
@@ -59,11 +59,13 @@ class subtarget : public rer::client<subtarget>,
 
   /* progress metrics */
   bool is_complete(void) const override {
-    return mc_manifest_size == n_total_placed();
+    return manifest_size() == n_total_placed();
   }
   size_t n_total_placed(void) const override { return m_total_placed; }
   size_t n_interval_placed(void) const override { return m_interval_placed; }
-  size_t manifest_size(void) const override { return mc_manifest_size; }
+  size_t manifest_size(void) const override {
+    return mc_entry.n_vertices() + mc_exit.n_vertices();
+  }
 
   /**
    * \brief Update the count of blocks within the slice as the result of a block
@@ -88,14 +90,9 @@ class subtarget : public rer::client<subtarget>,
    */
   rmath::vector3z slice_axis_calc(const rmath::radians& orientation) const;
 
-  size_t manifest_size_calc(const ssrepr::slice2D& slice,
-                            const structure3D* structure) const;
-
   /* clang-format off */
-  const size_t          mc_id;
   const ssrepr::slice2D mc_entry;
   const ssrepr::slice2D mc_exit;
-  const size_t          mc_manifest_size{0};
 
   size_t                m_total_placed{0};
   size_t                m_interval_placed{0};

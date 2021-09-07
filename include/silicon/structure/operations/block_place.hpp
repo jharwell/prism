@@ -36,7 +36,7 @@
 #include "cosm/pal/embodied_block_variant.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 #include "silicon/repr/placement_intent.hpp"
 
 /*******************************************************************************

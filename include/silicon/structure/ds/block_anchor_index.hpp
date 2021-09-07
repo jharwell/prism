@@ -1,5 +1,5 @@
 /**
- * \file frontier_coord.hpp
+ * \file block_anchor_index.hpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -18,33 +18,54 @@
  * SILICON.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_
-#define INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_
+#ifndef INCLUDE_SILICON_STRUCTURE_DS_BLOCK_ANCHOR_INDEX_HPP_
+#define INCLUDE_SILICON_STRUCTURE_DS_BLOCK_ANCHOR_INDEX_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcppsw/patterns/decorator/decorator.hpp"
+#include "rcppsw/ds/rtree.hpp"
+
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/block_spec.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, repr);
+NS_START(silicon, structure, ds, detail);
+
+using rtree_spec = rds::rtree_spec<rmath::vector3z,
+                                   rds::rtree_point<rmath::vector3z>,
+                                   connectivity_graph::vertex_descriptor>;
+NS_END(detail);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \brief Representation of how far into a construction lane construction has
- * progressed so far.
+ * \class block_anchor_index
+ * \ingroup structure ds
+ *
+ * \brief Indexs a location in the \ref sstructure3D to its \ref
+ * ssrepr::block_anchor_spec.
  */
 
-struct frontier_coord {
-  ssds::ct_coord ingress;
-  ssds::ct_coord egress;
+class block_anchor_index : public rpdecorator::decorator<
+  rds::rtree<detail::rtree_spec>
+  > {
+ public:
+  RCPPSW_DECORATE_DECLDEF(begin, const);
+  RCPPSW_DECORATE_DECLDEF(end, const);
+  RCPPSW_DECORATE_DECLDEF(size, const);
+  RCPPSW_DECORATE_DECLDEF(nearest, const);
+
+  RCPPSW_DECORATE_DECLDEF(insert);
+  RCPPSW_DECORATE_DECLDEF(begin);
+  RCPPSW_DECORATE_DECLDEF(end);
 };
 
-NS_END(repr, silicon);
+NS_END(ds, structure, silicon);
 
-#endif /* INCLUDE_SILICON_REPR_FRONTIER_COORD_HPP_ */
+#endif /* INCLUDE_SILICON_STRUCTURE_DS_BLOCK_ANCHOR_INDEX_HPP_ */

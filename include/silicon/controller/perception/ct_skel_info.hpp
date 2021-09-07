@@ -29,7 +29,7 @@
 #include "rcppsw/types/spatial_dist.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -72,14 +72,14 @@ class ct_skel_info {
   size_t n_lanes(void) const;
   const rtypes::discretize_ratio& grid_resolution(void) const;
 
-  rmath::vector3d anchor_loc_abs(const ssds::ct_coord& anchor) const;
+  rmath::vector3d anchor_loc_abs(const ssrepr::ct_coord& anchor) const;
   rtypes::type_uuid id(void) const;
-  ssds::ct_coord to_vcoord(const rmath::vector3d& arena_pos) const;
-  ssds::ct_coord to_vcoord2D(const rmath::vector2d& arena_pos) const;
-  ssds::ct_coord as_vcoord(const rmath::vector3z& coord) const;
-  ssds::ct_coord as_rcoord(const rmath::vector3z& coord) const;
-  ssds::ct_coord to_rcoord(const rmath::vector3d& arena_pos) const;
-  ssds::ct_coord to_rcoord2D(const rmath::vector2d& arena_pos) const;
+  ssrepr::ct_coord to_vcoord(const rmath::vector3d& arena_pos) const;
+  ssrepr::ct_coord to_vcoord2D(const rmath::vector2d& arena_pos) const;
+  ssrepr::ct_coord as_vcoord(const rmath::vector3z& coord) const;
+  ssrepr::ct_coord as_rcoord(const rmath::vector3z& coord) const;
+  ssrepr::ct_coord to_rcoord(const rmath::vector3d& arena_pos) const;
+  ssrepr::ct_coord to_rcoord2D(const rmath::vector2d& arena_pos) const;
 
  private:
   /* clang-format off */

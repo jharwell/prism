@@ -35,7 +35,7 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool geometry_check::operator()(const ssds::spec_graph* spec,
+bool geometry_check::operator()(const ssds::connectivity_graph* graph,
                                 const ssrepr::vshell* vshell,
                                 const rmath::radians& orientation) const {
   ER_CHECK(sstructure::orientation_valid(orientation),
@@ -45,10 +45,9 @@ bool geometry_check::operator()(const ssds::spec_graph* spec,
   for (size_t z = 0; z < vshell->real()->zdsize(); ++z) {
     auto slice = ssrepr::slice2D(ssrepr::slice2D::spec_calc(rmath::vector3z::Z,
                                                             z,
-                                                            spec,
                                                             vshell),
-                                 spec);
-    ER_CHECK(layer_check(slice, orientation, z),
+                                 graph);
+    ER_CHECK(layer_check(slice, orientation),
              "Layer%zu failed validation",
              z);
     ER_DEBUG("Layer%zu OK", z);
@@ -68,12 +67,12 @@ bool geometry_check::layer_check(const ssrepr::slice2D& layer,
    */
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
-    ER_CHECK(0 == (layer.d2() % saconstants::kCT_SUBTARGET_WIDTH_CELLS),
+    ER_CHECK(0 == (layer.xdsize() % saconstants::kCT_SUBTARGET_WIDTH_CELLS),
              "Spec with orientation={0,PI} not evenly divisible by subtarget width %zu",
              saconstants::kCT_SUBTARGET_WIDTH_CELLS);
   } else if (rmath::radians::kPI_OVER_TWO == orientation ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
-    ER_CHECK(0 == (layer.d1() % saconstants::kCT_SUBTARGET_WIDTH_CELLS),
+    ER_CHECK(0 == (layer.ydsize() % saconstants::kCT_SUBTARGET_WIDTH_CELLS),
              "Spec with orientation={PI/2,3PI/2} not evenly divisible by subtarget width %zu",
              saconstants::kCT_SUBTARGET_WIDTH_CELLS);
   }

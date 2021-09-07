@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 
 #include "silicon/controller/perception/ct_skel_info.hpp"
 #include "silicon/structure/structure3D.hpp"
@@ -29,7 +29,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, structure, ds);
+NS_START(silicon, structure, repr);
 
 /*******************************************************************************
  * Constructors/Destructors
@@ -38,9 +38,9 @@ ct_coord::ct_coord(const rmath::vector3z& offset,
                    const relativity& relative_to,
                    const structure3D* ct)
     : ER_CLIENT_INIT("silicon.structure.ct_coord"),
+      mc_ct(ct),
       m_offset(offset),
-      m_relative_to(relative_to),
-      mc_ct(ct) {}
+      m_relative_to(relative_to) {}
 
 /*******************************************************************************
  * Member Functions
@@ -105,4 +105,4 @@ std::string ct_coord::to_str(void) const {
                                                          : "@UNDEFINED");
 } /* to_str() */
 
-NS_END(ds, structure, silicon);
+NS_END(repr, structure, silicon);

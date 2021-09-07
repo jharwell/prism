@@ -48,8 +48,8 @@ NS_START(silicon, lane_alloc);
 class lane_geometry : public rer::client<lane_geometry> {
  public:
   lane_geometry(const scperception::ct_skel_info* target,
-                const ssds::ct_coord& ingress_cell,
-                const ssds::ct_coord& egress_cell);
+                const ssrepr::ct_coord& ingress_cell,
+                const ssrepr::ct_coord& egress_cell);
 
   lane_geometry(const lane_geometry&) = default;
   lane_geometry& operator=(const lane_geometry&) = delete;
@@ -57,8 +57,8 @@ class lane_geometry : public rer::client<lane_geometry> {
   lane_geometry(lane_geometry&&) = default;
   lane_geometry& operator=(lane_geometry&&) = delete;
 
-  const ssds::ct_coord& ingress_virt(void) const { return mc_ingress_virt; }
-  const ssds::ct_coord& egress_virt(void) const { return mc_egress_virt; }
+  const ssrepr::ct_coord& ingress_virt(void) const { return mc_ingress_virt; }
+  const ssrepr::ct_coord& egress_virt(void) const { return mc_egress_virt; }
 
   /**
    * \brief Range in X INCLUDING virtual cells if the lane is parallel to the
@@ -86,8 +86,8 @@ class lane_geometry : public rer::client<lane_geometry> {
 
  private:
   /* clang-format off */
-  const ssds::ct_coord  mc_ingress_virt;
-  const ssds::ct_coord  mc_egress_virt;
+  const ssrepr::ct_coord  mc_ingress_virt;
+  const ssrepr::ct_coord  mc_egress_virt;
   const rmath::vector3d mc_cell_corr;
 
   rmath::vector2z       m_dims2D{};

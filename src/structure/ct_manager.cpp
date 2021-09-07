@@ -28,7 +28,7 @@
 #include "silicon/structure/builder_factory.hpp"
 #include "silicon/structure/config/construct_targets_config.hpp"
 #include "silicon/structure/config/structure3D_builder_config.hpp"
-#include "silicon/structure/operations/spec_validate.hpp"
+#include "silicon/structure/operations/constructability_check.hpp"
 #include "silicon/structure/structure3D.hpp"
 
 /*******************************************************************************
@@ -134,7 +134,9 @@ structure3D* ct_manager::target_lookup(const rtypes::type_uuid& id) const {
 } /* target_lookup() */
 
 bool ct_manager::construction_feasible(const structure3D* target) const {
-  if (!ssops::spec_validate(target)()) {
+  if (!ssops::constructability_check()(target->spec(),
+                                       target->vshell(),
+                                       target->orientation())) {
     ER_WARN("Construction target%s invalid",
             rcppsw::to_string(target->id()).c_str());
     return false;

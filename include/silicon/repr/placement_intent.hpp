@@ -29,7 +29,7 @@
 #include "rcppsw/er/stringizable.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -52,7 +52,7 @@ class placement_intent : public rer::client<placement_intent>,
  public:
   placement_intent(void) : ER_CLIENT_INIT("silicon.repr.placement_intent") {}
 
-  placement_intent(const ssds::ct_coord& site, const rmath::radians& z_rot)
+  placement_intent(const ssrepr::ct_coord& site, const rmath::radians& z_rot)
       : ER_CLIENT_INIT("silicon.repr.placement_intent"),
         m_site(site),
         m_z_rot(z_rot) {}
@@ -61,13 +61,13 @@ class placement_intent : public rer::client<placement_intent>,
     return "site=" + rcppsw::to_string(m_site) + "," +
            "z_rot=" + rcppsw::to_string(m_z_rot);
   }
-  const ssds::ct_coord& site(void) const { return m_site; }
+  const ssrepr::ct_coord& site(void) const { return m_site; }
   const rmath::radians& z_rot(void) const { return m_z_rot; }
 
  private:
   /* clang-format off */
-  ssds::ct_coord m_site{};
-  rmath::radians       m_z_rot{};
+  ssrepr::ct_coord m_site{};
+  rmath::radians   m_z_rot{};
   /* clang-format on */
 };
 

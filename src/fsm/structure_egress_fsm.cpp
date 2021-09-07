@@ -25,7 +25,6 @@
 
 #include "rcppsw/patterns/fsm/event.hpp"
 
-#include "cosm/ds/cell3D.hpp"
 #include "cosm/spatial/fsm/util_signal.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"

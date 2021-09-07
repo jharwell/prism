@@ -33,17 +33,16 @@
 #include "rcppsw/math/vector3.hpp"
 #include "rcppsw/types/spatial_dist.hpp"
 
-#include "cosm/ds/cell3D.hpp"
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/repr/block_variant.hpp"
 
 #include "silicon/repr/placement_intent.hpp"
 #include "silicon/silicon.hpp"
 #include "silicon/structure/config/structure3D_config.hpp"
-#include "silicon/structure/ds/ct_coord.hpp"
+#include "silicon/structure/repr/ct_coord.hpp"
 #include "silicon/structure/metrics/ct_progress_metrics.hpp"
 #include "silicon/structure/metrics/ct_state_metrics.hpp"
-#include "silicon/structure/ds/block_spec.hpp"
+#include "silicon/structure/repr/block_spec.hpp"
 #include "silicon/structure/ds/block_placement_map.hpp"
 
 /*******************************************************************************
@@ -56,7 +55,8 @@ class base_arena_map;
 NS_START(silicon, structure);
 class subtarget;
 namespace ds {
-class spec_graph;
+class connectivity_graph;
+class block_anchor_index;
 } /* namespace ds */
 
 namespace repr {
@@ -116,7 +116,10 @@ class structure3D final : public rer::client<structure3D>,
   void reset_metrics(void) override;
 
   const ssrepr::vshell* vshell(void) const { return m_vshell.get(); }
-  const ssds::spec_graph* spec(void) const { return m_spec.get(); }
+  const ssds::connectivity_graph* spec(void) const { return m_spec_graph.get(); }
+  const ssds::block_anchor_index* anchor_index(void) const {
+    return m_anchor_index.get();
+  }
 
   /**
    * \brief Return the orientation for the structure.
@@ -161,19 +164,14 @@ class structure3D final : public rer::client<structure3D>,
    *
    * \param coord Coordinates of the desired block anchor point.
    */
-  const ssds::block_anchor_spec* spec_retrieve(const ssds::ct_coord& coord) const;
-
-  /**
-   * \brief Verify cell state for block addition.
-   */
-  bool block_placement_cell_check(const cds::cell3D& cell) const;
+  const ssrepr::block_anchor_spec* spec_retrieve(const ssrepr::ct_coord& coord) const;
 
   /**
    * \brief Given a \ref ds::block_anchor_spec from the structure, calculate its
    * absolute position in the arena. This is necessary to support blocks with a
    * unit dimension that is greater than the grid resolution of the arena.
    */
-  rmath::vector3d anchor_loc_abs(const ssds::ct_coord& anchor) const;
+  rmath::vector3d anchor_loc_abs(const ssrepr::ct_coord& anchor) const;
 
   const rtypes::discretize_ratio& arena_grid_resolution(void) const {
     return mc_arena_grid_res;
@@ -185,7 +183,7 @@ class structure3D final : public rer::client<structure3D>,
    *
    * \param cell The coordinates of the cell to check.
    */
-  subtarget* parent_subtarget(const ssds::ct_coord& coord);
+  subtarget* parent_subtarget(const ssrepr::ct_coord& coord);
 
   const subtarget_vectorno& subtargets(void) const { return m_subtargetsno; }
   rtypes::type_uuid placement_id(void) {
@@ -202,7 +200,7 @@ class structure3D final : public rer::client<structure3D>,
   subtarget_vectoro subtargetso_init(void) const;
   subtarget_vectorno subtargetsno_init(void) const;
 
-  ssds::block_placement_map block_placement_map_init(void);
+  void ds_init(void);
 
   bool post_completion_check(void) const;
 
@@ -233,13 +231,19 @@ class structure3D final : public rer::client<structure3D>,
    * specification for the anchor points for all blocks (vertices) and their
    * associated orientations and extents (edges).
    */
-  std::unique_ptr<ssds::spec_graph> m_spec{};
+  std::unique_ptr<ssds::connectivity_graph> m_spec_graph{nullptr};
 
   /**
-   * We build a map of {block anchor coord -> block spec}, so that we have fast
+   * We build a map of {block anchor coord -> block spec} so that we have fast
    * lookup of "is this a valid place to put a block" at runtime.
    */
-  ssds::block_placement_map         m_block_place_map{};
+  ssds::block_placement_map         m_placement_map{};
+
+  /**
+   * We build a spatial index of block anchor points so that we have fast
+   * queries like "what are the closest k points to this one".
+   */
+  std::unique_ptr<ssds::block_anchor_index> m_anchor_index{nullptr};
 
   /**
    * \brief Convenience representation of the bounding box+virtual shell around
@@ -248,9 +252,7 @@ class structure3D final : public rer::client<structure3D>,
   std::unique_ptr<ssrepr::vshell>   m_vshell;
 
   /**
-   * Subtargets within the structure. Cannot be computed in the constructor
-   * initializer list because it requires cell locations to be populated, which
-   * only happens in the BODY of the constructor.
+   * Subtargets within the structure.
    */
   subtarget_vectoro                 m_subtargetso{};
   subtarget_vectorno                m_subtargetsno{};

@@ -23,9 +23,11 @@
  ******************************************************************************/
 #include "silicon/structure/operations/constructability_check.hpp"
 
-#include "silicon/structure/operations/spec_composability_validate.hpp"
+#include "silicon/structure/operations/composability_check.hpp"
 #include "silicon/structure/operations/geometry_check.hpp"
-#include "silicon/structure/ds/spec_graph.hpp"
+#include "silicon/structure/operations/traversability_check.hpp"
+#include "silicon/structure/operations/topology_check.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -35,23 +37,21 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-bool constructability_check::operator()(const ssds::spec_graph* graph,
+bool constructability_check::operator()(const ssds::connectivity_graph* graph,
                                         const ssrepr::vshell* vshell,
                                         const rmath::radians& orientation) const {
-  spec_composability_validate composable(graph);
-
   ER_CHECK(geometry_check()(graph, vshell, orientation),
-           "Geometry validation failed");
+           "Structure spec failed Geometrical validation");
 
-  /* Second, inter-layer composability checks */
-  ER_CHECK(composable(), "Structure layers are not composable");
+  ER_CHECK(composability_check()(graph, vshell),
+           "Structure spec not composable");
 
-  /* Third, topological checks:
-   *
-   * - No vertical topological holes (should be computable by the same algorithm
-   *   that computes holes for sliced layers on the Z-axis); eg just slice along
-   *   the Y axis. Maybe this should be part of composability checks?
-   */
+  ER_CHECK(traversability_check()(graph, vshell),
+           "Structure spec not traversable at all points");
+
+  ER_CHECK(topology_check()(graph, vshell),
+           "Structure spec violates topological invariants")
+
   return true;
 
 error:

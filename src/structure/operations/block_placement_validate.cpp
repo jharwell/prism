@@ -1,5 +1,5 @@
 /**
- * \file placement_validate.cpp
+ * \file block_placement_validate.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/operations/placement_validate.hpp"
+#include "silicon/structure/operations/block_placement_validate.hpp"
 
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
@@ -37,7 +37,7 @@ NS_START(silicon, structure, operations);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-bool placement_validate::operator()(const crepr::cube_block3D* block) const {
+bool block_placement_validate::operator()(const crepr::cube_block3D* block) const {
   ER_CHECK(validate_common(),
            "Common validation for cube block%d with intent %s failed",
            block->id().v(),
@@ -53,16 +53,16 @@ error:
   return false;
 } /* operator() */
 
-bool placement_validate::operator()(const crepr::ramp_block3D* block) const {
+bool block_placement_validate::operator()(const crepr::ramp_block3D* block) const {
   ER_CHECK(validate_common(),
            "Common validation for ramp block%d with intent %s failed",
            block->id().v(),
            rcppsw::to_string(mc_intent).c_str());
 
   if (rmath::radians::kZERO == mc_intent.z_rot()) {
-    /* @todo check if structure invariants are violated by adding this block */
+    /* \todo check if structure invariants are violated by adding this block */
   } else if (rmath::radians::kPI == mc_intent.z_rot()) {
-    /* @todo check if structure invariants are violated by adding this block */
+    /* \todo check if structure invariants are violated by adding this block */
   } else {
     ER_FATAL_SENTINEL("Bad orientation: %s",
                       rcppsw::to_string(mc_intent.z_rot()).c_str());
@@ -74,9 +74,9 @@ error:
   return false;
 } /* operator() */
 
-bool placement_validate::validate_common(void) const {
+bool block_placement_validate::validate_common(void) const {
   /* all accesses into 3D array must be relative to virtual origin */
-  ER_ASSERT(ssds::ct_coord::relativity::ekVORIGIN ==
+  ER_ASSERT(ssrepr::ct_coord::relativity::ekVORIGIN ==
             mc_intent.site().relative_to(),
             "Placement coordinates not relative to virtual origin");
 
@@ -104,7 +104,7 @@ bool placement_validate::validate_common(void) const {
            rcppsw::to_string(mc_intent).c_str(),
            rcppsw::to_string(spec->z_rot).c_str());
   /*
-   * @todo check if the embodiment for this block would overlap with any other
+   * \todo check if the embodiment for this block would overlap with any other
    * blocks already placed on the structure.
    */
 

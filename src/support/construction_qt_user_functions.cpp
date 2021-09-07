@@ -33,7 +33,6 @@ RCPPSW_WARNING_DISABLE_POP()
 #include "cosm/vis/block_carry_visualizer.hpp"
 #include "cosm/vis/polygon2D_visualizer.hpp"
 #include "cosm/vis/steer2D_visualizer.hpp"
-#include "cosm/ds/cell3D.hpp"
 
 #include "silicon/controller/fcrw_bst_controller.hpp"
 #include "silicon/controller/perception/builder_perception_subsystem.hpp"

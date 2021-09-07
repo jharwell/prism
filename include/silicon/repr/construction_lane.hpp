@@ -32,7 +32,6 @@
 #include "cosm/ta/taskable_argument.hpp"
 
 #include "silicon/lane_alloc/lane_geometry.hpp"
-#include "silicon/repr/frontier_coord.hpp"
 #include "silicon/silicon.hpp"
 #include "silicon/lane_alloc/history.hpp"
 
@@ -70,7 +69,7 @@ class construction_lane : public cta::taskable_argument,
 
   size_t id(void) const { return m_id; }
 
-  bool contains(const ssds::ct_coord& coord) const;
+  bool contains(const ssrepr::ct_coord& coord) const;
   const rmath::radians& orientation(void) const { return m_orientation; }
   const lane_alloc::lane_geometry& geometry(void) const { return m_geometry; }
   lane_alloc::history* history(void) const { return m_history; }

@@ -23,8 +23,6 @@
  ******************************************************************************/
 #include "silicon/repr/construction_lane.hpp"
 
-#include "cosm/ds/cell3D.hpp"
-
 #include "silicon/repr/builder_los.hpp"
 
 /*******************************************************************************
@@ -48,7 +46,7 @@ construction_lane::construction_lane(size_t id,
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool construction_lane::contains(const ssds::ct_coord& coord) const {
+bool construction_lane::contains(const ssrepr::ct_coord& coord) const {
   /*
    * Even though construction lanes always use real construction target
    * coordinates, need to include the virtual cells at the front of the lane in

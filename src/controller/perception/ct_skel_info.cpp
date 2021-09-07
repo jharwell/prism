@@ -74,30 +74,30 @@ rmath::vector3z ct_skel_info::bbd(bool include_virtual) const {
            m_target->vshell()->zdspan().span() };
 } /* bbd() */
 
-ssds::ct_coord ct_skel_info::to_vcoord(const rmath::vector3d& arena_pos) const {
-  auto raw = ssds::ct_coord::from_arena(arena_pos, m_target);
+ssrepr::ct_coord ct_skel_info::to_vcoord(const rmath::vector3d& arena_pos) const {
+  auto raw = ssrepr::ct_coord::from_arena(arena_pos, m_target);
   return raw.to_virtual();
 } /* to_vcoord() */
 
-ssds::ct_coord ct_skel_info::as_vcoord(const rmath::vector3z& coord) const {
-  return { coord, ssds::ct_coord::relativity::ekVORIGIN, m_target };
+ssrepr::ct_coord ct_skel_info::as_vcoord(const rmath::vector3z& coord) const {
+  return { coord, ssrepr::ct_coord::relativity::ekVORIGIN, m_target };
 } /* to_vcoord() */
 
-ssds::ct_coord ct_skel_info::as_rcoord(const rmath::vector3z& coord) const {
-  return { coord, ssds::ct_coord::relativity::ekRORIGIN, m_target };
+ssrepr::ct_coord ct_skel_info::as_rcoord(const rmath::vector3z& coord) const {
+  return { coord, ssrepr::ct_coord::relativity::ekRORIGIN, m_target };
 } /* to_vcoord() */
 
-ssds::ct_coord
+ssrepr::ct_coord
 ct_skel_info::to_vcoord2D(const rmath::vector2d& arena_coord) const {
   return to_vcoord(rmath::vector3d(arena_coord.x(), arena_coord.y(), 0));
 } /* to_vcoord() */
 
-ssds::ct_coord ct_skel_info::to_rcoord(const rmath::vector3d& arena_pos) const {
-  auto raw = ssds::ct_coord::from_arena(arena_pos, m_target);
+ssrepr::ct_coord ct_skel_info::to_rcoord(const rmath::vector3d& arena_pos) const {
+  auto raw = ssrepr::ct_coord::from_arena(arena_pos, m_target);
   return raw.to_real();
 } /* to_rcoord() */
 
-ssds::ct_coord
+ssrepr::ct_coord
 ct_skel_info::to_rcoord2D(const rmath::vector2d& arena_pos) const {
   return to_rcoord(rmath::vector3d(arena_pos.x(), arena_pos.y(), 0));
 } /* to_rcoord() */
@@ -107,7 +107,7 @@ const rmath::radians& ct_skel_info::orientation(void) const {
 } /* orientation() */
 
 rmath::vector3d
-ct_skel_info::anchor_loc_abs(const ssds::ct_coord& anchor) const {
+ct_skel_info::anchor_loc_abs(const ssrepr::ct_coord& anchor) const {
   return m_target->anchor_loc_abs(anchor);
 } /* anchor_loc_abs() */
 

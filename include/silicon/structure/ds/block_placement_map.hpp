@@ -29,7 +29,7 @@
 #include "rcppsw/patterns/decorator/decorator.hpp"
 
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/block_spec.hpp"
+#include "silicon/structure/repr/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -48,7 +48,7 @@ NS_START(silicon, structure, ds);
 
 class block_placement_map : public rpdecorator::decorator<
   std::map<rmath::vector3z,
-           block_placement_spec>
+           ssrepr::block_placement_spec>
   > {
  public:
   RCPPSW_DECORATE_CT();

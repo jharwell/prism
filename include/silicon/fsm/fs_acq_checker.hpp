@@ -31,15 +31,11 @@
 
 #include "silicon/repr/fs_configuration.hpp"
 #include "silicon/silicon.hpp"
-#include "silicon/structure/ds/block_spec.hpp"
+#include "silicon/structure/repr/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::ds {
-class cell3D;
-} /* namespace cosm::ds */
-
 namespace silicon::repr {
 class construction_lane;
 class builder_los;
@@ -86,8 +82,8 @@ class fs_acq_checker : public rer::client<fs_acq_checker> {
   };
 
   struct acq_specs {
-    const ssds::block_anchor_spec* ingress{ nullptr };
-    const ssds::block_anchor_spec* egress{ nullptr };
+    const ssrepr::block_anchor_spec* ingress{ nullptr };
+    const ssrepr::block_anchor_spec* egress{ nullptr };
   };
 
   struct acq_result {

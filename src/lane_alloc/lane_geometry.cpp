@@ -35,8 +35,8 @@ NS_START(silicon, lane_alloc);
  * Constructors/Destructors
  ******************************************************************************/
 lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
-                             const ssds::ct_coord& ingress_virt,
-                             const ssds::ct_coord& egress_virt)
+                             const ssrepr::ct_coord& ingress_virt,
+                             const ssrepr::ct_coord& egress_virt)
     : ER_CLIENT_INIT("silicon.lane_alloc.lane_geometry"),
       mc_ingress_virt{ ingress_virt.to_virtual() },
       mc_egress_virt{ egress_virt.to_virtual() },
@@ -53,8 +53,8 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
                   "Bad orientation: '%s'",
                   rcppsw::to_string(target->orientation()).c_str());
 
-        auto l1 =
-            rmath::vector3z::l1norm(mc_egress_virt.offset(), mc_ingress_virt.offset());
+        auto l1 = rmath::l1norm(mc_egress_virt.offset(),
+                                mc_ingress_virt.offset());
         if (rmath::radians::kZERO == target->orientation()) {
           m_ingress_pt = target->anchor_loc_abs(mc_ingress_virt) + mc_cell_corr;
           m_egress_pt = target->anchor_loc_abs(mc_egress_virt) + mc_cell_corr;

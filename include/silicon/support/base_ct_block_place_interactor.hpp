@@ -196,8 +196,7 @@ class base_ct_block_place_interactor
               rcppsw::to_string(intent).c_str());
     auto placed = controller.block_release();
 
-    robot_block_place_visitor_type rplace_op(controller.entity_id(),
-                                             placed->danchor3D());
+    robot_block_place_visitor_type rplace_op(controller.entity_id());
     caops::nest_block_process_visitor aproc_op(
         m_arena_map->blocks()[placed->id().v()], t);
 

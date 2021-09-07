@@ -67,11 +67,14 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
 
   static ct_coord from_arena(rmath::vector3d pos,
                              const structure3D* ct);
-  static ct_coord to_virtual(const ct_coord& coord);
-  static ct_coord to_real(const ct_coord& coord);
+  static ct_coord to_virtual(const ct_coord& coord,
+                             const structure3D* ct);
+  static ct_coord to_real(const ct_coord& coord,
+                          const structure3D* ct);
 
   ct_coord(const rmath::vector3z& offset,
-           const relativity& relative_to);
+           const relativity& relative_to,
+           const structure3D* ct);
 
   ct_coord(void) : ER_CLIENT_INIT("silicon.structure.ct_coord") {}
 
@@ -84,11 +87,11 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
 
   /* operators */
   ct_coord operator-(const rmath::vector3z& other) const {
-    return ct_coord{m_offset - other, m_relative_to};
+    return ct_coord{m_offset - other, m_relative_to, mc_ct};
   }
 
   ct_coord operator+(const rmath::vector3z& other) const {
-    return ct_coord{m_offset + other, m_relative_to};
+    return ct_coord{m_offset + other, m_relative_to, mc_ct};
   }
 
   ct_coord to_real(void) const;
@@ -97,6 +100,8 @@ class ct_coord : public rer::client<ct_coord>, public rer::stringizable {
 
  private:
   /* clang-format off */
+  const structure3D* mc_ct{nullptr};
+
   rmath::vector3z    m_offset{};
   relativity         m_relative_to{relativity::ekUNDEFINED};
   /* clang-format on */

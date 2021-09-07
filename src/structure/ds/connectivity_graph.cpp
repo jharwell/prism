@@ -1,5 +1,5 @@
 /**
- * \file spec_graph.cpp
+ * \file connectivity_graph.cpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/structure/ds/spec_graph.hpp"
+#include "silicon/structure/ds/connectivity_graph.hpp"
 
 #include <fstream>
 
@@ -35,8 +35,8 @@ NS_START(silicon, structure, ds);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-spec_graph::spec_graph(const decoratee_type& decoratee)
-    : ER_CLIENT_INIT("silicon.structure.ds.spec_graph"),
+connectivity_graph::connectivity_graph(const decoratee_type& decoratee)
+    : ER_CLIENT_INIT("silicon.structure.ds.connectivity_graph"),
       decorator(decoratee) {}
 
 /*******************************************************************************
@@ -46,7 +46,7 @@ spec_graph::spec_graph(const decoratee_type& decoratee)
 /*******************************************************************************
  * Non-Member Functions
  ******************************************************************************/
-spec_graph spec_graph::from_file(const fs::path& path) {
+connectivity_graph connectivity_graph::from_file(const fs::path& path) {
   /* build GraphML properties to be parsed */
   auto build_map = [&](boost::dynamic_properties& dp, auto& g) {
                      dp.property("type",
@@ -63,7 +63,7 @@ spec_graph spec_graph::from_file(const fs::path& path) {
                                                                  build_map);
   /* read in the spec from GraphML into the decoratee (underlying graph) */
   rdgraph::read_graphml(path, decoratee, dp);
-  return spec_graph(decoratee);
+  return connectivity_graph(decoratee);
 } /* from_file() */
 
 

@@ -3,49 +3,49 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/builder_util_fsm.hpp"
+#include "prism/fsm/builder_util_fsm.hpp"
 
 #include "rcppsw/patterns/fsm/event.hpp"
 #include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/repr/construction_lane.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/repr/construction_lane.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(prism, fsm);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
 builder_util_fsm::builder_util_fsm(
-    const scperception::builder_perception_subsystem* perception,
+    const pcperception::builder_perception_subsystem* perception,
     csubsystem::saa_subsystemQ3D* saa,
     rmath::rng* rng,
     uint8_t max_states)
     : util_hfsm(saa, rng, max_states),
-      ER_CLIENT_INIT("silicon.fsm.builder_util"),
+      ER_CLIENT_INIT("prism.fsm.builder_util"),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       mc_perception(perception) {}
 
@@ -82,7 +82,7 @@ RCPPSW_HFSM_EXIT_DEFINE(builder_util_fsm, exit_wait_for_robot) {
 
   /*
    * If the interference episode we have just experienced occured while we were
-   * on the structure, then add its duration to the running total for the
+   * on the gmt, then add its duration to the running total for the
    * currently allocated lane.
    */
   if (in_ct_zone) {
@@ -100,4 +100,4 @@ void builder_util_fsm::init(void) {
   util_hfsm::init();
 } /* init() */
 
-NS_END(fsm, silicon);
+NS_END(fsm, prism);

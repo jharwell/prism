@@ -3,60 +3,60 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/fs_acq_checker.hpp"
+#include "prism/fsm/fs_acq_checker.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 #include "cosm/repr/base_block3D.hpp"
 
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/repr/construction_lane.hpp"
-#include "silicon/repr/builder_los.hpp"
-#include "silicon/structure/utils.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/repr/construction_lane.hpp"
+#include "prism/repr/builder_los.hpp"
+#include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(prism, fsm);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
 fs_acq_checker::fs_acq_checker(
     const csubsystem::sensing_subsystemQ3D* sensing,
-    const scperception::builder_perception_subsystem* perception)
-    : ER_CLIENT_INIT("silicon.fsm.fs_acq_checker"),
+    const pcperception::builder_perception_subsystem* perception)
+    : ER_CLIENT_INIT("prism.fsm.fs_acq_checker"),
       mc_sensing(sensing),
       mc_perception(perception) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-srepr::fs_configuration
-fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
+prepr::fs_configuration
+fs_acq_checker::operator()(const prepr::construction_lane* lane) const {
   const auto* los = mc_perception->los();
 
   if (nullptr == los) {
-    return srepr::fs_configuration::ekNONE;
+    return prepr::fs_configuration::ekNONE;
   }
 
   ER_TRACE("Robot position: %s/%s",
@@ -68,7 +68,7 @@ fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
    * such. This will be fixed once the most basic construction has been
    * validated.
    */
-  auto ret = srepr::fs_configuration::ekNONE;
+  auto ret = prepr::fs_configuration::ekNONE;
   for (size_t lookahead = 1; lookahead <= kDETECT_CELL_DIST_MAX; ++lookahead) {
     auto result = acq_result_calc(lane, lookahead);
     ret = configuration_calc(result, lane, los);
@@ -77,7 +77,7 @@ fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
      * Give priority to configurations encountered closer to the robot: as soon
      * as we find one, don't look any further out.
      */
-    if (srepr::fs_configuration::ekNONE != ret) {
+    if (prepr::fs_configuration::ekNONE != ret) {
       break;
     }
   } /* for(lookahead..) */
@@ -85,15 +85,15 @@ fs_acq_checker::operator()(const srepr::construction_lane* lane) const {
 } /* operator()() */
 
 fs_acq_checker::acq_result
-fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
+fs_acq_checker::acq_result_calc(const prepr::construction_lane* lane,
                                size_t lookahead) const {
   acq_result ret;
 
   const auto* ct = mc_perception->nearest_ct();
-  auto robot_ct_cell = ct->to_vcoord(mc_sensing->rpos3D());
+  auto robot_ct_cell = ct->to_rcoord(mc_sensing->rpos3D());
   const auto* los = mc_perception->los();
 
-  ER_ASSERT(boost::none != los->find(robot_ct_cell.offset()),
+  ER_CHECKW(boost::none != los->find(robot_ct_cell.offset()),
             "Robot CT cell not in LOS?");
 
   auto rpos = mc_sensing->rpos3D();
@@ -105,8 +105,8 @@ fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
                                              mc_perception->arena_resolution().v());
   auto egress_arena_cell = rmath::dvec2zvec(ret.positions.egress,
                                             mc_perception->arena_resolution().v());
-  auto ingress_ct_cell = ct->to_vcoord(ret.positions.ingress);
-  auto egress_ct_cell = ct->to_vcoord(ret.positions.egress);
+  auto ingress_ct_cell = ct->to_rcoord(ret.positions.ingress);
+  auto egress_ct_cell = ct->to_rcoord(ret.positions.egress);
 
 
   ER_TRACE("Robot arena cell=%s,ingress arena cell=%s,egress arena cell=%s",
@@ -143,10 +143,10 @@ fs_acq_checker::acq_result_calc(const srepr::construction_lane* lane,
   return ret;
 } /* acq_result_calc() */
 
-srepr::fs_configuration
+prepr::fs_configuration
 fs_acq_checker::configuration_calc(const acq_result& result,
-                                   const srepr::construction_lane* lane,
-                                   const srepr::builder_los* los) const {
+                                   const prepr::construction_lane* lane,
+                                   const prepr::builder_los* los) const {
   if (nullptr != result.specs.ingress && nullptr != result.specs.egress) {
     bool ingress_has_block = nullptr != result.specs.ingress->block;
     bool egress_has_block = nullptr != result.specs.egress->block;
@@ -156,19 +156,19 @@ fs_acq_checker::configuration_calc(const acq_result& result,
               rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
               rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
-      return srepr::fs_configuration::ekLANE_FILLED;
+      return prepr::fs_configuration::ekLANE_FILLED;
     } else if (ingress_has_block && !egress_has_block) {
       ER_INFO("LANE_GAP_EGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
               rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
               rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
-      return srepr::fs_configuration::ekLANE_GAP_EGRESS;
+      return prepr::fs_configuration::ekLANE_GAP_EGRESS;
     } else if (!ingress_has_block && egress_has_block) {
       ER_INFO("LANE_GAP_INGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
               rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
               rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
               result.lookahead);
-      return srepr::fs_configuration::ekLANE_GAP_INGRESS;
+      return prepr::fs_configuration::ekLANE_GAP_INGRESS;
     }
   } else {
     /* possibly empty lane encountered--need to check to see for sure */
@@ -177,17 +177,17 @@ fs_acq_checker::configuration_calc(const acq_result& result,
               rcppsw::to_string(result.positions.ingress).c_str(),
               rcppsw::to_string(result.positions.egress).c_str(),
               result.lookahead);
-      return srepr::fs_configuration::ekLANE_EMPTY;
+      return prepr::fs_configuration::ekLANE_EMPTY;
     }
   }
 
-  return srepr::fs_configuration::ekNONE;
+  return prepr::fs_configuration::ekNONE;
 } /* configuration_calc() */
 
-bool fs_acq_checker::acq_empty_lane(const srepr::construction_lane* lane,
-                                    const srepr::builder_los* los) const {
+bool fs_acq_checker::acq_empty_lane(const prepr::construction_lane* lane,
+                                    const prepr::builder_los* los) const {
   const auto* ct = mc_perception->nearest_ct();
-  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+  ER_ASSERT(pgmt::orientation_valid(lane->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
 
@@ -215,11 +215,11 @@ bool fs_acq_checker::acq_empty_lane(const srepr::construction_lane* lane,
 
 fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
     const rmath::vector3d& rpos,
-    const srepr::construction_lane* lane,
+    const prepr::construction_lane* lane,
     size_t lookahead) const {
   acq_positions ret;
 
-  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+  ER_ASSERT(pgmt::orientation_valid(lane->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
 
@@ -264,4 +264,4 @@ fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
   return ret;
 } /* acq_positions_calc() */
 
-NS_END(fsm, silicon);
+NS_END(fsm, prism);

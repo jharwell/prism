@@ -3,34 +3,34 @@
  *
  * \copyright 2018 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/metrics/blocks/manipulation_metrics_collector.hpp"
+#include "prism/metrics/blocks/manipulation_metrics_collector.hpp"
 
 #include "cosm/controller/metrics/manipulation_metrics.hpp"
 
-#include "silicon/metrics/blocks/block_manip_events.hpp"
+#include "prism/metrics/blocks/block_manip_events.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, metrics, blocks);
+NS_START(prism, metrics, blocks);
 
 /*******************************************************************************
  * Constructors/Destructor
@@ -51,9 +51,9 @@ void manipulation_metrics_collector::collect(
       m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
 
   m_data.interval.structure_place_events +=
-      m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
+      m.status(metrics::blocks::block_manip_events::ekSPCT_PLACE);
   m_data.interval.structure_place_penalty +=
-      m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
+      m.penalty(metrics::blocks::block_manip_events::ekSPCT_PLACE).v();
 
   m_data.cum.arena_pickup_events +=
       m.status(metrics::blocks::block_manip_events::ekARENA_PICKUP);
@@ -61,9 +61,9 @@ void manipulation_metrics_collector::collect(
       m.penalty(metrics::blocks::block_manip_events::ekARENA_PICKUP).v();
 
   m_data.cum.structure_place_events +=
-      m.status(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE);
+      m.status(metrics::blocks::block_manip_events::ekSPCT_PLACE);
   m_data.cum.structure_place_penalty +=
-      m.penalty(metrics::blocks::block_manip_events::ekSTRUCTURE_PLACE).v();
+      m.penalty(metrics::blocks::block_manip_events::ekSPCT_PLACE).v();
 } /* collect() */
 
 void manipulation_metrics_collector::reset_after_interval(void) {
@@ -74,4 +74,4 @@ void manipulation_metrics_collector::reset_after_interval(void) {
   m_data.interval.structure_place_penalty = 0;
 } /* reset_after_interval() */
 
-NS_END(blocks, metrics, silicon);
+NS_END(blocks, metrics, prism);

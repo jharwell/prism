@@ -3,43 +3,43 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/fcrw_bst_controller.hpp"
+#include "prism/controller/fcrw_bst_controller.hpp"
 
 #include "cosm/fsm/supervisor_fsm.hpp"
 #include "cosm/repr/base_block3D.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
-#include "silicon/controller/config/constructing_controller_repository.hpp"
-#include "silicon/fsm/fcrw_bst_fsm.hpp"
+#include "prism/controller/config/constructing_controller_repository.hpp"
+#include "prism/fsm/fcrw_bst_fsm.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller);
+NS_START(prism, controller);
 
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
 fcrw_bst_controller::fcrw_bst_controller(void)
-    : ER_CLIENT_INIT("silicon.controller.fcrw_bst"), m_fsm() {}
+    : ER_CLIENT_INIT("prism.controller.fcrw_bst"), m_fsm() {}
 
 fcrw_bst_controller::~fcrw_bst_controller(void) = default;
 
@@ -54,7 +54,7 @@ void fcrw_bst_controller::init(ticpp::Element& node) {
   config::constructing_controller_repository repo;
   repo.parse_all(node);
 
-  const auto* allocator_config = repo.config_get<slaconfig::lane_alloc_config>();
+  const auto* allocator_config = repo.config_get<placonfig::lane_alloc_config>();
 
   m_fsm = std::make_unique<fsm::fcrw_bst_fsm>(
       allocator_config, perception(), saa(), rng());
@@ -129,4 +129,4 @@ REGISTER_CONTROLLER(fcrw_bst_controller, "fcrw_bst_controller");
 
 RCPPSW_WARNING_DISABLE_POP()
 
-NS_END(controller, silicon);
+NS_END(controller, prism);

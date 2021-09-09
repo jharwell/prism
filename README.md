@@ -1,2 +1,2 @@
-# SILICON
-Swarms of Intelligent LIfe Construct Things
+# PRISM
+Phased Robotic Isomorphic (Graph) Manipulation

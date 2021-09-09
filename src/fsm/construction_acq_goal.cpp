@@ -3,30 +3,30 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/construction_acq_goal.hpp"
+#include "prism/fsm/construction_acq_goal.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(prism, fsm);
 
 /*******************************************************************************
  * Member Functions
@@ -56,4 +56,4 @@ to_goal_type(const construction_acq_goal& goal) {
   return csmetrics::goal_acq_metrics::goal_type(rcppsw::as_underlying(goal));
 }
 
-NS_END(fsm, silicon);
+NS_END(fsm, prism);

@@ -3,34 +3,34 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/perception/perception_receptor.hpp"
+#include "prism/controller/perception/perception_receptor.hpp"
 
 #include <algorithm>
 
-#include "silicon/structure/structure3D.hpp"
+#include "prism/gmt/spc_gmt.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller, perception);
+NS_START(prism, controller, perception);
 
 /*******************************************************************************
  * Constructors/Destructors
@@ -39,7 +39,7 @@ NS_START(silicon, controller, perception);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-const scperception::ct_skel_info*
+const pcperception::ct_skel_info*
 perception_receptor::nearest_ct(const rmath::vector3d& pos) const {
   auto pred = [&](const auto& target1, const auto& target2) {
     return (target1.roriginr() - pos).length() <
@@ -52,4 +52,4 @@ perception_receptor::nearest_ct(const rmath::vector3d& pos) const {
   return nullptr;
 } /* nearest_ct() */
 
-NS_END(perception, controller, silicon);
+NS_END(perception, controller, prism);

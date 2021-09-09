@@ -3,41 +3,41 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/lane_alloc/lane_geometry.hpp"
+#include "prism/lane_alloc/lane_geometry.hpp"
 
-#include "silicon/controller/perception/ct_skel_info.hpp"
-#include "silicon/structure/utils.hpp"
+#include "prism/controller/perception/ct_skel_info.hpp"
+#include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, lane_alloc);
+NS_START(prism, lane_alloc);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
-                             const ssrepr::ct_coord& ingress_virt,
-                             const ssrepr::ct_coord& egress_virt)
-    : ER_CLIENT_INIT("silicon.lane_alloc.lane_geometry"),
+lane_geometry::lane_geometry(const pcperception::ct_skel_info* target,
+                             const pgrepr::ct_coord& ingress_virt,
+                             const pgrepr::ct_coord& egress_virt)
+    : ER_CLIENT_INIT("prism.lane_alloc.lane_geometry"),
       mc_ingress_virt{ ingress_virt.to_virtual() },
       mc_egress_virt{ egress_virt.to_virtual() },
       /*
@@ -49,7 +49,7 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
       mc_cell_corr{ target->block_unit_dim().v() / 2.0,
                     target->block_unit_dim().v() / 2.0,
                     0.0 } {
-        ER_ASSERT(sstructure::orientation_valid(target->orientation()),
+        ER_ASSERT(pgmt::orientation_valid(target->orientation()),
                   "Bad orientation: '%s'",
                   rcppsw::to_string(target->orientation()).c_str());
 
@@ -85,4 +85,4 @@ lane_geometry::lane_geometry(const scperception::ct_skel_info* target,
         }
       }
 
-NS_END(lane_alloc, silicon);
+NS_END(lane_alloc, prism);

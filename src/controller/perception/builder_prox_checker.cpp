@@ -3,40 +3,40 @@
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/perception/builder_prox_checker.hpp"
+#include "prism/controller/perception/builder_prox_checker.hpp"
 
 #include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/calculators/lane_alignment.hpp"
-#include "silicon/repr/colors.hpp"
-#include "silicon/repr/construction_lane.hpp"
-#include "silicon/algorithm/constants.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/fsm/calculators/lane_alignment.hpp"
+#include "prism/repr/colors.hpp"
+#include "prism/repr/construction_lane.hpp"
+#include "prism/algorithm/constants.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, controller, perception);
+NS_START(prism, controller, perception);
 
 /*******************************************************************************
  * Constructors/Destructors
@@ -46,8 +46,8 @@ NS_START(silicon, controller, perception);
  * Member Functions
  ******************************************************************************/
 builder_prox_type
-builder_prox_checker::operator()(const srepr::construction_lane* lane,
-                                 const srepr::fs_configuration& fs) const {
+builder_prox_checker::operator()(const prepr::construction_lane* lane,
+                                 const prepr::fs_configuration& fs) const {
   builder_prox_type ret = builder_prox_type::ekNONE;
   ret |= trajectory_proximity(lane);
   ret |= frontier_set_proximity(fs, lane);
@@ -55,7 +55,7 @@ builder_prox_checker::operator()(const srepr::construction_lane* lane,
 } /* robot_proximity() */
 
 builder_prox_type builder_prox_checker::trajectory_proximity(
-    const srepr::construction_lane* lane) const {
+    const prepr::construction_lane* lane) const {
   /*
    * Get readings with angles relative to the robots current heading, rather
    * than PI=0 (default).
@@ -138,8 +138,8 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
 } /* trajectory_proximity() */
 
 builder_prox_type builder_prox_checker::frontier_set_proximity(
-    const srepr::fs_configuration& fs,
-    const srepr::construction_lane* lane) const {
+    const prepr::fs_configuration& fs,
+    const prepr::construction_lane* lane) const {
   /*
    * Get readings with angles relative to the robots current heading, rather
    * than PI=0 (default).
@@ -223,7 +223,7 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
      * also doing), so no builder proximity.
      *
      */
-    if (srepr::fs_configuration::ekNONE == fs) {
+    if (prepr::fs_configuration::ekNONE == fs) {
       continue;
     }
     /*
@@ -239,17 +239,17 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
 
 double builder_prox_checker::trajectory_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
-  return std::sqrt(cellsize * saconstants::kCT_TRAJECTORY_PROX_CELLS);
+  return std::sqrt(cellsize * paconstants::kCT_TRAJECTORY_PROX_CELLS);
 } /* trajectory_prox_dist() */
 
 double builder_prox_checker::frontier_set_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
-  return std::sqrt(cellsize * saconstants::kCT_FRONTIER_SET_PROX_CELLS);
+  return std::sqrt(cellsize * paconstants::kCT_FRONTIER_SET_PROX_CELLS);
 } /* frontier_set_prox_dist() */
 
 builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
     const rmath::vector2d& other_rpos,
-    const srepr::construction_lane* lane) const {
+    const prepr::construction_lane* lane) const {
   lane_share_state ret;
 
   /*
@@ -287,9 +287,9 @@ builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
 } /* share_state_calc() */
 
 bool builder_prox_checker::is_builder_robot(const rutils::color& color) const {
-  auto colors = srepr::colors::ct();
+  auto colors = prepr::colors::ct();
   return colors.end() != std::find(colors.begin(), colors.end(), color);
 } /* is_builder_robot() */
 
 
-NS_END(perception, controller, silicon);
+NS_END(perception, controller, prism);

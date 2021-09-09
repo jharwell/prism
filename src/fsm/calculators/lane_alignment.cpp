@@ -3,38 +3,38 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/calculators/lane_alignment.hpp"
+#include "prism/fsm/calculators/lane_alignment.hpp"
 
 #include "rcppsw/math/radians.hpp"
 #include "rcppsw/math/degrees.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/repr/construction_lane.hpp"
-#include "silicon/structure/utils.hpp"
+#include "prism/repr/construction_lane.hpp"
+#include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm, calculators);
+NS_START(prism, fsm, calculators);
 
 /*******************************************************************************
  * Class Constants
@@ -48,7 +48,7 @@ const rtypes::spatial_dist lane_alignment::kTRAJECTORY_ORTHOGONAL_TOL =
  * Member Functions
  ******************************************************************************/
 lane_alignment::ret_type
-lane_alignment::operator()(const srepr::construction_lane* lane) const {
+lane_alignment::operator()(const prepr::construction_lane* lane) const {
   return { verify_pos(lane->geometry().ingress_pt().to_2D(), lane->orientation()),
            verify_pos(lane->geometry().egress_pt().to_2D(), lane->orientation()),
            verify_azimuth(lane->orientation()) };
@@ -56,7 +56,7 @@ lane_alignment::operator()(const srepr::construction_lane* lane) const {
 
 bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
                                 const rmath::radians& orientation) const {
-  ER_ASSERT(sstructure::orientation_valid(orientation),
+  ER_ASSERT(pgmt::orientation_valid(orientation),
             "Bad orientation: '%s'",
             rcppsw::to_string(orientation).c_str());
 
@@ -75,7 +75,7 @@ bool lane_alignment::verify_pos(const rmath::vector2d& lane_point,
 
 bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   rmath::radians angle_diff;
-  ER_ASSERT(sstructure::orientation_valid(orientation),
+  ER_ASSERT(pgmt::orientation_valid(orientation),
             "Bad orientation: '%s'",
             rcppsw::to_string(orientation).c_str());
 
@@ -95,4 +95,4 @@ bool lane_alignment::verify_azimuth(const rmath::radians& orientation) const {
   return angle_diff <= kAZIMUTH_TOL;
 } /* lane_alignment_verify_azimuth() */
 
-NS_END(calculators, fsm, silicon);
+NS_END(calculators, fsm, prism);

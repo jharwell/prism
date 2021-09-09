@@ -3,28 +3,28 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/common/common.hpp"
+#include "rcppsw/algorithm/convex_hull2D.hpp"
 RCPPSW_WARNING_DISABLE_PUSH()
 RCPPSW_WARNING_DISABLE_OVERLOADED_VIRTUAL()
-#include "silicon/support/construction_qt_user_functions.hpp"
+#include "prism/support/construction_qt_user_functions.hpp"
 RCPPSW_WARNING_DISABLE_POP()
 
 #include <argos3/core/simulator/entity/controllable_entity.h>
@@ -34,13 +34,13 @@ RCPPSW_WARNING_DISABLE_POP()
 #include "cosm/vis/polygon2D_visualizer.hpp"
 #include "cosm/vis/steer2D_visualizer.hpp"
 
-#include "silicon/controller/fcrw_bst_controller.hpp"
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/controller/fcrw_bst_controller.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, support);
+NS_START(prism, support);
 
 /*******************************************************************************
  * Constructors/Destructor
@@ -90,30 +90,31 @@ void construction_qt_user_functions::los_render(
   const auto* los = controller->perception()->los();
   const auto* ct = controller->perception()->nearest_ct();
 
-  /*
-   * The LOS rspan is relative to the virtual structure origin, and knows
-   * nothing of where the structure is in the arena, so we fix that to get
-   * proper rendering. Note we use translate() rather than recenter(), so that
-   * the rendered LOS "snaps" to structure coordinates.
-   */
-  auto xspan = los->xrspan().translate(ct->voriginr().x());
-  auto yspan = los->yrspan().translate(ct->voriginr().y());
+  auto [v_begin, v_end] = los->vertices();
+  std::vector<rmath::vector2d> points;
+  for (auto vd = v_begin; vd != v_end; ++vd) {
+    auto ll = ct->roriginr().to_2D() + rmath::zvec2dvec(los->access(*vd)->coord,
+                                                        ct->block_unit_dim().v()).to_2D();
+    auto ul = ll + rmath::vector2d::Y * ct->block_unit_dim().v();
+    auto ur = ul + rmath::vector2d::X * ct->block_unit_dim().v();
+    auto lr = ur - rmath::vector2d::Y * ct->block_unit_dim().v();
+    points.push_back(ll);
+    points.push_back(ul);
+    points.push_back(ur);
+    points.push_back(lr);
+  } /* for(vd..) */
+  auto hull = ralgorithm::convex_hull2D<rmath::vector2d>()(std::move(points));
 
-  std::vector<rmath::vector2d> points = {
-    {xspan.lb(), yspan.lb()},
-    {xspan.lb(), yspan.ub()},
-    {xspan.ub(), yspan.ub()},
-    {xspan.ub(), yspan.lb()}
-  };
+  std::vector<rmath::vector2d> vec(hull->begin(), hull->end());
   cvis::polygon2D_visualizer(this).abs_draw(
-      controller->rpos3D(), orientation, points, rutils::color::kYELLOW);
+      controller->rpos3D(), orientation, vec, rutils::color::kYELLOW);
 } /* los_render() */
 
 void construction_qt_user_functions::nearest_ct_render(
     const controller::constructing_controller* controller,
     const argos::CQuaternion& orientation) {
   const auto* ct = controller->perception()->nearest_ct();
-  auto bbr = ct->bbd(true);
+  auto bbr = ct->bbd(false);
   auto bbv = ct->bbd(true);
 
   /*
@@ -135,15 +136,15 @@ void construction_qt_user_functions::nearest_ct_render(
 
   std::vector<rmath::vector2d> ct_rpoints = {
     ct->anchor_loc_abs(llr).to_2D(),
-    ct->anchor_loc_abs(ulr).to_2D() + corr_y,
-    ct->anchor_loc_abs(urr).to_2D() + corr_x + corr_y,
-    ct->anchor_loc_abs(lrr).to_2D() + corr_x
+    ct->anchor_loc_abs(ulr).to_2D(),
+    ct->anchor_loc_abs(urr).to_2D(),
+    ct->anchor_loc_abs(lrr).to_2D()
   };
   std::vector<rmath::vector2d> ct_vpoints = {
-    ct->anchor_loc_abs(llr).to_2D(),
-    ct->anchor_loc_abs(ulr).to_2D() + corr_y,
-    ct->anchor_loc_abs(urr).to_2D() + corr_x + corr_y,
-    ct->anchor_loc_abs(lrr).to_2D() + corr_x
+    ct->anchor_loc_abs(llv).to_2D(),
+    ct->anchor_loc_abs(ulv).to_2D(),
+    ct->anchor_loc_abs(urv).to_2D(),
+    ct->anchor_loc_abs(lrv).to_2D()
   };
   /* Draw BOTH virtual and real bounding boxes in 2D */
   cvis::polygon2D_visualizer v(this);
@@ -162,4 +163,4 @@ REGISTER_QTOPENGL_USER_FUNCTIONS(construction_qt_user_functions,
                                  "construction_qt_user_functions"); // NOLINT
 RCPPSW_WARNING_DISABLE_POP()
 
-NS_END(support, silicon);
+NS_END(support, prism);

@@ -3,46 +3,46 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/calculators/placement_path.hpp"
+#include "prism/fsm/calculators/placement_path.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/repr/construction_lane.hpp"
-#include "silicon/structure/utils.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/repr/construction_lane.hpp"
+#include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, fsm, calculators);
+NS_START(prism, fsm, calculators);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
 placement_path::placement_path(
     const csubsystem::sensing_subsystemQ3D* sensing,
-    const scperception::builder_perception_subsystem* perception)
-    : ER_CLIENT_INIT("silicon.fsm.calculator.placement_path"),
+    const pcperception::builder_perception_subsystem* perception)
+    : ER_CLIENT_INIT("prism.fsm.calculator.placement_path"),
       mc_sensing(sensing),
       mc_perception(perception) {}
 
@@ -50,14 +50,14 @@ placement_path::placement_path(
  * Member Functions
  ******************************************************************************/
 std::vector<rmath::vector2d>
-placement_path::operator()(const srepr::construction_lane* lane,
-                           const srepr::fs_configuration& acq) const {
+placement_path::operator()(const prepr::construction_lane* lane,
+                           const prepr::fs_configuration& acq) const {
   auto rpos = mc_sensing->rpos2D();
   const auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = { rpos };
   double cell_size = ct->block_unit_dim().v();
 
-  ER_ASSERT(sstructure::orientation_valid(lane->orientation()),
+  ER_ASSERT(pgmt::orientation_valid(lane->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
 
@@ -104,13 +104,13 @@ placement_path::operator()(const srepr::construction_lane* lane,
    * configuration using the EDGE of our LOS, rather than what cells it
    * contains.
    */
-  if (srepr::fs_configuration::ekLANE_EMPTY == acq) {
+  if (prepr::fs_configuration::ekLANE_EMPTY == acq) {
     path.push_back(forward1p5);
-  } else if (srepr::fs_configuration::ekLANE_FILLED == acq) {
+  } else if (prepr::fs_configuration::ekLANE_FILLED == acq) {
     path.push_back(forward1);
-  } else if (srepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
+  } else if (prepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
     path.push_back(forward1);
-  } else if (srepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
+  } else if (prepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
     path.push_back(forward1p25);
     path.push_back(right1);
   }
@@ -122,4 +122,4 @@ placement_path::operator()(const srepr::construction_lane* lane,
   return path;
 } /* operator()() */
 
-NS_END(calculators, fsm, silicon);
+NS_END(calculators, fsm, prism);

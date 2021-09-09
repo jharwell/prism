@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# SILICON documentation build configuration file, created by
+# PRISM documentation build configuration file, created by
 # sphinx-quickstart on Mon Oct 14 19:20:56 2019.
 #
 # This file is execfile()d with the current directory set to its
@@ -52,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'SILICON'
+project = 'PRISM'
 copyright = '201h20, John Harwell'
 author = 'John Harwell'
 
@@ -83,14 +83,14 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-SILICON_root = os.path.join(os.path.expanduser("~"), "git/silicon")
-breathe_projects = {"SILICON": os.path.join(SILICON_root, "build/xml")}
-breathe_default_project = "SILICON"
+PRISM_root = os.path.join(os.path.expanduser("~"), "git/prism")
+breathe_projects = {"PRISM": os.path.join(PRISM_root, "build/xml")}
+breathe_default_project = "PRISM"
 paths = []
-for root, subs, files in os.walk(os.path.join(SILICON_root, "silicon/include/")):
+for root, subs, files in os.walk(os.path.join(PRISM_root, "prism/include/")):
     for f in files:
         paths.append(os.path.abspath(os.path.join(root, f)))
-breathe_projects_source = {"SILICON": (os.path.join(SILICON_root, "silicon/include/"), paths)}
+breathe_projects_source = {"PRISM": (os.path.join(PRISM_root, "prism/include/"), paths)}
 
 exhale_args = {
     # These arguments are required
@@ -148,7 +148,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'SILICONdoc'
+htmlhelp_basename = 'PRISMdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -175,7 +175,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'SILICON.tex', 'SILICON Documentation',
+    (master_doc, 'PRISM.tex', 'PRISM Documentation',
      'John Harwell', 'manual'),
 ]
 
@@ -185,7 +185,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'silicon', 'SILICON Documentation',
+    (master_doc, 'prism', 'PRISM Documentation',
      [author], 1)
 ]
 
@@ -196,8 +196,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'SILICON', 'SILICON Documentation',
-     author, 'SILICON', 'One line description of project.',
+    (master_doc, 'PRISM', 'PRISM Documentation',
+     author, 'PRISM', 'One line description of project.',
      'Miscellaneous'),
 ]
 

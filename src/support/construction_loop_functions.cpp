@@ -3,25 +3,25 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/support/construction_loop_functions.hpp"
+#include "prism/support/construction_loop_functions.hpp"
 
 #include <boost/mpl/for_each.hpp>
 #include <cmath>
@@ -35,21 +35,22 @@
 #include "cosm/pal/argos_swarm_iterator.hpp"
 #include "cosm/pal/config/output_config.hpp"
 
-#include "silicon/controller/fcrw_bst_controller.hpp"
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/metrics/silicon_metrics_manager.hpp"
-#include "silicon/structure/ct_manager.hpp"
-#include "silicon/structure/structure3D.hpp"
-#include "silicon/support/interactor_status.hpp"
-#include "silicon/support/robot_arena_interactor.hpp"
-#include "silicon/support/robot_configurer.hpp"
-#include "silicon/support/tv/tv_manager.hpp"
-#include "silicon/structure/ds/block_anchor_index.hpp"
+#include "prism/controller/fcrw_bst_controller.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/metrics/prism_metrics_manager.hpp"
+#include "prism/gmt/ct_manager.hpp"
+#include "prism/gmt/spc_gmt.hpp"
+#include "prism/support/interactor_status.hpp"
+#include "prism/support/robot_arena_interactor.hpp"
+#include "prism/support/robot_configurer.hpp"
+#include "prism/support/tv/tv_manager.hpp"
+#include "prism/gmt/ds/block_anchor_index.hpp"
+#include "prism/gmt/repr/vshell.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, support);
+NS_START(prism, support);
 
 /*******************************************************************************
  * Struct Definitions
@@ -84,7 +85,7 @@ struct functor_maps_initializer {
             lf->m_metrics_manager.get()));
     lf->m_metrics_map->emplace(
         typeid(controller),
-        ccops::metrics_extract<T, smetrics::silicon_metrics_manager>(
+        ccops::metrics_extract<T, pmetrics::prism_metrics_manager>(
             lf->m_metrics_manager.get()));
     config_map->emplace(
         typeid(controller),
@@ -99,7 +100,7 @@ struct functor_maps_initializer {
       auto& updater = lf->m_los_updaters[i];
       updater.emplace(typeid(controller),
                       ccops::graph_los_update<T,
-                      ssds::connectivity_graph,
+                      pgds::connectivity_graph,
                       repr::builder_los>(
                           lf->ct_manager()->targetsno()[i]->spec(),
                           lf->ct_manager()->targetsno()[i]->block_unit_dim()));
@@ -119,7 +120,7 @@ NS_END(detail);
  ******************************************************************************/
 construction_loop_functions::construction_loop_functions(void)
     : base_loop_functions(),
-      ER_CLIENT_INIT("silicon.loop.construction"),
+      ER_CLIENT_INIT("prism.loop.construction"),
       m_metrics_manager(nullptr),
       m_interactor_map(nullptr),
       m_metrics_map(nullptr) {}
@@ -142,6 +143,17 @@ void construction_loop_functions::init(ticpp::Element& node) {
 
 void construction_loop_functions::shared_init(ticpp::Element& node) {
   base_loop_functions::init(node);
+
+  /* initialize construction */
+  const auto* tv = config()->config_get<tv::config::tv_manager_config>();
+  auto nests = construction_init(
+      config()->config_get<pgconfig::spct_builder_config>(),
+      config()->config_get<pgconfig::gmt_config>(),
+      &tv->env_dynamics.block_manip_penalty);
+
+  /* initialize arena map, creating nests from construction targets */
+  const auto* vconfig = config()->config_get<cvconfig::visualization_config>();
+  arena_map_init(vconfig, &nests);
 } /* shared_init() */
 
 void construction_loop_functions::private_init(void) {
@@ -156,7 +168,7 @@ void construction_loop_functions::private_init(void) {
   auto arena = *config()->config_get<caconfig::arena_map_config>();
   const auto* output = config()->config_get<cpconfig::output_config>();
   arena.grid.dims = padded_size;
-  m_metrics_manager = std::make_unique<smetrics::silicon_metrics_manager>(
+  m_metrics_manager = std::make_unique<pmetrics::prism_metrics_manager>(
       &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
 
   /* this starts at 0, and ARGoS starts at 1, so sync up */
@@ -205,6 +217,20 @@ void construction_loop_functions::private_init(void) {
       this, cb, cpal::kARGoSRobotType);
 } /* private_init() */
 
+crepr::config::nests_config construction_loop_functions::construction_init(
+    const pgconfig::spct_builder_config* const builder_config,
+    const pgconfig::gmt_config* const targets_config,
+    const ctv::config::temporal_penalty_config* placement_penalty_config) {
+  ER_INFO("Initializing construction targets manager");
+  m_ct_manager = std::make_unique<gmt::ct_manager>(
+      arena_map(),
+      this,
+      tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
+  return m_ct_manager->initialize(builder_config,
+                                  targets_config,
+                                  placement_penalty_config);
+} /* construction_init() */
+
 /*******************************************************************************
  * ARGoS Hooks
  ******************************************************************************/
@@ -212,6 +238,9 @@ void construction_loop_functions::pre_step(void) {
   ndc_push();
   base_loop_functions::pre_step();
   ndc_pop();
+
+  /* update structure builders if static builds are enabled */
+  m_ct_manager->update(timestep());
 
   /* Process all robots */
   auto cb = [&](argos::CControllableEntity* robot) {
@@ -241,10 +270,9 @@ void construction_loop_functions::post_step(void) {
       m_metrics_manager->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
                                                                          ":transp"
                                                                          "ortee");
-  arena_map()->redist_governor()->update(
-      rtypes::timestep(GetSpace().GetSimulationClock()),
-      collector->cum_transported(),
-      false); /* @todo never converged until that stuff is incorporated... */
+  arena_map()->redist_governor()->update(timestep(),
+                                         collector->cum_transported(),
+                                         false); /* @todo never converged until that stuff is incorporated... */
 
   /* Collect metrics from loop functions */
   m_metrics_manager->collect_from_ct(ct_manager());
@@ -277,6 +305,7 @@ void construction_loop_functions::reset(void) {
   ndc_push();
   base_loop_functions::reset();
   m_metrics_manager->initialize();
+  m_ct_manager->reset();
   ndc_pop();
 } /* reset() */
 
@@ -292,8 +321,7 @@ void construction_loop_functions::robot_pre_step(chal::robot& robot) {
    * control step because we need access to information only available in the
    * loop functions.
    */
-  controller->sensing_update(rtypes::timestep(GetSpace().GetSimulationClock()),
-                             arena_map()->grid_resolution());
+  controller->sensing_update(timestep(), arena_map()->grid_resolution());
 
   /* update robot LOS */
   robot_los_update(controller);
@@ -314,8 +342,8 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
             controller->type_index().name());
 
   auto iapplicator = cinteractors::applicator<controller::constructing_controller,
-                                              robot_arena_interactor>(
-      controller, rtypes::timestep(GetSpace().GetSimulationClock()));
+                                              robot_arena_interactor>(controller,
+                                                                      timestep());
   boost::apply_visitor(iapplicator,
                        m_interactor_map->at(controller->type_index()));
 
@@ -331,7 +359,7 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
   auto mapplicator =
       ccops::applicator<controller::constructing_controller,
                         ccops::metrics_extract,
-                        smetrics::silicon_metrics_manager>(controller);
+                        pmetrics::prism_metrics_manager>(controller);
   if (nullptr != controller->perception()->nearest_ct()) {
     auto visitor = [&](const auto& v) {
       mapplicator(v, controller->perception()->nearest_ct()->id());
@@ -350,6 +378,8 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
 bool construction_loop_functions::robot_los_update(
     controller::constructing_controller* const c) const {
   auto* target = robot_target(c);
+
+  /* robot not inside a nest */
   if (nullptr == target) {
     c->perception()->los(nullptr);
     return false;
@@ -366,22 +396,55 @@ bool construction_loop_functions::robot_los_update(
             c->type_index().name());
   auto applicator = ccops::applicator<controller::constructing_controller,
                                       ccops::graph_los_update,
-                                      ssds::connectivity_graph,
-                                      srepr::builder_los>(c);
-  auto nearest_vd = target->anchor_index()->nearest(rds::make_rtree_point(c->dpos3D()), 1)[0];
+                                      pgds::connectivity_graph,
+                                      prepr::builder_los>(c);
+  rmath::vector3z cell;
+  if (target->contains(c->rpos2D(), false)) {
+    cell = c->dpos3D() - target->vshell()->real()->danchor3D();
+  } else {
+    /*
+     * Robot currently in virtual shell. Need to find the closest cell inside
+     * the actual structure (relative to structure real origin), which will be
+     * straight ahead in either X or Y.
+     */
+    bool outside_in_x = target->contains(c->rpos2D() +
+                                         rmath::vector2d::X *
+                                         target->vshell()->sh_sizer().v(),
+                                         false);
+    bool outside_in_y = target->contains(c->rpos2D() +
+                                         rmath::vector2d::Y *
+                                         target->vshell()->sh_sizer().v(),
+                                         false);
+    if (outside_in_x) {
+      cell = c->dpos3D() +
+             rmath::vector3z::X *target->vshell()->sh_sized() -
+             target->vshell()->real()->danchor3D();
+    } else if (outside_in_y) {
+      cell = c->dpos3D() +
+             rmath::vector3z::Y * target->vshell()->sh_sized() -
+             target->vshell()->real()->danchor3D();
+    }
+  }
+  ER_ASSERT(target->spec()->contains(cell),
+            "Target%d does not contain nearest cell@%s for robot%d",
+            target->id().v(),
+            rcppsw::to_string(cell).c_str(),
+            c->entity_id().v());
+  auto nearest_vd = target->anchor_index()->nearest(rds::make_rtree_point(cell),
+                                                    1)[0];
   auto visitor = std::bind(applicator, std::placeholders::_1, nearest_vd);
   boost::apply_visitor(visitor,
                        m_los_updaters[index].find(c->type_index())->second);
   return true;
 } /* robot_los_update() */
 
-structure::structure3D* construction_loop_functions::robot_target(
+gmt::spc_gmt* construction_loop_functions::robot_target(
     const controller::constructing_controller* c) const {
   /*
-   * Figure out if the robot is current within the 2D bounds of any
-   * structure, OR if it is JUST outside the 2D bounds of any structure.
+   * Figure out if the robot is current within the 2D bounds of any target, OR
+   * if it is JUST outside the 2D bounds of any structure.
    *
-   * If it is, then compute and send it a LOS from the structure, if it is not,
+   * If it is, then compute and send it a LOS from the gmt, if it is not,
    * then clear out the robot's old LOS so it does not refer to out of date info
    * anymore, and we will get a segfault if it tries to.
    *
@@ -415,4 +478,4 @@ REGISTER_LOOP_FUNCTIONS(construction_loop_functions,
 
 RCPPSW_WARNING_DISABLE_POP()
 
-NS_END(support, silicon);
+NS_END(support, prism);

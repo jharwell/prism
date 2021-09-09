@@ -3,25 +3,25 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/support/base_loop_functions.hpp"
+#include "prism/support/base_loop_functions.hpp"
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/arena/config/arena_map_config.hpp"
@@ -29,19 +29,19 @@
 #include "cosm/vis/config/visualization_config.hpp"
 #include "cosm/pal/config/output_config.hpp"
 
-#include "silicon/structure/ct_manager.hpp"
-#include "silicon/support/tv/config/tv_manager_config.hpp"
-#include "silicon/support/tv/silicon_pd_adaptor.hpp"
+#include "prism/gmt/ct_manager.hpp"
+#include "prism/support/tv/config/tv_manager_config.hpp"
+#include "prism/support/tv/prism_pd_adaptor.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, support);
+NS_START(prism, support);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-base_loop_functions::base_loop_functions(void) : ER_CLIENT_INIT("silicon.loop") {}
+base_loop_functions::base_loop_functions(void) : ER_CLIENT_INIT("prism.loop") {}
 
 base_loop_functions::~base_loop_functions(void) = default;
 
@@ -49,6 +49,8 @@ base_loop_functions::~base_loop_functions(void) = default;
  * Initialization Functions
  ******************************************************************************/
 void base_loop_functions::init(ticpp::Element& node) {
+  argos_sm_adaptor::init(node);
+
   /* parse simulation input file */
   m_config.parse_all(node);
 
@@ -63,20 +65,12 @@ void base_loop_functions::init(ticpp::Element& node) {
   /* initialize output and metrics collection */
   output_init(m_config.config_get<cpconfig::output_config>());
 
-  /* initialize arena map and distribute blocks */
+  /* create arena map, but don't initialize yet */
   const auto* aconfig = config()->config_get<caconfig::arena_map_config>();
-  const auto* vconfig = config()->config_get<cvconfig::visualization_config>();
   arena_map_create<carena::base_arena_map>(aconfig);
-  arena_map_init(vconfig);
 
   /* initialize temporal variance injection */
   tv_init(config()->config_get<tv::config::tv_manager_config>());
-
-  /* initialize construction */
-  const auto* tv = config()->config_get<tv::config::tv_manager_config>();
-  construction_init(config()->config_get<ssconfig::structure3D_builder_config>(),
-                    config()->config_get<ssconfig::construct_targets_config>(),
-                    &tv->env_dynamics.block_manip_penalty);
 } /* init() */
 
 void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
@@ -91,7 +85,7 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
   auto envd =
       std::make_unique<tv::env_dynamics>(&tvp->env_dynamics, this, arena_map());
 
-  auto popd = std::make_unique<tv::silicon_pd_adaptor>(
+  auto popd = std::make_unique<tv::prism_pd_adaptor>(
       &tvp->population_dynamics, this, envd.get(), arena_map(), rng());
 
   m_tv_manager =
@@ -117,55 +111,42 @@ void base_loop_functions::output_init(const cpconfig::output_config* output) {
   argos_sm_adaptor::output_init(output);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.events"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.events"),
                  output_root() / "events.log");
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.support"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.support"),
                  output_root() / "support.log");
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.loop"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.loop"),
                  output_root() / "sim.log");
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.arena.base_arena_map"),
                  output_root() / "sim.log");
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.metrics"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.metrics"),
                  output_root() / "metrics.log");
 #endif
 } /* output_init() */
-
-void base_loop_functions::construction_init(
-    const ssconfig::structure3D_builder_config* const builder_config,
-    const ssconfig::construct_targets_config* const targets_config,
-    const ctv::config::temporal_penalty_config* placement_penalty_config) {
-  ER_INFO("Initializing construction targets manager");
-  m_ct_manager = std::make_unique<structure::ct_manager>(
-      arena_map(),
-      this,
-      tv_manager()->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
-  m_ct_manager->init(builder_config, targets_config, placement_penalty_config);
-} /* construction_init() */
 
 /*******************************************************************************
  * ARGoS Hooks
  ******************************************************************************/
 void base_loop_functions::pre_step(void) {
+  argos_sm_adaptor::pre_step();
   /*
    * Needs to be before robot controllers are run, so they run with the correct
    * throttling/are subjected to the correct penalties, etc.
    */
-  rtypes::timestep t(GetSpace().GetSimulationClock());
   if (nullptr != m_tv_manager) {
-    m_tv_manager->update(t);
+    m_tv_manager->update(timestep());
   }
-
-  /* update structure builders if static builds are enabled */
-  m_ct_manager->update(t);
 } /* pre_step() */
 
 void base_loop_functions::post_step(void) {
+  argos_sm_adaptor::post_step();
   /* open to extension */
 } /* post_step() */
 
 void base_loop_functions::reset(void) {
-  arena_map()->initialize(this);
-  m_ct_manager->reset();
+  argos_sm_adaptor::reset();
+  /* nests already initialized, and don't change, so no need to re-initialize */
+  arena_map()->initialize(this, nullptr);
 } /* reset() */
 
-NS_END(support, silicon);
+NS_END(support, prism);

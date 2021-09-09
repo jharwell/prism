@@ -1,4 +1,4 @@
-Welcome to SILICON's documentation!
+Welcome to PRISM's documentation!
 ===================================
 
 .. toctree::

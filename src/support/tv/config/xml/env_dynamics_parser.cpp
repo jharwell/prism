@@ -3,30 +3,30 @@
  *
  * \copyright 2019 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/support/tv/config/xml/env_dynamics_parser.hpp"
+#include "prism/support/tv/config/xml/env_dynamics_parser.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, support, tv, config, xml);
+NS_START(prism, support, tv, config, xml);
 using temporal_config_type =
     ctv::config::xml::temporal_penalty_parser::config_type;
 
@@ -72,4 +72,4 @@ bool env_dynamics_parser::validate(void) const {
   return m_block_manip.validate() && m_block_carry.validate();
 } /* validate() */
 
-NS_END(xml, config, tv, support, silicon);
+NS_END(xml, config, tv, support, prism);

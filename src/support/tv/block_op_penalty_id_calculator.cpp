@@ -3,41 +3,41 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/support/tv/block_op_penalty_id_calculator.hpp"
+#include "prism/support/tv/block_op_penalty_id_calculator.hpp"
 
 #include "cosm/repr/base_block3D.hpp"
 
-#include "silicon/controller/constructing_controller.hpp"
+#include "prism/controller/constructing_controller.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, support, tv);
+NS_START(prism, support, tv);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
 block_op_penalty_id_calculator::block_op_penalty_id_calculator(
     const carena::base_arena_map* map)
-    : ER_CLIENT_INIT("silicon.support.tv.block_op_penalty_id_calculator"),
+    : ER_CLIENT_INIT("prism.support.tv.block_op_penalty_id_calculator"),
       mc_map(map) {}
 
 /*******************************************************************************
@@ -64,4 +64,4 @@ rtypes::type_uuid block_op_penalty_id_calculator::operator()(
   return id;
 } /* penalty_id_calc() */
 
-NS_END(tv, support, silicon);
+NS_END(tv, support, prism);

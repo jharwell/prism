@@ -17,7 +17,7 @@
   <controllers>
 
     <fcrw_bst_controller id="fbc"
-                    library="libsilicon">
+                    library="libprism">
       <!-- <actuators> -->
       <!--   <pipuck_differential_drive implementation="default" /> -->
       <!-- </actuators> -->
@@ -63,9 +63,6 @@
             output_parent="output"
             output_leaf="__current_date__"
             />
-        <block_sel_matrix
-            nest="6, 3">
-        </block_sel_matrix>
         <perception
             type="rlos">
           <rlos dim="0.8">
@@ -119,7 +116,7 @@
   <!-- ****************** -->
   <!-- * Loop functions * -->
   <!-- ****************** -->
-  <loop_functions library="libsilicon"
+  <loop_functions library="libprism"
                   label="construction_loop_functions">
     <output
         output_parent="output"
@@ -173,104 +170,19 @@
       </env_dynamics>
     </temporal_variance>
 
-    <structure3D_builder
+    <spct_builder
         build_src="swarm"
         static_build_interval="1"
         static_build_interval_count="1"/>
-    <construct_targets>
-      <ramp anchor="4.4, 4.4,0.0" id="ramp0" orientation="4.7123">
-        <grid3D resolution="0.4"
-                dims="1.6, 3.2, 0.4"/>
-        <!-- <ramp_blocks> -->
-        <!--   <ramp_block cell="0,0,3" /> -->
-        <!--   <ramp_block cell="1,0,3" /> -->
-        <!--   <ramp_block cell="2,0,3" /> -->
-        <!--   <ramp_block cell="3,0,3" /> -->
-        <!--   <ramp_block cell="0,2,2" /> -->
-        <!--   <ramp_block cell="1,2,2" /> -->
-        <!--   <ramp_block cell="2,2,2" /> -->
-        <!--   <ramp_block cell="3,2,2" /> -->
-        <!-- </ramp_blocks> -->
 
-        <cube_blocks>
-
-          <!-- <!-\- test for orientation=0,pi -\-> -->
-          <!-- <cube_block cell="0,0,0" /> -->
-          <!-- <cube_block cell="1,0,0" /> -->
-          <!-- <cube_block cell="2,0,0" /> -->
-          <!-- <cube_block cell="3,0,0" /> -->
-          <!-- <cube_block cell="4,0,0" /> -->
-          <!-- <cube_block cell="5,0,0" /> -->
-          <!-- <cube_block cell="6,0,0" /> -->
-          <!-- <cube_block cell="7,0,0" /> -->
-
-          <!-- <cube_block cell="0,1,0" /> -->
-          <!-- <cube_block cell="1,1,0" /> -->
-          <!-- <cube_block cell="2,1,0" /> -->
-          <!-- <cube_block cell="3,1,0" /> -->
-          <!-- <cube_block cell="4,1,0" /> -->
-          <!-- <cube_block cell="5,1,0" /> -->
-          <!-- <cube_block cell="6,1,0" /> -->
-          <!-- <cube_block cell="7,1,0" /> -->
-
-          <!-- <cube_block cell="0,2,0" /> -->
-          <!-- <cube_block cell="1,2,0" /> -->
-          <!-- <cube_block cell="2,2,0" /> -->
-          <!-- <cube_block cell="3,2,0" /> -->
-          <!-- <cube_block cell="4,2,0" /> -->
-          <!-- <cube_block cell="5,2,0" /> -->
-          <!-- <cube_block cell="6,2,0" /> -->
-          <!-- <cube_block cell="7,2,0" /> -->
-
-          <!-- <cube_block cell="0,3,0" /> -->
-          <!-- <cube_block cell="1,3,0" /> -->
-          <!-- <cube_block cell="2,3,0" /> -->
-          <!-- <cube_block cell="3,3,0" /> -->
-          <!-- <cube_block cell="4,3,0" /> -->
-          <!-- <cube_block cell="5,3,0" /> -->
-          <!-- <cube_block cell="6,3,0" /> -->
-          <!-- <cube_block cell="7,3,0" /> -->
-
-          <!-- test for orientation=pi/2,3pi/2 -->
-          <cube_block cell="0,0,0" />
-          <cube_block cell="0,1,0" />
-          <cube_block cell="0,2,0" />
-          <cube_block cell="0,3,0" />
-          <cube_block cell="0,4,0" />
-          <cube_block cell="0,5,0" />
-          <cube_block cell="0,6,0" />
-          <cube_block cell="0,7,0" />
-
-          <cube_block cell="1,0,0" />
-          <cube_block cell="1,1,0" />
-          <cube_block cell="1,2,0" />
-          <cube_block cell="1,3,0" />
-          <cube_block cell="1,4,0" />
-          <cube_block cell="1,5,0" />
-          <cube_block cell="1,6,0" />
-          <cube_block cell="1,7,0" />
-
-          <cube_block cell="2,0,0" />
-          <cube_block cell="2,1,0" />
-          <cube_block cell="2,2,0" />
-          <cube_block cell="2,3,0" />
-          <cube_block cell="2,4,0" />
-          <cube_block cell="2,5,0" />
-          <cube_block cell="2,6,0" />
-          <cube_block cell="2,7,0" />
-
-          <cube_block cell="3,0,0" />
-          <cube_block cell="3,1,0" />
-          <cube_block cell="3,2,0" />
-          <cube_block cell="3,3,0" />
-          <cube_block cell="3,4,0" />
-          <cube_block cell="3,5,0" />
-          <cube_block cell="3,6,0" />
-          <cube_block cell="3,7,0" />
-
-        </cube_blocks>
-      </ramp>
-    </construct_targets>
+    <gmt>
+      <spct id="rectprism0"
+           bounding_box="4,8,1"
+           anchor="4.0,4.0,0.0"
+           orientation="PI/2"
+           graphml="exp/rectprism0.graphml"
+           />
+    </gmt>
 
     <arena_map>
       <grid2D resolution="0.4"
@@ -286,12 +198,6 @@
               />
         </distribution>
       </blocks>
-      <nests>
-        <nest dims="3.2, 6.9"
-              center="5.2, 5.2"
-              light_height="5.0"
-              light_intensity="5.0"/>
-      </nests>
     </arena_map>
     <visualization robot_id="true"
                    robot_steer2D="true"
@@ -330,7 +236,7 @@
 
       <!-- <position method="constant" values="7,8,0" max="7,8,0" /> -->
       <!-- <orientation method="uniform" min="0,0,0" max="0,0,0" /> -->
-      <entity quantity="8" max_trials="1000">
+      <entity quantity="1" max_trials="1000">
         <!-- <e-puck id="ep" omnidirectional_camera_aperture="89"> -->
         <!--   <controller config="epc" /> -->
         <!-- </e-puck> -->
@@ -369,6 +275,8 @@
   <!-- ****************** -->
   <visualization>
     <qt-opengl autoplay="true">
+      <placement index="0" position="6,6,6" look_at="6,6,0" />
+
       <!--  <frame_grabbing directory="frames" -->
       <!--                  base_name="frame_" -->
       <!--                  format="png" -->

@@ -3,25 +3,25 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/controller/constructing_controller.hpp"
+#include "prism/controller/constructing_controller.hpp"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <fstream>
@@ -36,20 +36,20 @@
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/tv/robot_dynamics_applicator.hpp"
 
-#include "silicon/controller/config/constructing_controller_repository.hpp"
-#include "silicon/controller/perception/perception_subsystem_factory.hpp"
-#include "silicon/fsm/construction_transport_goal.hpp"
+#include "prism/controller/config/constructing_controller_repository.hpp"
+#include "prism/controller/perception/perception_subsystem_factory.hpp"
+#include "prism/fsm/construction_transport_goal.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, controller);
+NS_START(prism, controller);
 
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
 constructing_controller::constructing_controller(void)
-    : ER_CLIENT_INIT("silicon.controller"), m_perception(nullptr) {}
+    : ER_CLIENT_INIT("prism.controller"), m_perception(nullptr) {}
 
 constructing_controller::~constructing_controller(void) = default;
 
@@ -109,16 +109,16 @@ fs::path constructing_controller::output_init(
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   /*
-   * Each file appender is attached to a root category in the SILICON
+   * Each file appender is attached to a root category in the PRISM
    * namespace. If you give different file appenders the same file, then the
    * lines within it are not always ordered, which is not overly helpful for
    * debugging.
    */
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("cosm.ta"), path / "ta.log");
 
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.controller"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.controller"),
                  path / "controller.log");
-  ER_LOGFILE_SET(log4cxx::Logger::getLogger("silicon.structure"),
+  ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.structure"),
                  path / "structure.log");
 #endif
   return path;
@@ -137,13 +137,13 @@ void constructing_controller::saa_init(
           saa_names::prox_sensor),
       &sensing_p->proximity);
 
-#ifdef SILICON_WITH_ROBOT_CAMERA
+#ifdef PRISM_WITH_ROBOT_CAMERA
   auto blobs = chal::sensors::colored_blob_camera_sensor(
       GetSensor<chal::sensors::colored_blob_camera_sensor::impl_type>(
           saa_names::camera_sensor));
 #else
   auto blobs = chal::sensors::colored_blob_camera_sensor(nullptr);
-#endif /* SILICON_WITH_ROBOT_CAMERA */
+#endif /* PRISM_WITH_ROBOT_CAMERA */
 
   auto light = chal::sensors::light_sensor(
       GetSensor<chal::sensors::light_sensor::impl_type>(saa_names::light_sensor));
@@ -172,12 +172,12 @@ void constructing_controller::saa_init(
               saa_names::diff_steering_saa)),
       ckin2D::governed_diff_drive::drive_type::ekFSM_DRIVE);
 
-#ifdef SILICON_WITH_ROBOT_LEDS
+#ifdef PRISM_WITH_ROBOT_LEDS
   auto leds = chal::actuators::led_actuator(
       GetActuator<chal::actuators::led_actuator::impl_type>(saa_names::leds_saa));
 #else
   auto leds = chal::actuators::led_actuator(nullptr);
-#endif /* SILICON_WITH_ROBOT_LEDS */
+#endif /* PRISM_WITH_ROBOT_LEDS */
 
   auto actuators = csubsystem::actuation_subsystem2D::actuator_map{
     /*
@@ -251,4 +251,4 @@ rmath::vector3d constructing_controller::ts_velocity(
   return {};
 } /* ts_velocity() */
 
-NS_END(controller, silicon);
+NS_END(controller, prism);

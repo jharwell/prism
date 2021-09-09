@@ -3,45 +3,45 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/lane_alloc/lane_allocator.hpp"
+#include "prism/lane_alloc/lane_allocator.hpp"
 
 #include <algorithm>
 
-#include "silicon/controller/perception/ct_skel_info.hpp"
-#include "silicon/lane_alloc/random_allocator.hpp"
-#include "silicon/lane_alloc/lru_allocator.hpp"
-#include "silicon/lane_alloc/interference_allocator.hpp"
-#include "silicon/lane_alloc/closest_allocator.hpp"
-#include "silicon/structure/utils.hpp"
+#include "prism/controller/perception/ct_skel_info.hpp"
+#include "prism/lane_alloc/random_allocator.hpp"
+#include "prism/lane_alloc/lru_allocator.hpp"
+#include "prism/lane_alloc/interference_allocator.hpp"
+#include "prism/lane_alloc/closest_allocator.hpp"
+#include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(silicon, lane_alloc);
+NS_START(prism, lane_alloc);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
 lane_allocator::lane_allocator(const config::lane_alloc_config* config, rmath::rng* rng)
-    : ER_CLIENT_INIT("silicon.lane_alloc.lane_allocator"),
+    : ER_CLIENT_INIT("prism.lane_alloc.lane_allocator"),
       mc_config(*config),
       m_rng(rng) {}
 
@@ -49,10 +49,10 @@ lane_allocator::lane_allocator(const config::lane_alloc_config* config, rmath::r
  * Member Functions
  ******************************************************************************/
 std::vector<lane_geometry>
-lane_allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
+lane_allocator::lane_locs_calc(const pcperception::ct_skel_info* target) const {
   std::vector<lane_geometry> ret;
 
-    ER_ASSERT(sstructure::orientation_valid(target->orientation()),
+    ER_ASSERT(pgmt::orientation_valid(target->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(target->orientation()).c_str());
 
@@ -99,12 +99,12 @@ lane_allocator::lane_locs_calc(const scperception::ct_skel_info* target) const {
 
 std::unique_ptr<repr::construction_lane>
 lane_allocator::operator()(const rmath::vector3d& robot_pos,
-                      const scperception::ct_skel_info* target) {
+                      const pcperception::ct_skel_info* target) {
   auto locs = lane_locs_calc(target);
 
   /*
    * If we have never allocated a lane from this structure before, then
-   * initialize a new allocation history for the structure, and set the last
+   * initialize a new allocation history for the gmt, and set the last
    * allocated lane randomly.
    */
   auto hist_it = m_history.find(target->id());
@@ -155,4 +155,4 @@ void lane_allocator::reset_metrics(void) {
   } /* for(&pair..) */
 } /* reset_metrics() */
 
-NS_END(lane_alloc, silicon);
+NS_END(lane_alloc, prism);

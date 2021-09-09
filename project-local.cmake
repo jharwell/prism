@@ -3,21 +3,21 @@
 ################################################################################
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(SILICON_WITH_ROBOT_RAB "NO" CACHE STRING "Enable robots to read/write over the RAB medium via sensors/actuators.")
-set(SILICON_WITH_ROBOT_BATTERY "NO" CACHE STRING "Enable robots to use the battery.")
-set(SILICON_WITH_ROBOT_LEDS "YES" CACHE STRING "Enable robots to use their LEDs.")
-set(SILICON_WITH_ROBOT_CAMERA "YES" CACHE STRING "Enable robots to use their camera.")
+set(PRISM_WITH_ROBOT_RAB "NO" CACHE STRING "Enable robots to read/write over the RAB medium via sensors/actuators.")
+set(PRISM_WITH_ROBOT_BATTERY "NO" CACHE STRING "Enable robots to use the battery.")
+set(PRISM_WITH_ROBOT_LEDS "YES" CACHE STRING "Enable robots to use their LEDs.")
+set(PRISM_WITH_ROBOT_CAMERA "YES" CACHE STRING "Enable robots to use their camera.")
 
-define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_RAB"
+define_property(CACHED_VARIABLE PROPERTY "PRISM_WITH_ROBOT_RAB"
   BRIEF_DOCS "Enable robots to use the RAB medium."
   FULL_DOCS "Default=NO.")
-define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_BATTERY"
+define_property(CACHED_VARIABLE PROPERTY "PRISM_WITH_ROBOT_BATTERY"
   BRIEF_DOCS "Enable robots to use the battery."
   FULL_DOCS "Default=YES.")
-define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_LEDS"
+define_property(CACHED_VARIABLE PROPERTY "PRISM_WITH_ROBOT_LEDS"
   BRIEF_DOCS "Enable robots to use their LEDs."
   FULL_DOCS "Default=YES.")
-define_property(CACHED_VARIABLE PROPERTY "SILICON_WITH_ROBOT_CAMERA"
+define_property(CACHED_VARIABLE PROPERTY "PRISM_WITH_ROBOT_CAMERA"
   BRIEF_DOCS "Enable robots to use their camera."
   FULL_DOCS "Default=YES.")
 
@@ -108,7 +108,7 @@ endif()
 # Force failures at build time rather than runtime
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
-# Define SILICON library
+# Define PRISM library
 add_library(${target} SHARED ${${target}_ROOT_SRC})
 
 add_dependencies(${target} cosm-${COSM_HAL_TARGET})
@@ -122,17 +122,17 @@ target_link_directories(${target} PUBLIC ${${target}_LIBRARY_DIRS})
 # Compile Options/Definitions                                                  #
 ################################################################################
 if ("${COSM_BUILD_FOR}" MATCHES "ARGOS")
-  if (SILICON_WITH_ROBOT_RAB)
-    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_RAB)
+  if (PRISM_WITH_ROBOT_RAB)
+    target_compile_definitions(${target} PUBLIC PRISM_WITH_ROBOT_RAB)
   endif()
-  if (SILICON_WITH_ROBOT_BATTERY)
-    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_BATTERY)
+  if (PRISM_WITH_ROBOT_BATTERY)
+    target_compile_definitions(${target} PUBLIC PRISM_WITH_ROBOT_BATTERY)
   endif()
-  if (SILICON_WITH_ROBOT_CAMERA)
-    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_CAMERA)
+  if (PRISM_WITH_ROBOT_CAMERA)
+    target_compile_definitions(${target} PUBLIC PRISM_WITH_ROBOT_CAMERA)
   endif()
-  if (SILICON_WITH_ROBOT_LEDS)
-    target_compile_definitions(${target} PUBLIC SILICON_WITH_ROBOT_LEDS)
+  if (PRISM_WITH_ROBOT_LEDS)
+    target_compile_definitions(${target} PUBLIC PRISM_WITH_ROBOT_LEDS)
   endif()
 endif()
 

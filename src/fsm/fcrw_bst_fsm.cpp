@@ -3,60 +3,60 @@
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
- * This file is part of SILICON.
+ * This file is part of PRISM.
  *
- * SILICON is free software: you can redistribute it and/or modify it under the
+ * PRISM is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) any later
  * version.
  *
- * SILICON is distributed in the hope that it will be useful, but WITHOUT ANY
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * SILICON.  If not, see <http://www.gnu.org/licenses/
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "silicon/fsm/fcrw_bst_fsm.hpp"
+#include "prism/fsm/fcrw_bst_fsm.hpp"
 
 #include "cosm/spatial/strategy/base_strategy.hpp"
 #include "cosm/spatial/strategy/explore/crw.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 
-#include "silicon/controller/perception/builder_perception_subsystem.hpp"
-#include "silicon/fsm/calculators/lane_alignment.hpp"
-#include "silicon/fsm/construction_acq_goal.hpp"
-#include "silicon/fsm/construction_signal.hpp"
-#include "silicon/lane_alloc/lane_allocator.hpp"
-#include "silicon/repr/construction_lane.hpp"
-#include "silicon/structure/structure3D.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
+#include "prism/fsm/calculators/lane_alignment.hpp"
+#include "prism/fsm/construction_acq_goal.hpp"
+#include "prism/fsm/construction_signal.hpp"
+#include "prism/lane_alloc/lane_allocator.hpp"
+#include "prism/repr/construction_lane.hpp"
+#include "prism/gmt/spc_gmt.hpp"
 
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(silicon, fsm);
+NS_START(prism, fsm);
 
 /*******************************************************************************
  * Fcrw_Bsts/Destructors
  ******************************************************************************/
 fcrw_bst_fsm::fcrw_bst_fsm(
-    const slaconfig::lane_alloc_config* allocator_config,
-    const scperception::builder_perception_subsystem* perception,
+    const placonfig::lane_alloc_config* allocator_config,
+    const pcperception::builder_perception_subsystem* perception,
     csubsystem::saa_subsystemQ3D* const saa,
     rmath::rng* rng)
     : builder_util_fsm(perception, saa, rng, ekST_MAX_STATES),
-      ER_CLIENT_INIT("silicon.fsm.fcrw_bst"),
+      ER_CLIENT_INIT("prism.fsm.fcrw_bst"),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_block_pickup, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_block_place, hfsm::top_state()),
-      RCPPSW_HFSM_CONSTRUCT_STATE(structure_ingress, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(gmt_ingress, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(structure_build, hfsm::top_state()),
-      RCPPSW_HFSM_CONSTRUCT_STATE(structure_egress, hfsm::top_state()),
+      RCPPSW_HFSM_CONSTRUCT_STATE(gmt_egress, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(finished, hfsm::top_state()),
       RCPPSW_HFSM_DEFINE_STATE_MAP(
           mc_state_map,
@@ -66,13 +66,13 @@ fcrw_bst_fsm::fcrw_bst_fsm(
                                              nullptr,
                                              &entry_wait_for_signal,
                                              nullptr),
-          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&structure_ingress),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&gmt_ingress),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX_ALL(&wait_for_block_place,
                                              nullptr,
                                              &entry_wait_for_signal,
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&structure_build),
-          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&structure_egress),
+          RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&gmt_egress),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_allocator(allocator_config, rng),
       m_allocated_lane(nullptr),
@@ -81,8 +81,8 @@ fcrw_bst_fsm::fcrw_bst_fsm(
                    rng,
                    std::bind(&fcrw_bst_fsm::block_detected, this)),
       m_block_place_fsm(perception, saa, rng),
-      m_structure_ingress_fsm(perception, saa, rng),
-      m_structure_egress_fsm(perception, saa, rng) {}
+      m_gmt_ingress_fsm(perception, saa, rng),
+      m_gmt_egress_fsm(perception, saa, rng) {}
 
 fcrw_bst_fsm::~fcrw_bst_fsm(void) = default;
 
@@ -126,7 +126,7 @@ RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
 
     m_allocated_lane =
         m_allocator(sensing()->rpos3D(), perception()->nearest_ct());
-    internal_event(ekST_STRUCTURE_INGRESS);
+    internal_event(ekST_SPCT_INGRESS);
   } else if (fsm::construction_signal::ekFORAGING_BLOCK_VANISHED == data->signal()) {
       ER_INFO("Block vanished signal received while foraging");
       internal_event(ekST_FORAGE);
@@ -134,20 +134,20 @@ RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
   return fsm::construction_signal::ekHANDLED;
 }
 
-RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_ingress) {
-  if (fsm_state::ekST_STRUCTURE_INGRESS != last_state()) {
-    ER_DEBUG("Executing ekST_STRUCTURE_INGRESS");
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, gmt_ingress) {
+  if (fsm_state::ekST_SPCT_INGRESS != last_state()) {
+    ER_DEBUG("Executing ekST_SPCT_INGRESS");
   }
 
-  if (!m_structure_ingress_fsm.task_running()) {
-    m_structure_ingress_fsm.task_reset();
-    m_structure_ingress_fsm.task_start(m_allocated_lane.get());
+  if (!m_gmt_ingress_fsm.task_running()) {
+    m_gmt_ingress_fsm.task_reset();
+    m_gmt_ingress_fsm.task_start(m_allocated_lane.get());
   }
-  m_structure_ingress_fsm.task_execute();
+  m_gmt_ingress_fsm.task_execute();
 
-  if (m_structure_ingress_fsm.task_finished()) {
+  if (m_gmt_ingress_fsm.task_finished()) {
     ER_DEBUG("Structure ingress finished");
-    internal_event(ekST_STRUCTURE_BUILD);
+    internal_event(ekST_SPCT_BUILD);
   }
   return fsm::construction_signal::ekHANDLED;
 }
@@ -177,20 +177,20 @@ RCPPSW_HFSM_STATE_DEFINE(fcrw_bst_fsm,
      * only be calculated when it is in the FINISHED state.
      */
     m_block_place_fsm.task_reset();
-    internal_event(ekST_STRUCTURE_EGRESS);
+    internal_event(ekST_SPCT_EGRESS);
   }
   return fsm::construction_signal::ekHANDLED;
 }
 
-RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, structure_egress) {
-  if (m_structure_egress_fsm.task_finished()) {
-    m_structure_egress_fsm.task_reset();
+RCPPSW_HFSM_STATE_DEFINE_ND(fcrw_bst_fsm, gmt_egress) {
+  if (m_gmt_egress_fsm.task_finished()) {
+    m_gmt_egress_fsm.task_reset();
     internal_event(ekST_FINISHED);
   } else {
-    if (!m_structure_egress_fsm.task_running()) {
-      m_structure_egress_fsm.task_start(m_allocated_lane.get());
+    if (!m_gmt_egress_fsm.task_running()) {
+      m_gmt_egress_fsm.task_start(m_allocated_lane.get());
     } else {
-      m_structure_egress_fsm.task_execute();
+      m_gmt_egress_fsm.task_execute();
     }
   }
   return fsm::construction_signal::ekHANDLED;
@@ -238,7 +238,7 @@ fcrw_bst_fsm::acquisition_goal(void) const {
   if (ekST_FORAGE == current_state() ||
       ekST_WAIT_FOR_BLOCK_PICKUP == current_state()) {
     return fsm::to_goal_type(construction_acq_goal::ekFORAGING_BLOCK);
-  } else if (ekST_STRUCTURE_BUILD == current_state() ||
+  } else if (ekST_SPCT_BUILD == current_state() ||
              ekST_WAIT_FOR_BLOCK_PLACE == current_state()) {
     return fsm::to_goal_type(construction_acq_goal::ekCT_BLOCK_PLACEMENT_SITE);
   }
@@ -251,12 +251,12 @@ fcrw_bst_fsm::acquisition_goal(void) const {
 bool fcrw_bst_fsm::exp_interference(void) const {
   if (m_forage_fsm.task_running()) {
     return m_forage_fsm.exp_interference();
-  } else if (m_structure_ingress_fsm.task_running()) {
-    return m_structure_ingress_fsm.exp_interference();
+  } else if (m_gmt_ingress_fsm.task_running()) {
+    return m_gmt_ingress_fsm.exp_interference();
   } else if (m_block_place_fsm.task_running()) {
     return m_block_place_fsm.exp_interference();
-  } else if (m_structure_egress_fsm.task_running()) {
-    return m_structure_egress_fsm.exp_interference();
+  } else if (m_gmt_egress_fsm.task_running()) {
+    return m_gmt_egress_fsm.exp_interference();
   } else {
     return false;
   }
@@ -265,12 +265,12 @@ bool fcrw_bst_fsm::exp_interference(void) const {
 bool fcrw_bst_fsm::entered_interference(void) const {
   if (m_forage_fsm.task_running()) {
     return m_forage_fsm.entered_interference();
-  } else if (m_structure_ingress_fsm.task_running()) {
-    return m_structure_ingress_fsm.entered_interference();
+  } else if (m_gmt_ingress_fsm.task_running()) {
+    return m_gmt_ingress_fsm.entered_interference();
   } else if (m_block_place_fsm.task_running()) {
     return m_block_place_fsm.entered_interference();
-  } else if (m_structure_egress_fsm.task_running()) {
-    return m_structure_egress_fsm.entered_interference();
+  } else if (m_gmt_egress_fsm.task_running()) {
+    return m_gmt_egress_fsm.entered_interference();
   } else {
     return false;
   }
@@ -279,12 +279,12 @@ bool fcrw_bst_fsm::entered_interference(void) const {
 bool fcrw_bst_fsm::exited_interference(void) const {
   if (m_forage_fsm.task_running()) {
     return m_forage_fsm.exited_interference();
-  } else if (m_structure_ingress_fsm.task_running()) {
-    return m_structure_ingress_fsm.exited_interference();
+  } else if (m_gmt_ingress_fsm.task_running()) {
+    return m_gmt_ingress_fsm.exited_interference();
   } else if (m_block_place_fsm.task_running()) {
     return m_block_place_fsm.exited_interference();
-  } else if (m_structure_egress_fsm.task_running()) {
-    return m_structure_egress_fsm.exited_interference();
+  } else if (m_gmt_egress_fsm.task_running()) {
+    return m_gmt_egress_fsm.exited_interference();
   } else {
     return false;
   }
@@ -293,12 +293,12 @@ bool fcrw_bst_fsm::exited_interference(void) const {
 rtypes::timestep fcrw_bst_fsm::interference_duration(void) const {
   if (m_forage_fsm.task_running()) {
     return m_forage_fsm.interference_duration();
-  } else if (m_structure_ingress_fsm.task_running()) {
-    return m_structure_ingress_fsm.interference_duration();
+  } else if (m_gmt_ingress_fsm.task_running()) {
+    return m_gmt_ingress_fsm.interference_duration();
   } else if (m_block_place_fsm.task_running()) {
     return m_block_place_fsm.interference_duration();
-  } else if (m_structure_egress_fsm.task_running()) {
-    return m_structure_egress_fsm.interference_duration();
+  } else if (m_gmt_egress_fsm.task_running()) {
+    return m_gmt_egress_fsm.interference_duration();
   } else {
     return rtypes::timestep(0);
   }
@@ -312,9 +312,9 @@ rmath::vector3z fcrw_bst_fsm::interference_loc3D(void) const {
  * Block Transport Metrics
  ******************************************************************************/
 construction_transport_goal fcrw_bst_fsm::block_transport_goal(void) const {
-  if (ekST_STRUCTURE_INGRESS == current_state()) {
+  if (ekST_SPCT_INGRESS == current_state()) {
     return construction_transport_goal::ekCONSTRUCTION_SITE;
-  } else if (ekST_STRUCTURE_BUILD == current_state()) {
+  } else if (ekST_SPCT_BUILD == current_state()) {
     return construction_transport_goal::ekCT_BLOCK_PLACEMENT_SITE;
   }
   return construction_transport_goal::ekNONE;
@@ -338,10 +338,10 @@ void fcrw_bst_fsm::task_execute(void) {
  * Member Functions
  ******************************************************************************/
 void fcrw_bst_fsm::init(void) {
-  sfsm::builder_util_fsm::init();
+  pfsm::builder_util_fsm::init();
   m_forage_fsm.init();
   m_block_place_fsm.init();
-  m_structure_egress_fsm.init();
+  m_gmt_egress_fsm.init();
 } /* init() */
 
 bool fcrw_bst_fsm::block_detected(void) const {
@@ -356,4 +356,4 @@ fcrw_bst_fsm::block_placement_intent(void) const {
   return boost::none;
 } /* block_placement_intent() */
 
-NS_END(fsm, silicon);
+NS_END(fsm, prism);

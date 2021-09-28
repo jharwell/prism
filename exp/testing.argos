@@ -65,8 +65,8 @@
             />
         <perception
             type="rlos">
-          <rlos dim="0.8">
-            <grid2D resolution="0.2"
+          <rlos dim="1.6">
+            <grid2D resolution="0.4"
                     dims="12, 12, 2"/>
           </rlos>
         </perception>
@@ -179,7 +179,7 @@
       <spct id="rectprism0"
            bounding_box="4,8,1"
            anchor="4.0,4.0,0.0"
-           orientation="PI/2"
+           orientation="3PI/2"
            graphml="exp/rectprism0.graphml"
            />
     </gmt>
@@ -236,7 +236,7 @@
 
       <!-- <position method="constant" values="7,8,0" max="7,8,0" /> -->
       <!-- <orientation method="uniform" min="0,0,0" max="0,0,0" /> -->
-      <entity quantity="1" max_trials="1000">
+      <entity quantity="8" max_trials="1000">
         <!-- <e-puck id="ep" omnidirectional_camera_aperture="89"> -->
         <!--   <controller config="epc" /> -->
         <!-- </e-puck> -->

@@ -63,16 +63,16 @@ ingress_path::operator()(const prepr::construction_lane* lane) const {
 
   if (rmath::radians::kZERO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ct->xrspan().ub(), ingress_pt.y());
+    path.emplace_back(ct->xrspan(true).ub(), ingress_pt.y());
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ingress_pt.x(), ct->yrspan().ub());
+    path.emplace_back(ingress_pt.x(), ct->yrspan(true).ub());
   } else if (rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ct->xrspan().lb(), ingress_pt.y());
+    path.emplace_back(ct->xrspan(true).lb(), ingress_pt.y());
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: Back of the structure */
-    path.emplace_back(ingress_pt.x(), ct->yrspan().lb());
+    path.emplace_back(ingress_pt.x(), ct->yrspan(true).lb());
   }
 
   return path;

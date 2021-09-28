@@ -116,7 +116,6 @@ builder_prox_type builder_prox_checker::trajectory_proximity(
      * the relative offset of the other robot to get its absolute position in
      * the global reference frame.
      */
-
     auto sharing = share_state_calc(self_rpos + r.vec, lane);
 
     /* If the robot is not in our lane, ignore it */

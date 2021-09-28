@@ -42,6 +42,10 @@ namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
+namespace prism::controller::perception {
+class builder_perception_subsystem;
+} /* namespace prism::controller::perception */
+
 NS_START(prism, fsm, calculators);
 
 /*******************************************************************************
@@ -57,8 +61,9 @@ NS_START(prism, fsm, calculators);
  */
 class ingress_lane_path : public rer::client<ingress_lane_path> {
  public:
-  explicit ingress_lane_path(
-      const csubsystem::sensing_subsystemQ3D* sensing);
+  ingress_lane_path(
+      const csubsystem::sensing_subsystemQ3D* sensing,
+      const pcperception::builder_perception_subsystem* perception);
 
   std::vector<rmath::vector2d> operator()(
       const prepr::construction_lane* lane) const;
@@ -72,7 +77,8 @@ class ingress_lane_path : public rer::client<ingress_lane_path> {
 
  private:
   /* clang-format off */
-  const csubsystem::sensing_subsystemQ3D* mc_sensing;
+  const csubsystem::sensing_subsystemQ3D*           mc_sensing;
+  const pcperception::builder_perception_subsystem* mc_perception;
   /* clang-format on */
 };
 

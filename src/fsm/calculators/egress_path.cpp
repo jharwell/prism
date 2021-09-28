@@ -68,20 +68,20 @@ egress_path::operator()(const prepr::construction_lane* lane) const {
   if (rmath::radians::kZERO == lane->orientation()) {
     x = m_rng->uniform(mc_perception->arena_xrspan().lb() +
                        ct->block_unit_dim().v(),
-                       ct->xrspan().lb() - ct->block_unit_dim().v() * kNEST_PADDING);
+                       ct->xrspan(true).lb() - ct->block_unit_dim().v() * kNEST_PADDING);
     y = egress_pt.y();
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
     x = egress_pt.x();
     y = m_rng->uniform(mc_perception->arena_yrspan().lb() +
                        ct->block_unit_dim().v(),
-                       ct->yrspan().lb() - ct->block_unit_dim().v() * kNEST_PADDING);
+                       ct->yrspan(true).lb() - ct->block_unit_dim().v() * kNEST_PADDING);
   } else if (rmath::radians::kPI == lane->orientation()) {
-    x = m_rng->uniform(ct->xrspan().ub() + ct->block_unit_dim().v() * kNEST_PADDING,
+    x = m_rng->uniform(ct->xrspan(true).ub() + ct->block_unit_dim().v() * kNEST_PADDING,
                        mc_perception->arena_xrspan().ub() - ct->block_unit_dim().v());
     y = egress_pt.y();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     x = egress_pt.x();
-    y = m_rng->uniform(ct->yrspan().ub() + ct->block_unit_dim().v() * kNEST_PADDING,
+    y = m_rng->uniform(ct->yrspan(true).ub() + ct->block_unit_dim().v() * kNEST_PADDING,
                        mc_perception->arena_yrspan().ub() - ct->block_unit_dim().v());
   }
 

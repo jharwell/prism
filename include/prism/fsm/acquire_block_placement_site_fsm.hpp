@@ -34,6 +34,7 @@
 #include "prism/fsm/builder_util_fsm.hpp"
 #include "prism/fsm/calculators/lane_alignment.hpp"
 #include "prism/repr/fs_configuration.hpp"
+#include "prism/fsm/calculators/fs_acq/base_strategy.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -53,8 +54,8 @@ NS_START(prism, fsm);
  * that it has completed its task.
  */
 class acquire_block_placement_site_fsm
-    : public builder_util_fsm,
-      public rer::client<acquire_block_placement_site_fsm> {
+    : public rer::client<acquire_block_placement_site_fsm>,
+      public builder_util_fsm {
  public:
   acquire_block_placement_site_fsm(
       const pcperception::builder_perception_subsystem* perception,
@@ -151,10 +152,11 @@ class acquire_block_placement_site_fsm
                                 fsm_state::ekST_MAX_STATES);
 
   /* clang-format off */
-  std::unique_ptr<csteer2D::ds::path_state> m_ingress_path{nullptr};
-  std::unique_ptr<csteer2D::ds::path_state> m_site_path{nullptr};
-  prepr::fs_configuration                   m_site_fs{prepr::fs_configuration::ekNONE};
-  calculators::lane_alignment               m_alignment_calc;
+  std::unique_ptr<csteer2D::ds::path_state>             m_ingress_path{nullptr};
+  std::unique_ptr<csteer2D::ds::path_state>             m_site_path{nullptr};
+  std::unique_ptr<pfcalculators::fs_acq::base_strategy> m_fs_acq_strat;
+  pfcalculators::lane_alignment                         m_alignment_calc;
+  prepr::fs_acq_result                                  m_site_fs{};
   /* clang-format on */
 };
 

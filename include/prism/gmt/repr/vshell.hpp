@@ -76,9 +76,7 @@ class vshell : public rer::client<vshell> {
   vshell(vshell&&) = delete;
   vshell& operator=(vshell&&) = delete;
 
-
   const rtypes::spatial_dist& unit_dim(void) const { return mc_unit_dim; }
-
 
   /**
    * \brief Get the size of the virtual shell, in spatial distance;

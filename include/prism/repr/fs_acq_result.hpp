@@ -1,5 +1,5 @@
 /**
- * \file constants.hpp
+ * \file fs_acq_result.hpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -18,49 +18,49 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_
-#define INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_
+#ifndef INCLUDE_PRISM_REPR_FS_ACQ_RESULT_HPP_
+#define INCLUDE_PRISM_REPR_FS_ACQ_RESULT_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "prism/prism.hpp"
+#include "prism/repr/fs_configuration.hpp"
+#include "prism/gmt/repr/block_spec.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(prism, algorithm, constants);
+NS_START(prism, repr);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-/**
- * \brief The # of cells that robots need to keep between them and the robot in
- * front of them, once they have acquired the frontier set, in order to ensure
- * deadlock-free operation.
- */
-static constexpr size_t kCT_FRONTIER_SET_PROX_CELLS = 3;
+struct fs_acq_positions {
+  rmath::vector3d ingress{};
+  rmath::vector3d egress{};
+};
+
+struct fs_acq_specs {
+  const pgrepr::block_anchor_spec* ingress{ nullptr };
+  const pgrepr::block_anchor_spec* egress{ nullptr };
+};
 
 /**
- * \brief The # of cells that robots need to keep between them and the robot in
- * front of them when they are in a construction lane (ingress/egress), but have
- * not yet acquired the frontier set.
+ * \class fs_acq_result
+ * \ingroup repr
+ *
+ * \brief The result of acquiring a frontier set configuration (i.e., a \ref
+ * prepr::fs_configuration and associated data).
  */
-static constexpr size_t kCT_TRAJECTORY_PROX_CELLS = 2;
+struct fs_acq_result {
+  /* clang-format off */
+  fs_acq_positions        positions{};
+  fs_acq_specs            specs{};
+  size_t                  lookahead{0};
+  prepr::fs_configuration configuration{prepr::fs_configuration::ekNONE};
+  /* clang-format on */
+};
 
-/**
- * \brief The width of a construction lane/subtarget on the structure in cells.
- */
-static constexpr const size_t kCT_SUBTARGET_WIDTH_CELLS = 2;
+NS_END(repr, prism);
 
-
-/**
- * How far ahead of the robot's current cell location on the structure to look
- * for stygmergic configurations, in units of cells. This is a critical value
- * for overall builder FSM provable correctness.
- */
-static constexpr const size_t kCT_FS_LOOKAHEAD_MAX_CELLS = 3;
-
-NS_END(constants, algorithm, prism);
-
-#endif /* INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_ */
+#endif /* INCLUDE_PRISM_REPR_FS_ACQ_RESULT_HPP_ */

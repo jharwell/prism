@@ -29,6 +29,7 @@
 
 #include "prism/repr/construction_lane.hpp"
 #include "prism/gmt/utils.hpp"
+#include "prism/controller/perception/builder_perception_subsystem.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -39,9 +40,11 @@ NS_START(prism, fsm, calculators);
  * Constructors/Destructors
  ******************************************************************************/
 ingress_lane_path::ingress_lane_path(
-    const csubsystem::sensing_subsystemQ3D* sensing)
+    const csubsystem::sensing_subsystemQ3D* sensing,
+    const pcperception::builder_perception_subsystem* perception)
     : ER_CLIENT_INIT("prism.fsm.calculator.ingress_lane_path"),
-      mc_sensing(sensing) {}
+      mc_sensing(sensing),
+      mc_perception(perception) {}
 
 /*******************************************************************************
  * Member Functions
@@ -55,6 +58,8 @@ ingress_lane_path::operator()(const prepr::construction_lane* lane) const {
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
 
+  double cell_size = mc_perception->nearest_ct()->block_unit_dim().v();
+
   /* 1st point: robot's current location */
   std::vector<rmath::vector2d> path{ pos };
 
@@ -62,17 +67,31 @@ ingress_lane_path::operator()(const prepr::construction_lane* lane) const {
       rmath::radians::kPI == lane->orientation()) {
     /* 2nd point: get aligned with middle of ingress lane */
     path.push_back({ pos.x(), ingress_pt.y() });
-
-    /* 3rd point: ingress */
-    path.push_back(ingress_pt.to_2D());
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
     /* 2nd point: get aligned with ingress lane */
     path.push_back({ ingress_pt.x(), pos.y() });
 
-    /* 3rd point: ingress */
-    path.push_back(ingress_pt.to_2D());
   }
+  /*
+   * The lane geometry has the ingress point at the center of the ingress cell,
+   * and we need it to be on the edge of the cell/edge of the vshell, in order
+   * to get proper placement of the last row of blocks in a construction lane.
+   */
+  rmath::vector2d ingress_corr;
+  if (rmath::radians::kZERO == lane->orientation()) {
+    ingress_corr = -rmath::vector2d::X * cell_size * 0.5;
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    ingress_corr = rmath::vector2d::X * cell_size * 0.5;
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    ingress_corr = -rmath::vector2d::Y * cell_size * 0.5;
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    ingress_corr = rmath::vector2d::Y * cell_size * 0.5;
+  }
+
+  /* 3rd point: ingress */
+  path.push_back(ingress_pt.to_2D() + ingress_corr);
+
   return path;
 } /* operator()() */
 

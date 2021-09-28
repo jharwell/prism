@@ -46,7 +46,9 @@ namespace metrics {}
 namespace repr {}
 } /* namespace gmt */
 
-namespace fsm {}
+namespace fsm {
+namespace calculators {}
+}
 
 namespace support {
 namespace tv {}
@@ -71,6 +73,7 @@ namespace metrics {}
 namespace pds = prism::ds;
 
 namespace pfsm = prism::fsm;
+namespace pfcalculators = pfsm::calculators;
 
 namespace prepr = prism::repr;
 

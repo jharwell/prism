@@ -33,7 +33,7 @@
 #include "prism/fsm/calculators/placement_intent.hpp"
 #include "prism/fsm/calculators/placement_path.hpp"
 #include "prism/fsm/construction_signal.hpp"
-#include "prism/fsm/fs_acq_checker.hpp"
+#include "prism/fsm/calculators/fs_acq/cubic_spacefill.hpp"
 #include "prism/repr/colors.hpp"
 #include "prism/repr/construction_lane.hpp"
 
@@ -49,8 +49,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
     const pcperception::builder_perception_subsystem* perception,
     csubsystem::saa_subsystemQ3D* saa,
     rmath::rng* rng)
-    : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
-      ER_CLIENT_INIT("prism.fsm.acquire_block_placement_site"),
+    : ER_CLIENT_INIT("prism.fsm.acquire_block_placement_site"),
+      builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(acquire_frontier_set, hfsm::top_state()),
@@ -72,6 +72,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
                                              &entry_acquire_placement_loc,
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
+      m_fs_acq_strat(std::make_unique<pfcalculators::fs_acq::cubic_spacefill>(
+          saa->sensing(), perception)),
       m_alignment_calc(saa->sensing()) {}
 
 acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
@@ -108,11 +110,11 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
    * it we will cause a construction deadlock.
    */
   auto old_fs = m_site_fs;
-  m_site_fs = fs_acq_checker(sensing(), perception())(allocated_lane());
+  m_site_fs = m_fs_acq_strat->operator()(allocated_lane());
 
   ER_INFO("Recalculate placement path for site acquisition: old_fs=%d new_fs=%d",
-          rcppsw::as_underlying(old_fs),
-          rcppsw::as_underlying(m_site_fs));
+          rcppsw::as_underlying(old_fs.configuration),
+          rcppsw::as_underlying(m_site_fs.configuration));
   auto calculator = calculators::placement_path(sensing(), perception());
   m_site_path = std::make_unique<csteer2D::ds::path_state>(
       calculator(allocated_lane(), m_site_fs));
@@ -126,8 +128,9 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   ER_CHECKW(alignment.azimuth,
             "Bad alignment (orientation) during frontier set acquisition");
 
-  auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
-  auto prox = perception()->builder_prox()->operator()(allocated_lane(), acq);
+  auto acq = m_fs_acq_strat->operator()(allocated_lane());
+  auto prox = perception()->builder_prox()->operator()(allocated_lane(),
+                                                       acq.configuration);
 
   /*
    * A robot in front of us is too close (either on structure or when we are in
@@ -141,7 +144,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
              rcppsw::as_underlying(prox));
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(prox, acq));
+                   std::make_unique<robot_wait_data>(prox, acq.configuration));
     return rpfsm::event_signal::ekHANDLED;
   }
 
@@ -157,9 +160,9 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
     ER_TRACE("Robot=%s/%s: On gmt, acq=%d",
              rcppsw::to_string(sensing()->rpos2D()).c_str(),
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
-             rcppsw::as_underlying(acq));
+             rcppsw::as_underlying(acq.configuration));
 
-    if (prepr::fs_configuration::ekNONE == acq) {
+    if (prepr::fs_configuration::ekNONE == acq.configuration) {
       /* no robots in front, but not there yet */
       saa()->steer_force2D().accum(
           saa()->steer_force2D().path_following(m_ingress_path.get()));
@@ -172,8 +175,9 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
 
 RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
                             acquire_placement_loc) {
-  auto acq = fs_acq_checker(sensing(), perception())(allocated_lane());
-  auto prox = perception()->builder_prox()->operator()(allocated_lane(), acq);
+  auto acq = m_fs_acq_strat->operator()(allocated_lane());
+  auto prox = perception()->builder_prox()->operator()(allocated_lane(),
+                                                       acq.configuration);
 
   if (pcperception::builder_prox_type::ekFRONTIER_SET == prox) {
     ER_DEBUG("Wait@%s/%s while acquiring frontier set: robot proximity=%d",
@@ -181,7 +185,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
              rcppsw::to_string(sensing()->dpos2D()).c_str(),
              rcppsw::as_underlying(prox));
     internal_event(fsm_state::ekST_WAIT_FOR_ROBOT,
-                   std::make_unique<robot_wait_data>(prox, acq));
+                   std::make_unique<robot_wait_data>(prox, acq.configuration));
   } else {
     if (!m_site_path->is_complete()) {
       auto force = saa()->steer_force2D().path_following(m_site_path.get());
@@ -236,7 +240,7 @@ void acquire_block_placement_site_fsm::task_execute(void) {
 
 void acquire_block_placement_site_fsm::task_reset(void) {
   builder_util_fsm::init();
-  m_site_fs = prepr::fs_configuration::ekNONE;
+  m_site_fs = {};
   m_site_path.reset();
   m_ingress_path.reset();
 } /* task_reset() */

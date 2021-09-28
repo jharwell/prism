@@ -177,6 +177,7 @@ class construction_loop_functions
   gmt::spc_gmt*
   robot_target(const controller::constructing_controller* c) const;
 
+
   /**
    * \brief Initialize the \ref gmt::ct_manager.
    *

@@ -34,21 +34,14 @@ NS_START(prism, controller, perception);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-rmath::vector3d ct_skel_info::roriginr(void) const {
-  return m_target->roriginr();
-} /* roriginr() */
+rmath::vector3d ct_skel_info::anchor_loc_abs(const pgrepr::ct_coord& anchor) const {
+  return m_target->anchor_loc_abs(anchor);
+} /* anchor_loc_abs() */
 
-rmath::vector3z ct_skel_info::rorigind(void) const {
-  return m_target->rorigind();
-} /* rorigind() */
+const rtypes::discretize_ratio& ct_skel_info::grid_resolution(void) const {
+  return m_target->vshell()->real()->resolution();
+} /* grid_resolution() */
 
-rmath::vector3d ct_skel_info::voriginr(void) const {
-  return m_target->voriginr();
-} /* voriginr() */
-
-rmath::vector3z ct_skel_info::vorigind(void) const {
-  return m_target->vorigind();
-} /* vorigind() */
 
 size_t ct_skel_info::vshell_sized(void) const {
   return m_target->vshell()->sh_sized();
@@ -58,9 +51,6 @@ rtypes::spatial_dist ct_skel_info::vshell_sizer(void) const {
   return m_target->vshell()->sh_sizer();
 } /* vshell_sizer() */
 
-rmath::vector3d ct_skel_info::center(void) const {
-  return m_target->rcenter3D();
-} /* center() */
 
 rmath::vector3d ct_skel_info::bbr(bool include_virtual) const {
   return { m_target->vshell()->xrspan(include_virtual).span(),
@@ -102,37 +92,20 @@ ct_skel_info::to_rcoord2D(const rmath::vector2d& arena_pos) const {
   return to_rcoord(rmath::vector3d(arena_pos.x(), arena_pos.y(), 0));
 } /* to_rcoord() */
 
-const rmath::radians& ct_skel_info::orientation(void) const {
-  return m_target->orientation();
-} /* orientation() */
-
-rmath::vector3d
-ct_skel_info::anchor_loc_abs(const pgrepr::ct_coord& anchor) const {
-  return m_target->anchor_loc_abs(anchor);
-} /* anchor_loc_abs() */
-
-rtypes::type_uuid ct_skel_info::id(void) const {
-  return m_target->id();
-} /* id() */
-
-rmath::ranged ct_skel_info::xrspan(void) const {
-  return m_target->vshell()->xrspan(true); /* include virtual */
+rmath::ranged ct_skel_info::xrspan(bool include_virtual) const {
+  return m_target->vshell()->xrspan(include_virtual);
 } /* xrspan() */
 
-rmath::ranged ct_skel_info::yrspan(void) const {
-  return m_target->vshell()->yrspan(true); /* include virtual */
+rmath::ranged ct_skel_info::yrspan(bool include_virtual) const {
+  return m_target->vshell()->yrspan(include_virtual);
 } /* yrspan() */
 
-rtypes::spatial_dist ct_skel_info::block_unit_dim(void) const {
-  return m_target->block_unit_dim();
-} /* block_unit_dim() */
-
-size_t ct_skel_info::unit_dim_factor(void) const {
-  return m_target->unit_dim_factor();
-} /* unit_dim_factor() */
-
-const rtypes::discretize_ratio& ct_skel_info::grid_resolution(void) const {
-  return m_target->vshell()->real()->resolution();
-} /* grid_resolution() */
+RCPPSW_WRAP_DEF(ct_skel_info, roriginr, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, rorigind, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, voriginr, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, vorigind, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, block_unit_dim, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, orientation, *m_target, const);
+RCPPSW_WRAP_DEF(ct_skel_info, id, *m_target, const);
 
 NS_END(perception, controller, prism);

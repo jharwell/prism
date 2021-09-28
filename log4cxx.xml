@@ -51,7 +51,7 @@
   <category name="prism.fsm.builder_util" >
     <priority value ="trace" />
   </category>
-  <category name="prism.fsm.fs_acq_checker" >
+  <category name="prism.fsm.calculators.csf_fs_acq" >
     <priority value ="trace" />
   </category>
   <category name="prism.controller.perception.builder_prox_checker" >
@@ -64,10 +64,10 @@
     <priority value ="trace" />
   </category>
   <category name="rcppsw.ds.graph.hgrid3D_view_filter_data" >
-    <priority value ="trace" />
+    <priority value ="info" />
   </category>
   <category name="rcppsw.ds.graph.hgrid3D_view_filter" >
-    <priority value ="trace" />
+    <priority value ="info" />
   </category>
 
 

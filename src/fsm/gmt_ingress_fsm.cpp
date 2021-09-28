@@ -100,7 +100,8 @@ RCPPSW_HFSM_STATE_DEFINE_ND(gmt_ingress_fsm, ct_approach) {
 
   if (approach.x_ok && approach.y_ok) {
     ER_INFO("Finished construction target approach");
-    auto path = calculators::ingress_lane_path(sensing())(allocated_lane());
+    auto path = calculators::ingress_lane_path(sensing(),
+                                               perception())(allocated_lane());
     ER_INFO("Calculated target entry path to lane%zu ingress with %zu waypoints",
             allocated_lane()->id(),
             path.size());

@@ -1,5 +1,5 @@
 /**
- * \file fs_acq_checker.cpp
+ * \file cubic_spacefill.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "prism/fsm/fs_acq_checker.hpp"
+#include "prism/fsm/calculators/fs_acq/cubic_spacefill.hpp"
 
 #include "rcppsw/math/radians.hpp"
 
@@ -31,80 +31,80 @@
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/repr/construction_lane.hpp"
 #include "prism/repr/builder_los.hpp"
+#include "prism/algorithm/constants.hpp"
 #include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(prism, fsm);
+NS_START(prism, fsm, calculators, fs_acq);
 
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-fs_acq_checker::fs_acq_checker(
+cubic_spacefill::cubic_spacefill(
     const csubsystem::sensing_subsystemQ3D* sensing,
     const pcperception::builder_perception_subsystem* perception)
-    : ER_CLIENT_INIT("prism.fsm.fs_acq_checker"),
-      mc_sensing(sensing),
-      mc_perception(perception) {}
+    : ER_CLIENT_INIT("prism.fsm.cubic_spacefill"),
+      base_strategy(sensing, perception) {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-prepr::fs_configuration
-fs_acq_checker::operator()(const prepr::construction_lane* lane) const {
-  const auto* los = mc_perception->los();
+prepr::fs_acq_result
+cubic_spacefill::operator()(const prepr::construction_lane* lane) const {
+  const auto* los = perception()->los();
 
+  prepr::fs_acq_result result;
   if (nullptr == los) {
-    return prepr::fs_configuration::ekNONE;
+    return result;
   }
 
   ER_TRACE("Robot position: %s/%s",
-           rcppsw::to_string(mc_sensing->rpos3D()).c_str(),
-           rcppsw::to_string(mc_sensing->dpos3D()).c_str());
+           rcppsw::to_string(sensing()->rpos3D()).c_str(),
+           rcppsw::to_string(sensing()->dpos3D()).c_str());
 
   /*
    * \todo Right now this assumes cube blocks, and is only correct for
    * such. This will be fixed once the most basic construction has been
    * validated.
    */
-  auto ret = prepr::fs_configuration::ekNONE;
-  for (size_t lookahead = 1; lookahead <= kDETECT_CELL_DIST_MAX; ++lookahead) {
-    auto result = acq_result_calc(lane, lookahead);
-    ret = configuration_calc(result, lane, los);
+
+  for (size_t lookahead = 1; lookahead <= paconstants::kCT_FS_LOOKAHEAD_MAX_CELLS; ++lookahead) {
+    result = acq_result_calc(lane, los, lookahead);
 
     /*
      * Give priority to configurations encountered closer to the robot: as soon
      * as we find one, don't look any further out.
      */
-    if (prepr::fs_configuration::ekNONE != ret) {
+    if (prepr::fs_configuration::ekNONE != result.configuration) {
       break;
     }
   } /* for(lookahead..) */
-  return ret;
+  return result;
 } /* operator()() */
 
-fs_acq_checker::acq_result
-fs_acq_checker::acq_result_calc(const prepr::construction_lane* lane,
-                               size_t lookahead) const {
-  acq_result ret;
+prepr::fs_acq_result
+cubic_spacefill::acq_result_calc(const prepr::construction_lane* lane,
+                            const prepr::builder_los* los,
+                            size_t lookahead) const {
+  prepr::fs_acq_result ret;
 
-  const auto* ct = mc_perception->nearest_ct();
-  auto robot_ct_cell = ct->to_rcoord(mc_sensing->rpos3D());
-  const auto* los = mc_perception->los();
+  const auto* ct = perception()->nearest_ct();
+  auto robot_ct_cell = ct->to_rcoord(sensing()->rpos3D());
 
   ER_CHECKW(boost::none != los->find(robot_ct_cell.offset()),
             "Robot CT cell not in LOS?");
 
-  auto rpos = mc_sensing->rpos3D();
-  auto dpos = mc_sensing->dpos3D();
+  auto rpos = sensing()->rpos3D();
+  auto dpos = sensing()->dpos3D();
 
   ret.positions = acq_positions_calc(rpos, lane, lookahead);
 
   auto ingress_arena_cell = rmath::dvec2zvec(ret.positions.ingress,
-                                             mc_perception->arena_resolution().v());
+                                             perception()->arena_resolution().v());
   auto egress_arena_cell = rmath::dvec2zvec(ret.positions.egress,
-                                            mc_perception->arena_resolution().v());
+                                            perception()->arena_resolution().v());
   auto ingress_ct_cell = ct->to_rcoord(ret.positions.ingress);
   auto egress_ct_cell = ct->to_rcoord(ret.positions.egress);
 
@@ -140,40 +140,41 @@ fs_acq_checker::acq_result_calc(const prepr::construction_lane* lane,
   }
 
   ret.lookahead = lookahead;
+  ret.configuration = configuration_calc(ret, lane, los);
   return ret;
 } /* acq_result_calc() */
 
 prepr::fs_configuration
-fs_acq_checker::configuration_calc(const acq_result& result,
-                                   const prepr::construction_lane* lane,
-                                   const prepr::builder_los* los) const {
+cubic_spacefill::configuration_calc(const prepr::fs_acq_result& result,
+                               const prepr::construction_lane* lane,
+                               const prepr::builder_los* los) const {
   if (nullptr != result.specs.ingress && nullptr != result.specs.egress) {
     bool ingress_has_block = nullptr != result.specs.ingress->block;
     bool egress_has_block = nullptr != result.specs.egress->block;
 
     if (ingress_has_block && egress_has_block) {
       ER_INFO("LANE_FILLED encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
-              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.ingress->coord).c_str(),
+              rcppsw::to_string(result.specs.egress->coord).c_str(),
               result.lookahead);
       return prepr::fs_configuration::ekLANE_FILLED;
     } else if (ingress_has_block && !egress_has_block) {
       ER_INFO("LANE_GAP_EGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
-              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.ingress->coord).c_str(),
+              rcppsw::to_string(result.specs.egress->coord).c_str(),
               result.lookahead);
       return prepr::fs_configuration::ekLANE_GAP_EGRESS;
     } else if (!ingress_has_block && egress_has_block) {
       ER_INFO("LANE_GAP_INGRESS encountered: ingress=%s,egress=%s,lookahead=%zu",
-              rcppsw::to_string(result.specs.ingress->block->danchor2D()).c_str(),
-              rcppsw::to_string(result.specs.egress->block->danchor2D()).c_str(),
+              rcppsw::to_string(result.specs.ingress->coord).c_str(),
+              rcppsw::to_string(result.specs.egress->coord).c_str(),
               result.lookahead);
       return prepr::fs_configuration::ekLANE_GAP_INGRESS;
     }
   } else {
     /* possibly empty lane encountered--need to check to see for sure */
     if (acq_empty_lane(lane, los)) {
-      ER_INFO("LANE_EMPTY encountered: ingress=%s,egress=%s,lookahead=%zu",
+          ER_INFO("LANE_EMPTY encountered: ingress=%s,egress=%s,lookahead=%zu",
               rcppsw::to_string(result.positions.ingress).c_str(),
               rcppsw::to_string(result.positions.egress).c_str(),
               result.lookahead);
@@ -184,9 +185,9 @@ fs_acq_checker::configuration_calc(const acq_result& result,
   return prepr::fs_configuration::ekNONE;
 } /* configuration_calc() */
 
-bool fs_acq_checker::acq_empty_lane(const prepr::construction_lane* lane,
+bool cubic_spacefill::acq_empty_lane(const prepr::construction_lane* lane,
                                     const prepr::builder_los* los) const {
-  const auto* ct = mc_perception->nearest_ct();
+  const auto* ct = perception()->nearest_ct();
   ER_ASSERT(pgmt::orientation_valid(lane->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
@@ -195,35 +196,35 @@ bool fs_acq_checker::acq_empty_lane(const prepr::construction_lane* lane,
    * The origin of the LOS is always in the LL corner, regardless of lane
    * orientation, which simplifies calculations of empty lane acquisition a
    * lot. The returned spans of the LOS are specified relative to the grid
-   * origin (structure virtual origin), so we account for that here to get spans
+   * origin (structure real origin), so we account for that here to get spans
    * relative to the arena origin.
    */
-  auto xspan = los->xrspan().recenter(mc_sensing->rpos3D().x());
-  auto yspan = los->yrspan().recenter(mc_sensing->rpos3D().y());
+  auto xspan = los->xrspan().recenter(sensing()->rpos3D().x());
+  auto yspan = los->yrspan().recenter(sensing()->rpos3D().y());
 
   if (rmath::radians::kZERO == lane->orientation()) {
-    return xspan.ub() >= ct->voriginr().x() + ct->bbr().x() + ct->vshell_sizer().v();
+    return xspan.ub() >= ct->roriginr().x() + ct->bbr(false).x();
   } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    return yspan.ub() >= ct->voriginr().y() + ct->bbr().y() + ct->vshell_sizer().v();
+    return yspan.ub() >= ct->roriginr().y() + ct->bbr(false).y();
   } else if (rmath::radians::kPI == lane->orientation()) {
-    return xspan.lb() <= ct->voriginr().x() + ct->vshell_sizer().v();
+    return xspan.lb() <= ct->roriginr().x();
   } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    return yspan.lb() <= ct->voriginr().y() + ct->vshell_sizer().v();
+    return yspan.lb() <= ct->roriginr().y();
   }
   return false;
 } /* acq_empty_lane() */
 
-fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
+prepr::fs_acq_positions cubic_spacefill::acq_positions_calc(
     const rmath::vector3d& rpos,
     const prepr::construction_lane* lane,
     size_t lookahead) const {
-  acq_positions ret;
+  prepr::fs_acq_positions ret;
 
   ER_ASSERT(pgmt::orientation_valid(lane->orientation()),
             "Bad orientation: '%s'",
             rcppsw::to_string(lane->orientation()).c_str());
 
-  const auto* ct = mc_perception->nearest_ct();
+  const auto* ct = perception()->nearest_ct();
   auto cell_size = ct->block_unit_dim().v();
 
   /*
@@ -264,4 +265,4 @@ fs_acq_checker::acq_positions fs_acq_checker::acq_positions_calc(
   return ret;
 } /* acq_positions_calc() */
 
-NS_END(fsm, prism);
+NS_END(fs_acq, calculators, fsm, prism);

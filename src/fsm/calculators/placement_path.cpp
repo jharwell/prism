@@ -51,7 +51,7 @@ placement_path::placement_path(
  ******************************************************************************/
 std::vector<rmath::vector2d>
 placement_path::operator()(const prepr::construction_lane* lane,
-                           const prepr::fs_configuration& acq) const {
+                           const prepr::fs_acq_result& acq) const {
   auto rpos = mc_sensing->rpos2D();
   const auto* ct = mc_perception->nearest_ct();
   std::vector<rmath::vector2d> path = { rpos };
@@ -66,57 +66,108 @@ placement_path::operator()(const prepr::construction_lane* lane,
    * such. This will be fixed once the most basic construction has been
    * validated.
    */
-
-  rmath::vector2d forward1p25;
-  rmath::vector2d forward1p5;
-  rmath::vector2d forward1;
-  rmath::vector2d right1;
-  if (rmath::radians::kZERO == lane->orientation()) {
-    forward1p25 = {rpos.x() + cell_size * 1.25, rpos.y()};
-    forward1p25 = {rpos.x() + cell_size * 1.5, rpos.y()};
-    forward1 = {rpos.x() + cell_size, rpos.y()};
-    right1 = {rpos.x() + cell_size * 1.25, rpos.y() - cell_size};
-  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
-    forward1p25 = {rpos.x(), rpos.y() + cell_size * 1.25};
-    forward1p5 = {rpos.x(), rpos.y() + cell_size * 1.5};
-    forward1 = {rpos.x(), rpos.y() + cell_size};
-    right1 = {rpos.x() + cell_size, rpos.y() + cell_size * 1.25};
-  } else if (rmath::radians::kPI == lane->orientation()) {
-    forward1p25 = {rpos.x() - cell_size * 1.25, rpos.y()};
-    forward1p5 = {rpos.x() - cell_size * 1.5, rpos.y()};
-    forward1 = {rpos.x() - cell_size, rpos.y()};
-    right1 = {rpos.x() - cell_size * 1.25, rpos.y() + cell_size};
-  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
-    forward1p25 = {rpos.x(), rpos.y() - cell_size * 1.25};
-    forward1p5 = {rpos.x(), rpos.y() - cell_size * 1.5};
-    forward1 = {rpos.x(), rpos.y() - cell_size};
-    right1 = {rpos.x() - cell_size, rpos.y() - cell_size * 1.25 };
+  bool in_vshell = false;
+  if (rmath::radians::kZERO == lane->orientation() ||
+      rmath::radians::kPI == lane->orientation()) {
+    in_vshell = ct->xrspan(true).contains(rpos.x());
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation() ||
+             rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    in_vshell = ct->yrspan(true).contains(rpos.y());
   }
+
+
+  rmath::vector2d forward2p25;
+  rmath::vector2d forward2;
+  rmath::vector2d forward1p75;
+  rmath::vector2d forward1p5;
+  rmath::vector2d right1_for1p5;
+  rmath::vector2d right1_for1p75;
+  rmath::vector2d right1_for2;
+  rmath::vector2d right1_for2p25;
 
   /*
    * In order to make block placements look "mostly" physical, we need to move
-   * forward by 1 OR 1.25 OR 1.5 cells from our current position, due to the
+   * forward by 2 OR 2.25 OR 1.5 cells from our current position, due to the
    * truncation used when robot position is converted from real -> discrete ->
    * CT coordinates. We don't have to move at all to get algorithmic
-   * correctness, but it help the simulations to look nice.
+   * correctness, but it help the simulations to look nice. The {2,2.25,1.5}
+   * values are strongly tied to the value of \ref
+   * palgorithm::constants::kCT_FS_LOOKAHEAD_MAX_CELLS and the size of the robot
+   * LOS. If chose change value, then these values will have to be updated as
+   * well.
    *
    * LANE_EMPTY is the only one that requires 1.5 cells because we detect this
    * configuration using the EDGE of our LOS, rather than what cells it
    * contains.
+   *
+   * \todo Calculate values programmatically rather than having a bunch of magic
+   * numbers here.
    */
-  if (prepr::fs_configuration::ekLANE_EMPTY == acq) {
+  if (rmath::radians::kZERO == lane->orientation()) {
+    forward2p25 = {rpos.x() + cell_size * 2.25, rpos.y()};
+    forward2 = {rpos.x() + cell_size * 2, rpos.y()};
+    forward1p75 = {rpos.x() + cell_size * 1.75, rpos.y()};
+    forward1p5 = {rpos.x() + cell_size * 1.5, rpos.y()};
+    right1_for1p5 = {rpos.x() + cell_size * 1.5, rpos.y() - cell_size};
+    right1_for1p75 = {rpos.x() + cell_size * 1.75, rpos.y() - cell_size};
+    right1_for2 = {rpos.x() + cell_size * 2, rpos.y() - cell_size};
+    right1_for2p25 = {rpos.x() + cell_size * 2.25, rpos.y() - cell_size};
+  } else if (rmath::radians::kPI_OVER_TWO == lane->orientation()) {
+    forward2p25 = {rpos.x(), rpos.y() + cell_size * 2.25};
+    forward2 = {rpos.x(), rpos.y() + cell_size * 2};
+    forward1p75 = {rpos.x(), rpos.y() + cell_size * 1.75};
+    forward1p5 = {rpos.x(), rpos.y() + cell_size * 1.5};
+    right1_for1p5 = {rpos.x() + cell_size, rpos.y() + cell_size * 1.5};
+    right1_for1p75 = {rpos.x() + cell_size, rpos.y() + cell_size * 1.75};
+    right1_for2 = {rpos.x() + cell_size, rpos.y() + cell_size * 2};
+    right1_for2p25 = {rpos.x() + cell_size, rpos.y() + cell_size * 2.25};
+  } else if (rmath::radians::kPI == lane->orientation()) {
+    forward2p25 = {rpos.x() - cell_size * 2.25, rpos.y()};
+    forward2 = {rpos.x() - cell_size * 2, rpos.y()};
+    forward1p75 = {rpos.x() - cell_size * 1.75, rpos.y()};
+    forward1p5 = {rpos.x() - cell_size * 1.5, rpos.y()};
+    right1_for1p5 = {rpos.x() - cell_size * 1.5, rpos.y() + cell_size};
+    right1_for1p75 = {rpos.x() - cell_size * 1.75, rpos.y() + cell_size};
+    right1_for2 = {rpos.x() - cell_size * 2, rpos.y() + cell_size};
+    right1_for2p25 = {rpos.x() - cell_size * 2.25, rpos.y() + cell_size};
+  } else if (rmath::radians::kTHREE_PI_OVER_TWO == lane->orientation()) {
+    forward2p25 = {rpos.x(), rpos.y() - cell_size * 2.25};
+    forward2 = {rpos.x(), rpos.y() - cell_size * 2};
+    forward1p75 = {rpos.x(), rpos.y() - cell_size * 1.75};
+    forward1p5 = {rpos.x(), rpos.y() - cell_size * 1.5};
+    right1_for1p5 = {rpos.x() - cell_size, rpos.y() - cell_size * 1.5 };
+    right1_for1p75 = {rpos.x() - cell_size, rpos.y() - cell_size * 1.75 };
+    right1_for2 = {rpos.x() - cell_size, rpos.y() - cell_size * 2 };
+    right1_for2p25 = {rpos.x() - cell_size, rpos.y() - cell_size * 2.25 };
+  }
+
+  ER_ASSERT(2 == acq.lookahead || 3 == acq.lookahead, "Lookhead == 1 ?");
+  if (prepr::fs_configuration::ekLANE_EMPTY == acq.configuration) {
     path.push_back(forward1p5);
-  } else if (prepr::fs_configuration::ekLANE_FILLED == acq) {
-    path.push_back(forward1);
-  } else if (prepr::fs_configuration::ekLANE_GAP_INGRESS == acq) {
-    path.push_back(forward1);
-  } else if (prepr::fs_configuration::ekLANE_GAP_EGRESS == acq) {
-    path.push_back(forward1p25);
-    path.push_back(right1);
+  } else if (prepr::fs_configuration::ekLANE_FILLED == acq.configuration) {
+    if (2 == acq.lookahead) {
+      path.push_back(forward1p5);
+    } else {
+      path.push_back(forward1p75);
+    }
+  } else if (prepr::fs_configuration::ekLANE_GAP_INGRESS == acq.configuration) {
+    if (2 == acq.lookahead) {
+      path.push_back(forward1p5);
+    } else {
+      path.push_back(forward2);
+    }
+  } else if (prepr::fs_configuration::ekLANE_GAP_EGRESS == acq.configuration) {
+    if (2 == acq.lookahead) {
+      path.push_back(forward1p75);
+      path.push_back(right1_for1p75);
+    } else {
+      path.push_back(forward2p25);
+      path.push_back(right1_for2p25);
+    }
   }
 
   ER_INFO("Calculated placement path for fs=%d, %zu waypoints",
-          rcppsw::as_underlying(acq),
+          rcppsw::as_underlying(acq.configuration),
           path.size());
 
   return path;

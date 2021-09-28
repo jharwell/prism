@@ -1,5 +1,5 @@
 /**
- * \file placement_path.hpp
+ * \file base_strategy.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,25 +18,23 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_PLACEMENT_PATH_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_PLACEMENT_PATH_HPP_
+#ifndef INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_
+#define INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <vector>
-
 #include "rcppsw/er/client.hpp"
-#include "rcppsw/math/vector2.hpp"
+#include "rcppsw/math/vector3.hpp"
 
 #include "prism/repr/fs_acq_result.hpp"
-#include "prism/prism.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 namespace prism::repr {
 class construction_lane;
+class builder_los;
 } /* namespace prism::repr */
 
 namespace prism::controller::perception {
@@ -47,37 +45,37 @@ namespace cosm::subsystem {
 class sensing_subsystemQ3D;
 } /* namespace cosm::subsystem */
 
-NS_START(prism, fsm, calculators);
+NS_START(prism, fsm, calculators, fs_acq);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \class placement_path
- * \ingroup fsm calculators
+ * \class base_strategy
+ * \ingroup fsm calculators fs_acq
  *
- * \brief Once a robot has reach the frontier set and acquired a specific
- * stygmetrig configuration (acquired meaning it has entered the robot's LOS),
- * calculate a path to a cell adjacent to the cell the robot will place a block
- * in (the placement site), so that block placement will be triggered by the
- * loop functions.
+ * \brief Base class for the classes which calculate stygmergic configurations
+ * in different ways.
  */
-class placement_path : public rer::client<placement_path> {
+class base_strategy : public rer::client<base_strategy> {
  public:
-  placement_path(
-      const csubsystem::sensing_subsystemQ3D* sensing,
-      const pcperception::builder_perception_subsystem* perception);
-
-  std::vector<rmath::vector2d> operator()(
-      const prepr::construction_lane* lane,
-      const prepr::fs_acq_result& acq) const;
+  base_strategy(const csubsystem::sensing_subsystemQ3D* sensing,
+              const pcperception::builder_perception_subsystem* perception)
+      : ER_CLIENT_INIT("prism.fsm.base_strategy"),
+        mc_sensing(sensing),
+        mc_perception(perception) {}
 
   /* Not move/copy constructable/assignable by default */
-  placement_path(const placement_path&) = delete;
-  const placement_path& operator=(const placement_path&) =
-      delete;
-  placement_path(placement_path&&) = delete;
-  placement_path& operator=(placement_path&&) = delete;
+  base_strategy(const base_strategy&) = delete;
+  const base_strategy& operator=(const base_strategy&) = delete;
+  base_strategy(base_strategy&&) = delete;
+  base_strategy& operator=(base_strategy&&) = delete;
+
+  virtual prepr::fs_acq_result operator()(
+      const prepr::construction_lane* lane) const = 0;
+
+  const auto* sensing(void) const { return mc_sensing; }
+  const auto* perception(void) const { return mc_perception; }
 
  private:
   /* clang-format off */
@@ -86,6 +84,6 @@ class placement_path : public rer::client<placement_path> {
   /* clang-format on */
 };
 
-NS_END(calculators, fsm, prism);
+NS_END(fs_acq, calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_PLACEMENT_PATH_HPP_ */
+#endif /* INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_ */

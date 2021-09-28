@@ -46,6 +46,7 @@
 #include "prism/support/tv/tv_manager.hpp"
 #include "prism/gmt/ds/block_anchor_index.hpp"
 #include "prism/gmt/repr/vshell.hpp"
+#include "prism/support/nearest_ct_calculator.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -377,13 +378,23 @@ void construction_loop_functions::robot_post_step(chal::robot& robot) {
 
 bool construction_loop_functions::robot_los_update(
     controller::constructing_controller* const c) const {
-  auto* target = robot_target(c);
-
-  /* robot not inside a nest */
-  if (nullptr == target) {
+  auto calculator = nearest_ct_calculator(ct_manager()->targetsno());
+  /*
+   * Figure out if the robot is current within the 2D bounds of any target, OR
+   * if it is JUST outside the 2D bounds of any structure.
+   *
+   * If it is, then compute and send it a LOS from the gmt, if it is not,
+   * then clear out the robot's old LOS so it does not refer to out of date info
+   * anymore, and we will get a segfault if it tries to.
+   */
+  auto* target = calculator.nearest_ct(c);
+  auto cell = calculator.nearest_ct_cell(c, target);
+  if (nullptr == target || !cell) {
     c->perception()->los(nullptr);
     return false;
   }
+  auto nearest_vd = target->anchor_index()->nearest(rds::make_rtree_point(*cell),
+                                                    1)[0];
   size_t index = std::distance(ct_manager()->targetsno().begin(),
                                std::find(ct_manager()->targetsno().begin(),
                                          ct_manager()->targetsno().end(),
@@ -398,73 +409,12 @@ bool construction_loop_functions::robot_los_update(
                                       ccops::graph_los_update,
                                       pgds::connectivity_graph,
                                       prepr::builder_los>(c);
-  rmath::vector3z cell;
-  if (target->contains(c->rpos2D(), false)) {
-    cell = c->dpos3D() - target->vshell()->real()->danchor3D();
-  } else {
-    /*
-     * Robot currently in virtual shell. Need to find the closest cell inside
-     * the actual structure (relative to structure real origin), which will be
-     * straight ahead in either X or Y.
-     */
-    bool outside_in_x = target->contains(c->rpos2D() +
-                                         rmath::vector2d::X *
-                                         target->vshell()->sh_sizer().v(),
-                                         false);
-    bool outside_in_y = target->contains(c->rpos2D() +
-                                         rmath::vector2d::Y *
-                                         target->vshell()->sh_sizer().v(),
-                                         false);
-    if (outside_in_x) {
-      cell = c->dpos3D() +
-             rmath::vector3z::X *target->vshell()->sh_sized() -
-             target->vshell()->real()->danchor3D();
-    } else if (outside_in_y) {
-      cell = c->dpos3D() +
-             rmath::vector3z::Y * target->vshell()->sh_sized() -
-             target->vshell()->real()->danchor3D();
-    }
-  }
-  ER_ASSERT(target->spec()->contains(cell),
-            "Target%d does not contain nearest cell@%s for robot%d",
-            target->id().v(),
-            rcppsw::to_string(cell).c_str(),
-            c->entity_id().v());
-  auto nearest_vd = target->anchor_index()->nearest(rds::make_rtree_point(cell),
-                                                    1)[0];
+
   auto visitor = std::bind(applicator, std::placeholders::_1, nearest_vd);
   boost::apply_visitor(visitor,
                        m_los_updaters[index].find(c->type_index())->second);
   return true;
 } /* robot_los_update() */
-
-gmt::spc_gmt* construction_loop_functions::robot_target(
-    const controller::constructing_controller* c) const {
-  /*
-   * Figure out if the robot is current within the 2D bounds of any target, OR
-   * if it is JUST outside the 2D bounds of any structure.
-   *
-   * If it is, then compute and send it a LOS from the gmt, if it is not,
-   * then clear out the robot's old LOS so it does not refer to out of date info
-   * anymore, and we will get a segfault if it tries to.
-   *
-   * We check if the robot is currently inside the a given target's boundaries
-   * INCLUDING the virtual cells that surround it; this is necessary so that
-   * robots will get a LOS and correctly compute the placement paths for the
-   * last block in a lane on a given level.
-   */
-  auto target_it = std::find_if(ct_manager()->targetsno().begin(),
-                                ct_manager()->targetsno().end(),
-                                [&](auto* target) {
-                                  return target->contains(c->rpos2D(), true);
-                                });
-
-  if (ct_manager()->targetsno().end() == target_it) {
-    return nullptr;
-  } else {
-    return (*target_it);
-  }
-} /* robot_target() */
 
 using namespace argos; // NOLINT
 

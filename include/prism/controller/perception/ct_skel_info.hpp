@@ -57,23 +57,26 @@ class ct_skel_info {
 
   size_t vshell_sized(void) const;
   rtypes::spatial_dist vshell_sizer(void) const;
-  rmath::vector3d center(void) const;
-  rmath::vector3d roriginr(void) const;
-  rmath::vector3z rorigind(void) const;
-  rmath::vector3d voriginr(void) const;
-  rmath::vector3z vorigind(void) const;
-  rmath::ranged xrspan(void) const;
-  rmath::ranged yrspan(void) const;
-  rmath::vector3d bbr(bool include_virtual = false) const;
-  rmath::vector3z bbd(bool include_virtual = false) const;
-  rtypes::spatial_dist block_unit_dim(void) const;
-  size_t unit_dim_factor(void) const;
-  const rmath::radians& orientation(void) const;
-  size_t n_lanes(void) const;
+
+  RCPPSW_WRAP_DECL(rmath::vector3d, roriginr, const);
+  RCPPSW_WRAP_DECL(rmath::vector3z, rorigind, const);
+  RCPPSW_WRAP_DECL(rmath::vector3d, voriginr, const);
+  RCPPSW_WRAP_DECL(rmath::vector3z, vorigind, const);
+  RCPPSW_WRAP_DECL(rtypes::spatial_dist, block_unit_dim, const);
+  RCPPSW_WRAP_DECL(size_t, unit_dim_factor, const);
+  RCPPSW_WRAP_DECL(const rtypes::type_uuid&, id, const);
+  RCPPSW_WRAP_DECL(const rmath::radians&, orientation, const);
+
+  rmath::vector3d bbr(bool include_virtual) const;
+  rmath::vector3z bbd(bool include_virtual) const;
+  rmath::ranged xrspan(bool include_virtual) const;
+  rmath::ranged yrspan(bool include_virtual) const;
   const rtypes::discretize_ratio& grid_resolution(void) const;
 
+  size_t n_lanes(void) const;
+
   rmath::vector3d anchor_loc_abs(const pgrepr::ct_coord& anchor) const;
-  rtypes::type_uuid id(void) const;
+
   pgrepr::ct_coord to_vcoord(const rmath::vector3d& arena_pos) const;
   pgrepr::ct_coord to_vcoord2D(const rmath::vector2d& arena_pos) const;
   pgrepr::ct_coord as_vcoord(const rmath::vector3z& coord) const;

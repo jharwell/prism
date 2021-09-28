@@ -86,7 +86,6 @@ class spc_gmt final : public rer::client<spc_gmt>,
                       public crepr::entity3D {
  public:
   using subtarget_vectorno = std::vector<subtarget*>;
-
   spc_gmt(const config::spct_config* config,
           const carena::base_arena_map* map,
           const rtypes::type_uuid& id);

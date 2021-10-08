@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -84,4 +83,3 @@ class ingress_lane_path : public rer::client<ingress_lane_path> {
 
 NS_END(calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_INGRESS_LANE_PATH_HPP_ */

@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_BLOCK_OP_FILTER_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_BLOCK_OP_FILTER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -134,4 +133,3 @@ class block_op_filter : public rer::client<block_op_filter> {
 };
 NS_END(tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_BLOCK_OP_FILTER_HPP_ */

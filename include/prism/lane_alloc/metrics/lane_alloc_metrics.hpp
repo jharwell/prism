@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -56,4 +55,3 @@ class lane_alloc_metrics : public rmetrics::base_metrics {
 
 NS_END(metrics, lane_alloc, prism);
 
-#endif /* INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_HPP_ */

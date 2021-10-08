@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_DS_CT_VECTOR_HPP_
-#define INCLUDE_PRISM_DS_CT_VECTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -49,4 +48,3 @@ using ct_vectorro = std::vector<const gmt::spc_gmt*>;
 
 NS_END(ds, prism);
 
-#endif /* INCLUDE_PRISM_DS_CT_VECTOR_HPP_ */

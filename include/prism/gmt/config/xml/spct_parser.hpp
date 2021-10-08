@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_CONFIG_XML_SPCT_PARSER_HPP_
-#define INCLUDE_PRISM_GMT_CONFIG_XML_SPCT_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -41,14 +40,16 @@ NS_START(prism, gmt, config, xml);
  ******************************************************************************/
 /**
  * \class spct_parser
- * \ingroup config gmt xml
+ * \ingroup gmt config xml
  *
  * \brief Parses XML parameters defining \ref spct to be constructed at
  * the start of simulation.
  */
-class spct_parser final : public rconfig::xml::xml_config_parser {
+class spct_parser final : public rer::client<spct_parser>,
+                          public rconfig::xml::xml_config_parser {
  public:
   using config_type = spct_config;
+  spct_parser(void) : ER_CLIENT_INIT("prism.gmt.config.xml.spct_parser") {}
 
   inline static const std::string kXMLRoot = "spct";
 
@@ -67,5 +68,3 @@ class spct_parser final : public rconfig::xml::xml_config_parser {
 };
 
 NS_END(xml, config, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_CONFIG_XML_SPCT_PARSER_HPP_ */

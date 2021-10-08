@@ -37,8 +37,8 @@ NS_START(prism, gmt, operations);
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-cpal::embodied_block_variantno
-block_place::operator()(std::unique_ptr<cpal::embodied_cube_block> block) const {
+cargos::embodied_block_variantno
+block_place::operator()(std::unique_ptr<cargos::embodied_cube_block> block) const {
   ER_INFO("Cube block%d to structure with intent: %s",
           block->id().v(),
           rcppsw::to_string(mc_intent).c_str());
@@ -65,8 +65,8 @@ block_place::operator()(std::unique_ptr<cpal::embodied_cube_block> block) const 
   return { ret };
 } /* do_place() */
 
-cpal::embodied_block_variantno
-block_place::operator()(std::unique_ptr<cpal::embodied_ramp_block> block) const {
+cargos::embodied_block_variantno
+block_place::operator()(std::unique_ptr<cargos::embodied_ramp_block> block) const {
   ER_INFO("Cube block%d to structure with intent: %s",
           block->id().v(),
           rcppsw::to_string(mc_intent).c_str());

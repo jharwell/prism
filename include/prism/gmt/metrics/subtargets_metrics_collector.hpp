@@ -18,15 +18,14 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_COLLECTOR_HPP_
-#define INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_COLLECTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <memory>
 
-#include "rcppsw/metrics/base_metrics_collector.hpp"
+#include "rcppsw/metrics/base_collector.hpp"
 
 #include "prism/gmt/metrics/subtargets_metrics_data.hpp"
 
@@ -48,7 +47,7 @@ NS_START(prism, gmt, metrics);
  * Metrics MUST be collected serially; concurrent updates to the gathered stats
  * are not supported.
  */
-class subtargets_metrics_collector final : public rmetrics::base_metrics_collector {
+class subtargets_metrics_collector final : public rmetrics::base_collector {
  public:
  /**
    * \param sink The metrics sink to use.
@@ -56,13 +55,13 @@ class subtargets_metrics_collector final : public rmetrics::base_metrics_collect
    * \param n_subtargets The # of subtargets the structure will be broken down
    *                     into during construction.
    */
-  subtargets_metrics_collector(std::unique_ptr<rmetrics::base_metrics_sink> sink,
+  subtargets_metrics_collector(std::unique_ptr<rmetrics::base_sink> sink,
                                size_t n_subtargets);
 
-  /* base_metrics_collector overrides */
+  /* base_collector overrides */
   void collect(const rmetrics::base_metrics& metrics) override;
   void reset_after_interval(void) override;
-  const rmetrics::base_metrics_data* data(void) const override { return &m_data; }
+  const rmetrics::base_data* data(void) const override { return &m_data; }
 
  private:
   /* clang-format off */
@@ -71,5 +70,3 @@ class subtargets_metrics_collector final : public rmetrics::base_metrics_collect
 };
 
 NS_END(metrics, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_COLLECTOR_HPP_ */

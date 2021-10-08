@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_SWARM_SPCT3D_BUILDER_HPP_
-#define INCLUDE_PRISM_GMT_SWARM_SPCT3D_BUILDER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -44,7 +43,7 @@ class swarm_spct_builder : public base_spct_builder {
  public:
   swarm_spct_builder(const config::spct_builder_config* config,
                      spc_gmt* target,
-                     cpal::argos_sm_adaptor* sm)
+                     cpargos::swarm_manager_adaptor* sm)
       : base_spct_builder(config, target, sm) {}
 
   /* Not copy constructable/assignable by default */
@@ -62,5 +61,3 @@ class swarm_spct_builder : public base_spct_builder {
 };
 
 NS_END(gmt, prism);
-
-#endif /* INCLUDE_PRISM_SWARM_SPCT_SPCT3D_BUILDER_HPP_ */

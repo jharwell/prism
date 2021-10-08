@@ -18,19 +18,18 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <boost/variant/static_visitor.hpp>
+#include <variant>
 #include <memory>
 #include <utility>
 
-#include "cosm/pal/block_embodiment_variant.hpp"
-#include "cosm/pal/embodied_cube_block.hpp"
-#include "cosm/pal/embodied_ramp_block.hpp"
+#include "cosm/argos/block_embodiment_variant.hpp"
+#include "cosm/argos/embodied_cube_block.hpp"
+#include "cosm/argos/embodied_ramp_block.hpp"
 
 #include "prism/prism.hpp"
 #include "prism/gmt/spc_gmt.hpp"
@@ -47,8 +46,7 @@ NS_START(prism, gmt, operations, detail);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-struct block_embodiment_set_impl : public rer::client<block_embodiment_set_impl>,
-                                   private boost::static_visitor<void> {
+struct block_embodiment_set_impl : public rer::client<block_embodiment_set_impl> {
   block_embodiment_set_impl(void)
       : ER_CLIENT_INIT("prism.gmt.builder.block_embodiment_set") {}
   virtual ~block_embodiment_set_impl(void) = default;
@@ -79,25 +77,23 @@ NS_END(detail);
  * crepr::block3D_variant to the corresponding embodiment type in \ref
  * crepr::embodied_block_variant.
  */
-struct block_embodiment_set : public boost::static_visitor<void> {
-  explicit block_embodiment_set(cpal::block_embodiment_variant&& e)
+struct block_embodiment_set {
+  explicit block_embodiment_set(cargos::block_embodiment_variant&& e)
       : embodiment(std::move(e)) {}
 
-  void operator()(cpal::embodied_ramp_block* block) {
-    boost::apply_visitor(std::bind(detail::block_embodiment_set_impl(),
-                                   block,
-                                   std::placeholders::_1),
-                         std::move(embodiment));
+  void operator()(cargos::embodied_ramp_block* block) {
+    std::visit(std::bind(detail::block_embodiment_set_impl(),
+                         block,
+                         std::placeholders::_1),
+               std::move(embodiment));
   }
-  void operator()(cpal::embodied_cube_block* block) {
-    boost::apply_visitor(std::bind(detail::block_embodiment_set_impl(),
-                                   block,
-                                   std::placeholders::_1),
-                         std::move(embodiment));
+  void operator()(cargos::embodied_cube_block* block) {
+    std::visit(std::bind(detail::block_embodiment_set_impl(),
+                         block,
+                         std::placeholders::_1),
+               std::move(embodiment));
   }
-  cpal::block_embodiment_variant embodiment;
+  cargos::block_embodiment_variant embodiment;
 };
 
 NS_END(operations, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_EMBODIMENT_SET_HPP_ */

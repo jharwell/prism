@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -45,7 +44,8 @@ NS_START(prism, lane_alloc, config, xml);
  *
  * \brief Parses XML parameters \ref lane_alloc::lane_allocator objects.
  */
-class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
+class lane_alloc_parser final : public rer::client<lane_alloc_parser>,
+                                public rconfig::xml::xml_config_parser {
  public:
   using config_type = lane_alloc_config;
 
@@ -54,6 +54,9 @@ class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
    * should lie under in the XML tree.
    */
   inline static const std::string kXMLRoot = "lane_alloc";
+
+  lane_alloc_parser(void)
+      : ER_CLIENT_INIT("prism.lane_alloc.config.xml.lane_alloc_parser") {}
 
   void parse(const ticpp::Element& node) override RCPPSW_COLD;
 
@@ -71,5 +74,3 @@ class lane_alloc_parser final : public rconfig::xml::xml_config_parser {
 };
 
 NS_END(xml, config, lane_alloc, prism);
-
-#endif /* INCLUDE_PRISM_LANE_ALLOC_CONFIG_XML_LANE_ALLOC_PARSER_HPP_ */

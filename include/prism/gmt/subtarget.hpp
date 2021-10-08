@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_SUBTARGET_HPP_
-#define INCLUDE_PRISM_GMT_SUBTARGET_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -101,4 +100,3 @@ class subtarget : public rer::client<subtarget>,
 
 NS_END(gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_SUBTARGET_HPP_ */

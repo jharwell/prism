@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
-#define INCLUDE_PRISM_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -132,4 +131,3 @@ class builder_perception_subsystem : public csperception::rlos_perception_subsys
 
 NS_END(perception, controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_PERCEPTION_BUILDER_PERCEPTION_SUBSYSTEM_HPP_ */

@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_REPR_CONSTRUCTION_LANE_HPP_
-#define INCLUDE_PRISM_REPR_CONSTRUCTION_LANE_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -86,4 +85,3 @@ class construction_lane : public cta::taskable_argument,
 
 NS_END(repr, prism);
 
-#endif /* INCLUDE_PRISM_REPR_CONSTRUCTION_LANE_HPP_ */

@@ -18,13 +18,12 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_DATA_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_DATA_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/metrics/base_metrics_data.hpp"
+#include "rcppsw/metrics/base_data.hpp"
 #include "rcppsw/types/timestep.hpp"
 
 /*******************************************************************************
@@ -43,7 +42,7 @@ NS_START(prism, support, tv, metrics);
  * env_dynamics_metrics. Does not need to be atomic, because these are collected
  * in non-current contexts.
  */
-struct env_dynamics_metrics_data : public rmetrics::base_metrics_data {
+struct env_dynamics_metrics_data : public rmetrics::base_data {
   double           avg_motion_throttle{0.0};
   rtypes::timestep arena_block_manip_penalty{0};
   rtypes::timestep structure_block_manip_penalty{0};
@@ -51,4 +50,3 @@ struct env_dynamics_metrics_data : public rmetrics::base_metrics_data {
 
 NS_END(metrics, tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_DATA_HPP_ */

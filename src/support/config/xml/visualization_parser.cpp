@@ -32,13 +32,17 @@ NS_START(prism, support, config, xml);
  * Member Functions
  ******************************************************************************/
 void visualization_parser::parse(const ticpp::Element& node) {
+  ER_DEBUG("Parent node=%s: child=%s",
+           node.Value().c_str(),
+           kXMLRoot.c_str());
+
   if (nullptr != node.FirstChild(kXMLRoot, false)) {
     ticpp::Element vnode = node_get(node, kXMLRoot);
     m_config = std::make_unique<config_type>();
 
     m_parent.parse(node);
-    *static_cast<cvconfig::visualization_config*>(m_config.get()) =
-        *m_parent.config_get<cvconfig::xml::visualization_parser::config_type>();
+    *static_cast<cavis::config::visualization_config*>(m_config.get()) =
+        *m_parent.config_get<cavis::config::xml::visualization_parser::config_type>();
 
     XML_PARSE_ATTR_DFLT(vnode, m_config, robot_nearest_ct, false);
   }

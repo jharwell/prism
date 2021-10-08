@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACE_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACE_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -31,9 +30,9 @@
 #include "rcppsw/er/client.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
-#include "cosm/pal/embodied_cube_block.hpp"
-#include "cosm/pal/embodied_ramp_block.hpp"
-#include "cosm/pal/embodied_block_variant.hpp"
+#include "cosm/argos/embodied_cube_block.hpp"
+#include "cosm/argos/embodied_ramp_block.hpp"
+#include "cosm/argos/embodied_block_variant.hpp"
 
 #include "prism/prism.hpp"
 #include "prism/gmt/repr/ct_coord.hpp"
@@ -84,7 +83,7 @@ class block_place : public rer::client<block_place>,
    * - The \ref spc_gmt builder clones a block in the arena to give to the
    *   gmt, which takes ownership.
    */
-  cpal::embodied_block_variantno operator()(std::unique_ptr<cpal::embodied_cube_block> block) const;
+  cargos::embodied_block_variantno operator()(std::unique_ptr<cargos::embodied_cube_block> block) const;
 
   /**
    * \brief Place a ramp block onto the structure. This happens when:
@@ -94,7 +93,7 @@ class block_place : public rer::client<block_place>,
    * - The \ref spc_gmt builder clones a block in the arena to give to the
    *   gmt, which takes ownership.
    */
-  cpal::embodied_block_variantno operator()(std::unique_ptr<cpal::embodied_ramp_block> block) const;
+  cargos::embodied_block_variantno operator()(std::unique_ptr<cargos::embodied_ramp_block> block) const;
 
  private:
   /**
@@ -117,4 +116,3 @@ class block_place : public rer::client<block_place>,
 
 NS_END(operations, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACE_HPP_ */

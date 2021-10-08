@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_CT_MANAGER_HPP_
-#define INCLUDE_PRISM_GMT_CT_MANAGER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -52,8 +51,8 @@ namespace cosm::arena {
 class base_arena_map;
 } /* namespace cosm::arena */
 
-namespace cosm::pal {
-class argos_sm_adaptor;
+namespace cosm::pal::argos {
+class swarm_manager_adaptor;
 } /* namespace cosm::pal */
 
 NS_START(prism, gmt);
@@ -73,7 +72,7 @@ NS_START(prism, gmt);
 class ct_manager : public rer::client<ct_manager> {
  public:
   ct_manager(carena::base_arena_map* map,
-             cpal::argos_sm_adaptor* sm,
+             cpargos::swarm_manager_adaptor* sm,
              pstv::env_dynamics* envd);
 
   ~ct_manager(void) override;
@@ -166,16 +165,14 @@ class ct_manager : public rer::client<ct_manager> {
   spc_gmt* target_lookup(const rtypes::type_uuid& id) const;
 
   /* clang-format off */
-  carena::base_arena_map* m_arena_map;
-  cpal::argos_sm_adaptor* m_sm;
-  pstv::env_dynamics*     m_envd;
-  pds::ct_vectoro         m_targetso{};
-  pds::ct_vectorno        m_targetsno{};
-  pds::ct_vectorro        m_targetsro{};
-  builders_vectoro_type   m_builderso{};
+  carena::base_arena_map*         m_arena_map;
+  cpargos::swarm_manager_adaptor* m_sm;
+  pstv::env_dynamics*             m_envd;
+  pds::ct_vectoro                 m_targetso{};
+  pds::ct_vectorno                m_targetsno{};
+  pds::ct_vectorro                m_targetsro{};
+  builders_vectoro_type           m_builderso{};
   /* clang-format on */
 };
 
 NS_END(gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_CT_MANAGER_HPP_ */

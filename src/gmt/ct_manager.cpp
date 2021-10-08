@@ -42,7 +42,7 @@ NS_START(prism, gmt);
  * Constructors/Destructors
  ******************************************************************************/
 ct_manager::ct_manager(carena::base_arena_map* const map,
-                       cpal::argos_sm_adaptor* const sm,
+                       cpargos::swarm_manager_adaptor* const sm,
                        pstv::env_dynamics* const envd)
     : ER_CLIENT_INIT("prism.gmt.ct_manager"),
       m_arena_map(map),

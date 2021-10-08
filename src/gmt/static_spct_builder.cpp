@@ -27,7 +27,7 @@
 #include <typeindex>
 
 #include "cosm/arena/base_arena_map.hpp"
-#include "cosm/pal/argos_sm_adaptor.hpp"
+#include "cosm/pal/argos/swarm_manager_adaptor.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 
@@ -47,7 +47,7 @@ NS_START(prism, gmt);
 static_spct_builder::static_spct_builder(
     const config::spct_builder_config* config,
     spc_gmt* target,
-    cpal::argos_sm_adaptor* sm)
+    cpargos::swarm_manager_adaptor* sm)
     : ER_CLIENT_INIT("prism.gmt.builder"),
       base_spct_builder(config, target, sm),
       mc_config(*config) {}

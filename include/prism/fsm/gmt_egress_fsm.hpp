@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_SPCT_EGRESS_FSM_HPP_
-#define INCLUDE_PRISM_FSM_SPCT_EGRESS_FSM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -31,6 +30,7 @@
 
 #include "prism/fsm/builder_util_fsm.hpp"
 #include "prism/fsm/calculators/lane_alignment.hpp"
+#include "prism/fsm/fsm_params.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -50,10 +50,8 @@ NS_START(prism, fsm);
 class gmt_egress_fsm : public builder_util_fsm,
                              public rer::client<gmt_egress_fsm> {
  public:
-  gmt_egress_fsm(
-      const pcperception::builder_perception_subsystem* perception,
-      csubsystem::saa_subsystemQ3D* saa,
-      rmath::rng* rng);
+  gmt_egress_fsm(const pfsm::fsm_params* params,
+                 rmath::rng* rng);
 
   ~gmt_egress_fsm(void) override = default;
 
@@ -132,4 +130,3 @@ class gmt_egress_fsm : public builder_util_fsm,
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_SPCT_EGRESS_FSM_HPP_ */

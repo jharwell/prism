@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_BUILDER_FACTORY_HPP_
-#define INCLUDE_PRISM_GMT_BUILDER_FACTORY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -50,7 +49,7 @@ class builder_factory
                                           std::string, /* key type */
                                           const config::spct_builder_config*,
                                           spc_gmt*,
-                                          cpal::argos_sm_adaptor*> {
+                                          cpargos::swarm_manager_adaptor*> {
  public:
   inline static const std::string kStatic = "static";
   inline static const std::string kSwarm = "swarm";
@@ -59,5 +58,3 @@ class builder_factory
 };
 
 NS_END(gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_BUILDER_FACTORY_HPP_ */

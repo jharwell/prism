@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -86,4 +85,3 @@ class base_strategy : public rer::client<base_strategy> {
 
 NS_END(fs_acq, calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_BASE_STRATEGY_HPP_ */

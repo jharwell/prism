@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_HISTORY_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_HISTORY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -97,4 +96,3 @@ class history {
 
 NS_END(lane_alloc, prism);
 
-#endif /* INCLUDE_PRISM_LANE_ALLOC_HISTORY_HPP_ */

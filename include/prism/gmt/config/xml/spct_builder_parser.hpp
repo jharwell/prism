@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_CONFIG_XML_SPCT3D_BUILDER_PARSER_HPP_
-#define INCLUDE_PRISM_GMT_CONFIG_XML_SPCT3D_BUILDER_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -40,12 +39,13 @@ NS_START(prism, gmt, config, xml);
  ******************************************************************************/
 /**
  * \class spct_builder_parser
- * \ingroup config structure xml
+ * \ingroup gmt config xml
  *
  * \brief Parses XML parameters defining for the \ref spct_builder at the
  * start of simulation.
  */
-class spct_builder_parser final : public rconfig::xml::xml_config_parser {
+class spct_builder_parser final : public rer::client<spct_builder_parser>,
+                                  public rconfig::xml::xml_config_parser {
  public:
   using config_type = spct_builder_config;
 
@@ -54,6 +54,9 @@ class spct_builder_parser final : public rconfig::xml::xml_config_parser {
    * under in the XML tree.
    */
   inline static const std::string kXMLRoot = "spct_builder";
+
+  spct_builder_parser(void)
+      : ER_CLIENT_INIT("prism.gmt.config.xml.spct_builder_parser") {}
 
   void parse(const ticpp::Element& node) override RCPPSW_COLD;
 
@@ -69,5 +72,3 @@ class spct_builder_parser final : public rconfig::xml::xml_config_parser {
 };
 
 NS_END(xml, config, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_CONFIG_XML_SPCT3D_BUILDER_PARSER_HPP_ */

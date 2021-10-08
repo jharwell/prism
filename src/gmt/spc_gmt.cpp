@@ -27,10 +27,11 @@
 #include <boost/variant/static_visitor.hpp>
 
 #include "cosm/arena/base_arena_map.hpp"
+#include "cosm/repr/sim_block3D.hpp"
 
 #include "prism/gmt/operations/block_placement_validate.hpp"
 #include "prism/gmt/subtarget.hpp"
-#include "prism/algorithm/constants.hpp"
+#include "prism/properties/algorithm.hpp"
 #include "prism/gmt/ds/connectivity_graph.hpp"
 #include "prism/gmt/ds/block_anchor_index.hpp"
 #include "prism/gmt/repr/vshell.hpp"
@@ -134,13 +135,13 @@ spc_gmt::subtarget_vectoro spc_gmt::subtargetso_init(void) const {
   subtarget_vectoro ret;
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    for (size_t j = 0; j < ydsize() / paconstants::kCT_SUBTARGET_WIDTH_CELLS; ++j) {
+    for (size_t j = 0; j < ydsize() / pproperties::algorithm::kCT_SUBTARGET_WIDTH_CELLS; ++j) {
       ER_INFO("Calculating subtarget %zu along Y slice axis", j);
       ret.push_back(std::make_unique<subtarget>(this, j));
     } /* for(j..) */
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    for (size_t i = 0; i < xdsize() / paconstants::kCT_SUBTARGET_WIDTH_CELLS; ++i) {
+    for (size_t i = 0; i < xdsize() / pproperties::algorithm::kCT_SUBTARGET_WIDTH_CELLS; ++i) {
       ER_INFO("Calculating subtarget %zu along X slice axis", i);
       ret.push_back(std::make_unique<subtarget>(this, i));
     } /* for(i..) */
@@ -163,7 +164,7 @@ spc_gmt::subtarget_vectorno spc_gmt::subtargetsno_init(void) const {
 bool spc_gmt::block_placement_valid(const crepr::block3D_variantro& block,
                                         const prepr::placement_intent& intent) {
   auto validator = operations::block_placement_validate(this, intent);
-  return boost::apply_visitor(validator, block);
+  return std::visit(validator, block);
 } /* block_placement_valid() */
 
 bool spc_gmt::spec_exists(const crepr::base_block3D* const query) const {
@@ -228,10 +229,10 @@ subtarget* spc_gmt::parent_subtarget(const pgrepr::ct_coord& coord) {
   auto rcoord = coord.to_real();
   if (rmath::radians::kZERO == orientation() ||
       rmath::radians::kPI == orientation()) {
-    index = rcoord.offset().y() / paconstants::kCT_SUBTARGET_WIDTH_CELLS;
+    index = rcoord.offset().y() / ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS;
   } else if (rmath::radians::kPI_OVER_TWO == orientation() ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation()) {
-    index = rcoord.offset().x() / paconstants::kCT_SUBTARGET_WIDTH_CELLS;
+    index = rcoord.offset().x() / ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS;
   }
   ER_ASSERT(
       index <= m_subtargetsno.size(), "Bad index %zu: no such subtarget", index);

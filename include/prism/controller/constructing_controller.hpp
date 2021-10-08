@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_CONSTRUCTING_CONTROLLER_HPP_
-#define INCLUDE_PRISM_CONTROLLER_CONSTRUCTING_CONTROLLER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -34,9 +33,9 @@
 #include "cosm/controller/manip_event_recorder.hpp"
 #include "cosm/fsm/block_transporter.hpp"
 #include "cosm/pal/config/output_config.hpp"
-#include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
+#include "cosm/pal/controller/controllerQ3D.hpp"
 #include "cosm/subsystem/config/actuation_subsystem2D_config.hpp"
-#include "cosm/subsystem/config/sensing_subsystemQ3D_config.hpp"
+#include "cosm/hal/subsystem/config/sensing_subsystemQ3D_config.hpp"
 #include "cosm/subsystem/subsystem_fwd.hpp"
 
 #include "prism/fsm/block_placer.hpp"
@@ -72,12 +71,11 @@ NS_START(prism, controller);
  * graphics overlays.
  */
 class constructing_controller
-    : public cpal::argos_controllerQ3D_adaptor,
+    : public cpcontroller::controllerQ3D,
       public ccontroller::irv_recipient_controller,
       public ccontroller::block_carrying_controller,
       public fsm::block_placer,
       public cfsm::block_transporter<fsm::construction_transport_goal>,
-
       public rer::client<constructing_controller> {
  public:
   using block_manip_recorder_type = ccontroller::manip_event_recorder<
@@ -89,7 +87,7 @@ class constructing_controller
   constructing_controller(const constructing_controller&) = delete;
   constructing_controller& operator=(const constructing_controller&) = delete;
 
-  /* constructing_controllerQ3D overrides */
+  /* controllerQ3D overrides */
   void init(ticpp::Element& node) override RCPPSW_COLD;
   void reset(void) override RCPPSW_COLD;
   rtypes::type_uuid entity_id(void) const override final;
@@ -99,7 +97,7 @@ class constructing_controller
   void irv_init(const ctv::robot_dynamics_applicator* rda) override final;
 
   /* block carrying controller overrides */
-  bool block_detected(void) const override;
+  bool block_detect(void) const override;
 
   /* movement metrics */
   rtypes::spatial_dist
@@ -130,18 +128,18 @@ class constructing_controller
   }
   block_manip_recorder_type* block_manip_recorder(void) { return &m_block_manip; }
   const class csubsystem::saa_subsystemQ3D* saa(void) const {
-    return cpal::argos_controllerQ3D_adaptor::saa();
+    return cpcontroller::controllerQ3D::saa();
   }
 
  protected:
   class csubsystem::saa_subsystemQ3D* saa(void) {
-    return cpal::argos_controllerQ3D_adaptor::saa();
+    return cpcontroller::controllerQ3D::saa();
   }
 
  private:
   void
   saa_init(const csubsystem::config::actuation_subsystem2D_config* actuation_p,
-           const csubsystem::config::sensing_subsystemQ3D_config* sensing_p);
+           const chsubsystem::config::sensing_subsystemQ3D_config* sensing_p);
 
   fs::path output_init(const cpconfig::output_config* outputp) override;
 
@@ -156,4 +154,3 @@ class constructing_controller
 
 NS_END(controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_CONSTRUCTING_CONTROLLER_HPP_ */

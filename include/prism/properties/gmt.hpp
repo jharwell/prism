@@ -1,5 +1,5 @@
 /**
- * \file constants.hpp
+ * \file gmt.hpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -18,49 +18,54 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_
-#define INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <string>
+
 #include "prism/prism.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(prism, algorithm, constants);
+NS_START(prism, properties, gmt);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
- * \brief The # of cells that robots need to keep between them and the robot in
- * front of them, once they have acquired the frontier set, in order to ensure
- * deadlock-free operation.
+ * \brief Cube blocks are restricted to being connected to their neighbors only
+ * through their faces.
  */
-static constexpr size_t kCT_FRONTIER_SET_PROX_CELLS = 3;
+static constexpr const size_t kMAX_MANHATTAN_NEIGHBORS_CUBE = 6;
 
 /**
- * \brief The # of cells that robots need to keep between them and the robot in
- * front of them when they are in a construction lane (ingress/egress), but have
- * not yet acquired the frontier set.
+ * \brief Cube blocks are restricted to being connected to their neighbors only
+ * through their faces. 1 for back + 2 for bottom + 2 for sides = 5 (sides would
+ * have to be other ramp blocks).
  */
-static constexpr size_t kCT_TRAJECTORY_PROX_CELLS = 2;
+static constexpr const size_t kMAX_MANHATTAN_NEIGHBORS_RAMP = 5;
 
 /**
- * \brief The width of a construction lane/subtarget on the structure in cells.
+ * \brief If a vertex on the structure has at least 1 neighbor above it (i.e.,
+ * the vertex at (x,y,z+1) exists), then it must have at least 2 neighbors: its
+ * support below, and the neighbor above. In most cases it will have more, but
+ * this is as restrictive as I can be.
  */
-static constexpr const size_t kCT_SUBTARGET_WIDTH_CELLS = 2;
-
+static constexpr const size_t kABOVE_GROUND_MIN_MANHATTAN_NEIGHBORS = 2;
 
 /**
- * How far ahead of the robot's current cell location on the structure to look
- * for stygmergic configurations, in units of cells. This is a critical value
- * for overall builder FSM provable correctness.
+ * \brief The color of cube blocks, for the purposes of doing structure
+ * validation through graph coloring.
  */
-static constexpr const size_t kCT_FS_LOOKAHEAD_MAX_CELLS = 3;
+static inline const std::string kVertexColorCube = "blue";
 
-NS_END(constants, algorithm, prism);
+/**
+ * \brief The color of ramp blocks, for the purposes of doing structure
+ * validation through graph coloring.
+ */
+static inline const std::string kVertexColorRamp = "red";
 
-#endif /* INCLUDE_PRISM_ALGORITHM_CONSTANTS_HPP_ */
+NS_END(gmt, properties, prism);

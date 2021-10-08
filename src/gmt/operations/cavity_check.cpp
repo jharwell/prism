@@ -1,5 +1,5 @@
 /**
- * \file topology_check.cpp
+ * \file cavity_check.cpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "prism/gmt/operations/topology_check.hpp"
+#include "prism/gmt/operations/cavity_check.hpp"
 
 #include "prism/gmt/repr/vshell.hpp"
 #include "prism/gmt/repr/ct_coord.hpp"
@@ -34,13 +34,13 @@ NS_START(prism, gmt, operations);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-topology_check::topology_check(void)
-    : ER_CLIENT_INIT("prism.gmt.operations.topology_check") {}
+cavity_check::cavity_check(void)
+    : ER_CLIENT_INIT("prism.gmt.operations.cavity_check") {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool topology_check::operator()(const pgds::connectivity_graph* graph,
+bool cavity_check::operator()(const pgds::connectivity_graph* graph,
                                 const pgrepr::vshell* vshell) const {
   for (size_t x = 0; x < vshell->real()->xdsize(); ++x) {
     auto slice = pgrepr::slice2D(pgrepr::slice2D::spec_calc(rmath::vector3z::X,
@@ -80,23 +80,47 @@ error:
   return false;
 } /* operator()() */
 
-bool topology_check::layer_check(const pgrepr::slice2D& layer,
-                                 const pgrepr::vshell* vshell) const {
-  /*
-   * @todo For right now, we disallow ALL holes in structures, because even
-   * simple holes are not feasible unless beam blocks exist, which they do
-   * not yet. This may be relaxed at some point in the future.
-   */
-  ER_CHECK(topological_holes(layer, vshell).empty(),
-           "Layer contains one or more topological holes");
+bool cavity_check::extent_holes(const pgds::connectivity_graph* graph,
+                                const pgrepr::vshell* vshell) const {
+  for (size_t x = 0; x < vshell->real()->xdsize(); ++x) {
+    auto slice = pgrepr::slice2D(pgrepr::slice2D::spec_calc(rmath::vector3z::X,
+                                                            x,
+                                                            vshell),
+                                 graph);
+    ER_CHECK(extent_holes_for_layer(slice, vshell).empty(),
+             "Layer%zu along X failed validation", x);
+    ER_DEBUG("Layer%zu along X OK", x);
+  } /* for(x..) */
 
+  for (size_t y = 0; y < vshell->real()->ydsize(); ++y) {
+    auto slice = pgrepr::slice2D(pgrepr::slice2D::spec_calc(rmath::vector3z::Y,
+                                                            y,
+                                                            vshell),
+                                 graph);
+    ER_CHECK(extent_holes_for_layer(slice, vshell).empty(),
+             "Layer%zu along Y failed validation", y);
+    ER_DEBUG("Layer%zu along Y OK", y);
+  } /* for(y..) */
+
+  /* PROPERTY: top layer has no topological holes */
+  for (size_t z = 0; z < vshell->real()->zdsize() - 1; ++z) {
+    auto slice = pgrepr::slice2D(pgrepr::slice2D::spec_calc(rmath::vector3z::Z,
+                                                            z,
+                                                            vshell),
+                                 graph);
+    ER_CHECK(extent_holes_for_layer(slice, vshell).empty(),
+             "Layer%zu along Z failed validation", z);
+    ER_DEBUG("Layer%zu along Z OK", z);
+  } /* for(z..) */
+
+  ER_INFO("All layers validated in X,Y,Z");
   return true;
 
 error:
   return false;
-} /* layer_check() */
+} /* operator()() */
 
-std::set<topology_check::extent_hole> topology_check::extent_holes(
+std::set<cavity_check::extent_hole> cavity_check::extent_holes_for_layer(
     const pgrepr::slice2D& layer,
     const pgrepr::vshell* vshell) const {
   std::set<extent_hole> ret;
@@ -134,22 +158,18 @@ std::set<topology_check::extent_hole> topology_check::extent_holes(
     if (!bad_edge_cross) {
       continue;
     }
-    /* Property 3: Extent holes are not on the exterior of the structure */
-    if (cell_on_exterior(layer.access(*vd)->coord, vshell)) {
-      continue;
-    }
     ER_DEBUG("Add extent hole %s",
              rcppsw::to_string(layer.access(*vd)->coord).c_str());
     ret.insert(layer.access(*vd));
   } /* (vd...) */
 
   return ret;
-} /* extent_holes() */
+} /* extent_holes_for_layer() */
 
-std::vector<topology_check::topological_hole> topology_check::topological_holes(
+std::vector<cavity_check::topological_hole> cavity_check::topological_holes_for_layer(
     const pgrepr::slice2D& layer,
     const pgrepr::vshell* vshell) const {
-  auto extent_holes = this->extent_holes(layer, vshell);
+  auto extent_holes = this->extent_holes_for_layer(layer, vshell);
   std::vector<topological_hole> ret;
   auto axis_offset = layer.dcenter3D().mask(layer.spec().axis()).length();
   ER_DEBUG("Slice with axis offset %zu contains %zu extent holes",
@@ -185,9 +205,9 @@ std::vector<topology_check::topological_hole> topology_check::topological_holes(
     }
   } /* for(&shole..) */
   return ret;
-} /* topological_holes() */
+} /* topological_holes_for_layer() */
 
-bool topology_check::is_anchor_hole(const pgrepr::block_anchor_spec* spec,
+bool cavity_check::is_anchor_hole(const pgrepr::block_anchor_spec* spec,
                                     const pgrepr::vshell* vshell) const {
   /* Criteria 1: contains no anchor point */
   RCPPSW_CHECK(nullptr == spec);
@@ -201,7 +221,7 @@ error:
   return false;
 } /* is_anchor_hole() */
 
-bool topology_check::cell_on_exterior(const rmath::vector3z& cell,
+bool cavity_check::cell_on_exterior(const rmath::vector3z& cell,
                                       const pgrepr::vshell* vshell) const {
   return !cell.is_pd() ||
       cell.x() == vshell->real()->xdsize() - 1 ||

@@ -1,5 +1,5 @@
 /**
- * \file topology_check.hpp
+ * \file cavity_check.hpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_TOPOLOGY_CHECK_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_TOPOLOGY_CHECK_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -49,7 +48,7 @@ NS_START(prism, gmt, operations);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class topology_check
+ * \class cavity_check
  * \ingroup gmt operations
  *
  * \brief Perform topological checks as part of determining if a \ref connectivity_graph
@@ -60,62 +59,60 @@ NS_START(prism, gmt, operations);
  * - The graph contains no holes in any layer other than the top (required for
  *   structures composed of only cube blocks; will be relaxed later.
  */
-class topology_check : public rer::client<topology_check> {
+class cavity_check : public rer::client<cavity_check> {
  public:
   using extent_hole = const pgrepr::block_anchor_spec*;
   using topological_hole = std::set<extent_hole>;
 
-  topology_check(void);
+  cavity_check(void);
 
   /* Not move/copy constructable/assignable by default */
-  topology_check(const topology_check&) = delete;
-  topology_check& operator=(const topology_check&) = delete;
-  topology_check(topology_check&&) = delete;
-  topology_check& operator=(topology_check&&) = delete;
+  cavity_check(const cavity_check&) = delete;
+  cavity_check& operator=(const cavity_check&) = delete;
+  cavity_check(cavity_check&&) = delete;
+  cavity_check& operator=(cavity_check&&) = delete;
 
   /**
-   * \brief Perform topological checks on a all layers (siliced in X,Y,Z) within
-   * the \ref connectivity_graph.
+   * \brief Check for holes in the graph due to mismatched block extents. This
+   * only covers holes from a badly connected graph, NOT those from missing
+   * vertices (i.e., it only checks the vertices currently in the graph).
    */
-  bool operator()(const pgds::connectivity_graph* graph,
-                  const pgrepr::vshell* vshell) const;
+  bool extent_holes(const pgds::connectivity_graph* graph,
+                    const pgrepr::vshell* vshell) const;
 
   /**
-   * \brief Perform topological checks on a single layer within the \ref
-   * connectivity_graph.
+   * \brief Check for holes in the graph due to block anchors not
+   * providing support AND block extents not providing support.
    */
-  bool layer_check(const pgrepr::slice2D& layer,
-                   const pgrepr::vshell* vshell) const;
+  bool cavities(const pgds::connectivity_graph* graph,
+                const pgrepr::vshell* vshell) const;
 
+ private:
   /**
    * \brief Get the set of topological holes in the slice (i.e., within a single
    * layer), where each topological hole is a contiguous group of "simple"
    * holes. Contiguousness is determined by N,S,E,W adjacency.
    */
-  std::vector<topological_hole> topological_holes(const pgrepr::slice2D& layer,
-                                                  const pgrepr::vshell* vshell) const;
-
- private:
-
+  std::vector<topological_hole> topological_holes_for_layer(
+      const pgrepr::slice2D& layer,
+      const pgrepr::vshell* vshell) const;
 
   /**
    * \brief Find all extent holes in a layer. Cells (x,y,z) in the bounding box
-   * of the layer are considered extent holes if they meet any of the following
-   * criteria.
+   * of the layer are considered extent holes if they meet *ALL* of the
+   * following criteria.
    *
    * 1. Are not anchor holes.
    * 2. Are not crossed by exactly 1 edge of a block's extent (i.e., one of the
    *    neighboring blocks has an extent that is too short or too long). This is
    *    equivalent to saying L1 norm of the difference in coordinates of the two
    *    corresponding vertices (e = (u,v)) is not equal to the edge length.
-   * 3. Are not on the exterior of the bounding box/a perimeter cell.
    *
    * \todo This check is only currently valid for structures containing only
    * cube and beam blocks.
    */
-  std::set<extent_hole> extent_holes(const pgrepr::slice2D& layer,
-                                     const pgrepr::vshell* vshell) const;
-
+  std::set<extent_hole> extent_holes_for_layer(const pgrepr::slice2D& layer,
+                                               const pgrepr::vshell* vshell) const;
   /**
    * \brief Determine if the host cell of a block is an anchor hole: a cell
    * (x,y,z) in the bounding box of the spec which meets all of the following
@@ -145,4 +142,3 @@ class topology_check : public rer::client<topology_check> {
 
 NS_END(operations, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_TOPOLOGY_CHECK_HPP_ */

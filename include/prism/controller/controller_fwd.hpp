@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_CONTROLLER_FWD_HPP_
-#define INCLUDE_PRISM_CONTROLLER_CONTROLLER_FWD_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -49,4 +48,3 @@ using typelist = rmpl::typelist<fcrw_bst_controller>;
 
 NS_END(controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_CONTROLLER_FWD_HPP_ */

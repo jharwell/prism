@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_BLOCK_PLACER_HPP_
-#define INCLUDE_PRISM_FSM_BLOCK_PLACER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -64,4 +63,3 @@ class block_placer {
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_BLOCK_PLACER_HPP_ */

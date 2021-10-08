@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -28,7 +27,7 @@
 #include <list>
 #include <vector>
 
-#include "rcppsw/metrics/base_metrics_collector.hpp"
+#include "rcppsw/metrics/base_collector.hpp"
 #include "rcppsw/types/type_uuid.hpp"
 
 #include "prism/prism.hpp"
@@ -53,7 +52,7 @@ NS_START(prism, lane_alloc, metrics);
  * gathered stats are supported. Metrics are written out at the specified
  * collection interval.
  */
-class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collector {
+class lane_alloc_metrics_collector final : public rmetrics::base_collector {
  public:
   /**
    * \param sink The metrics sink to use.
@@ -63,14 +62,14 @@ class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collect
    * \param n_lanes # of lanes on the target structure.
    */
   lane_alloc_metrics_collector(
-      std::unique_ptr<rmetrics::base_metrics_sink> sink,
+      std::unique_ptr<rmetrics::base_sink> sink,
       const rtypes::type_uuid& target_id,
       size_t n_lanes);
 
-  /* base_metrics_collector overrides */
+  /* base_collector overrides */
   void collect(const rmetrics::base_metrics& metrics) override;
   void reset_after_interval(void) override;
-  const rmetrics::base_metrics_data* data(void) const override { return &m_data; }
+  const rmetrics::base_data* data(void) const override { return &m_data; }
 
  private:
   /* clang-format off */
@@ -82,4 +81,3 @@ class lane_alloc_metrics_collector final : public rmetrics::base_metrics_collect
 
 NS_END(metrics, lane_alloc, prism);
 
-#endif /* INCLUDE_PRISM_LANE_ALLOC_METRICS_LANE_ALLOC_METRICS_COLLECTOR_HPP_ */

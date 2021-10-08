@@ -1,0 +1,68 @@
+/**
+ * \file vertex_extent_check.hpp
+ *
+ * \copyright 2021 John Harwell, All rights reserved.
+ *
+ * This file is part of PRISM.
+ *
+ * PRISM is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PRISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * PRISM.  If not, see <http://www.gnu.org/licenses/
+ */
+
+#pragma once
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include "rcppsw/er/client.hpp"
+
+#include "cosm/repr/block_variant.hpp"
+
+#include "prism/properties/gmt.hpp"
+#include "prism/gmt/ds/connectivity_graph.hpp"
+
+/*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+NS_START(prism, gmt, operations);
+
+/*******************************************************************************
+ * Class Definitions
+ ******************************************************************************/
+/**
+ * \class vertex_extent_check
+ * \ingroup gmt operations
+ *
+ * \brief Enforces graph properties related to coherent extents from \cite
+ * Harwell2022c-EGM.
+ */
+class vertex_extent_check : public rer::client<vertex_extent_check> {
+ public:
+  explicit vertex_extent_check(const pgds::connectivity_graph* graph)
+      : ER_CLIENT_INIT("prism.gmt.operations.vertex_extent_check"),
+        mc_graph(graph) {}
+
+  /* Not move/copy constructable/assignable by default */
+  vertex_extent_check(const vertex_extent_check&) = delete;
+  vertex_extent_check& operator=(const vertex_extent_check&) = delete;
+  vertex_extent_check(vertex_extent_check&&) = delete;
+  vertex_extent_check& operator=(vertex_extent_check&&) = delete;
+
+  bool operator()(const pgds::connectivity_graph::vertex_descriptor& vd) const;
+
+ private:
+  /* clang-format off */
+  const pgds::connectivity_graph* mc_graph;
+  /* clang-format on */
+};
+
+NS_END(operations, gmt, prism);

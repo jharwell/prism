@@ -18,13 +18,12 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_
-#define INCLUDE_PRISM_CONTROLLER_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcppsw/config/xml/xml_config_repository.hpp"
+#include "cosm/controller/config/xml/base_controller_repository.hpp"
 
 #include "prism/prism.hpp"
 
@@ -44,11 +43,9 @@ NS_START(prism, controller, config);
  * all constructing controllers.
  */
 class constructing_controller_repository
-    : public rconfig::xml::xml_config_repository {
+    : public virtual ccontroller::config::xml::base_controller_repository {
  public:
   constructing_controller_repository(void) RCPPSW_COLD;
 };
 
 NS_END(config, controller, prism);
-
-#endif /* INCLUDE_PRISM_CONFIG_CONSTRUCTING_CONTROLLER_REPOSITORY_HPP_ */

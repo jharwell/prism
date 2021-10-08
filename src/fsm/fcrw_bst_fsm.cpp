@@ -26,6 +26,7 @@
 #include "cosm/spatial/strategy/base_strategy.hpp"
 #include "cosm/spatial/strategy/explore/crw.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/fsm/calculators/lane_alignment.hpp"
@@ -45,10 +46,9 @@ NS_START(prism, fsm);
  ******************************************************************************/
 fcrw_bst_fsm::fcrw_bst_fsm(
     const placonfig::lane_alloc_config* allocator_config,
-    const pcperception::builder_perception_subsystem* perception,
-    csubsystem::saa_subsystemQ3D* const saa,
+    const pfsm::fsm_params* params,
     rmath::rng* rng)
-    : builder_util_fsm(perception, saa, rng, ekST_MAX_STATES),
+    : builder_util_fsm(params, rng, ekST_MAX_STATES),
       ER_CLIENT_INIT("prism.fsm.fcrw_bst"),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(forage, hfsm::top_state()),
@@ -76,13 +76,13 @@ fcrw_bst_fsm::fcrw_bst_fsm(
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_allocator(allocator_config, rng),
       m_allocated_lane(nullptr),
-      m_forage_fsm(saa,
-                   std::make_unique<csstrategy::explore::crw>(saa, rng),
+      m_forage_fsm(params,
+                   std::make_unique<csstrategy::explore::crw>(params, rng),
                    rng,
-                   std::bind(&fcrw_bst_fsm::block_detected, this)),
-      m_block_place_fsm(perception, saa, rng),
-      m_gmt_ingress_fsm(perception, saa, rng),
-      m_gmt_egress_fsm(perception, saa, rng) {}
+                   std::bind(&fcrw_bst_fsm::block_detect, this)),
+      m_block_place_fsm(params, rng),
+      m_gmt_ingress_fsm(params, rng),
+      m_gmt_egress_fsm(params, rng) {}
 
 fcrw_bst_fsm::~fcrw_bst_fsm(void) = default;
 
@@ -344,9 +344,9 @@ void fcrw_bst_fsm::init(void) {
   m_gmt_egress_fsm.init();
 } /* init() */
 
-bool fcrw_bst_fsm::block_detected(void) const {
-  return saa()->sensing()->ground()->detect("block");
-} /* block_detected() */
+bool fcrw_bst_fsm::block_detect(void) const {
+  return saa()->sensing()->env()->detect("block");
+} /* block_detect() */
 
 boost::optional<repr::placement_intent>
 fcrw_bst_fsm::block_placement_intent(void) const {

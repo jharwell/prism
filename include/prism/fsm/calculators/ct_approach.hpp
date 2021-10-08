@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_CT_APPROACH_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_CT_APPROACH_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -86,4 +85,3 @@ class ct_approach : public rer::client<ct_approach> {
 
 NS_END(calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_CT_APPROACH_HPP_ */

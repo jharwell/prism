@@ -1,5 +1,5 @@
 /**
- * \file composability_check.cpp
+ * \file stability_check.cpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "prism/gmt/operations/composability_check.hpp"
+#include "prism/gmt/operations/stability_check.hpp"
 
 #include "prism/gmt/operations/topology_check.hpp"
 #include "prism/gmt/repr/vshell.hpp"
@@ -31,16 +31,11 @@
  ******************************************************************************/
 NS_START(prism, gmt, operations);
 
-/*******************************************************************************
- * Constructors/Destructor
- ******************************************************************************/
-composability_check::composability_check(void)
-    : ER_CLIENT_INIT("prism.gmt.operations.composability_check") {}
 
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-bool composability_check::operator()(const pgds::connectivity_graph* graph,
+bool stability_check::operator()(const pgds::connectivity_graph* graph,
                                      const pgrepr::vshell* vshell) const {
   for (size_t z = 0; z < vshell->real()->zdsize() - 1; ++z) {
     auto lower = pgrepr::slice2D(pgrepr::slice2D::spec_calc(rmath::vector3z::Z,
@@ -64,7 +59,7 @@ error:
   return false;
 } /* operator()() */
 
-bool composability_check::is_composable(const pgrepr::slice2D& lower,
+bool stability_check::is_composable(const pgrepr::slice2D& lower,
                                         const pgrepr::slice2D& upper,
                                         const pgrepr::vshell* vshell) const {
   auto topo_checker = topology_check();
@@ -89,7 +84,7 @@ error:
   return false;
 } /* is_composable() */
 
-bool composability_check::has_overhangs(const pgrepr::slice2D& lower,
+bool stability_check::has_overhangs(const pgrepr::slice2D& lower,
                                         const pgrepr::slice2D& upper) const {
   auto lower_offset = lower.dcenter3D().mask(lower.spec().axis()).length();
   auto upper_offset = upper.dcenter3D().mask(upper.spec().axis()).length();

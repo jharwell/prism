@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -51,4 +50,3 @@ struct env_dynamics_config final : public ctv::config::base_env_dynamics_config 
 
 NS_END(config, tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_CONFIG_ENV_DYNAMICS_CONFIG_HPP_ */

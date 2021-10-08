@@ -24,7 +24,7 @@
 #include "prism/gmt/subtarget.hpp"
 
 #include "prism/gmt/spc_gmt.hpp"
-#include "prism/algorithm/constants.hpp"
+#include "prism/properties/algorithm.hpp"
 #include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
@@ -38,11 +38,11 @@ NS_START(prism, gmt);
 subtarget::subtarget(const spc_gmt* ct, size_t id)
     : ER_CLIENT_INIT("prism.gmt.subtarget"),
       mc_entry(pgrepr::slice2D::spec_calc(slice_axis_calc(ct->orientation()),
-                                          id * paconstants::kCT_SUBTARGET_WIDTH_CELLS,
+                                          id * ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS,
                                           ct->vshell()),
                ct->spec()),
       mc_exit(pgrepr::slice2D::spec_calc(slice_axis_calc(ct->orientation()),
-                                         id * paconstants::kCT_SUBTARGET_WIDTH_CELLS + 1,
+                                         id * ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS + 1,
                                          ct->vshell()),
               ct->spec()) {}
 

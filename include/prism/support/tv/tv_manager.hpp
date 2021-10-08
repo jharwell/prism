@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_TV_MANAGER_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_TV_MANAGER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -48,4 +47,3 @@ using tv_manager = ctv::tv_manager<env_dynamics, prism_pd_adaptor>;
 
 NS_END(tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_TV_MANAGER_HPP_ */

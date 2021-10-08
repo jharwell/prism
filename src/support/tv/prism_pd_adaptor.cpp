@@ -25,6 +25,7 @@
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/arena/operations/free_block_drop.hpp"
+#include "cosm/repr/sim_block3D.hpp"
 
 #include "prism/controller/constructing_controller.hpp"
 
@@ -38,12 +39,12 @@ NS_START(prism, support, tv);
  ******************************************************************************/
 prism_pd_adaptor::prism_pd_adaptor(
     const ctv::config::population_dynamics_config* config,
-    cpal::argos_sm_adaptor* sm,
+    cpargos::swarm_manager_adaptor* sm,
     env_dynamics_type* envd,
     carena::base_arena_map* map,
     rmath::rng* rng)
     : ER_CLIENT_INIT("prism.support.tv.prism_pd_adaptor"),
-      argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>(
+      pd_adaptor<cpcontroller::controllerQ3D>(
           config,
           sm,
           envd,
@@ -54,8 +55,7 @@ prism_pd_adaptor::prism_pd_adaptor(
 /*******************************************************************************
  * Member Functions
  ******************************************************************************/
-void prism_pd_adaptor::pre_kill_cleanup(
-    cpal::argos_controllerQ3D_adaptor* controller) {
+void prism_pd_adaptor::pre_kill_cleanup(cpcontroller::controllerQ3D* controller) {
   auto* constructing =
       static_cast<controller::constructing_controller*>(controller);
   /*

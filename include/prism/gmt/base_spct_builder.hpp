@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_BASE_SPCT_BUILDER_HPP_
-#define INCLUDE_PRISM_GMT_BASE_SPCT_BUILDER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -42,8 +41,8 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-namespace cosm::pal {
-class argos_sm_adaptor;
+namespace cosm::pal::argos {
+class swarm_manager_adaptor;
 } /* namespace cosm::pal */
 namespace cosm::arena {
 class base_arena_map;
@@ -75,7 +74,7 @@ class base_spct_builder : public rer::client<base_spct_builder> {
  public:
   base_spct_builder(const config::spct_builder_config* config,
                     spc_gmt* target,
-                    cpal::argos_sm_adaptor* sm);
+                    cpargos::swarm_manager_adaptor* sm);
 
   base_spct_builder(const base_spct_builder&) = default;
   const base_spct_builder&
@@ -122,15 +121,13 @@ class base_spct_builder : public rer::client<base_spct_builder> {
 
  protected:
   spc_gmt* target(void) const { return m_target; }
-  cpal::argos_sm_adaptor* sm(void) const { return m_sm; }
+  cpargos::swarm_manager_adaptor* sm(void) const { return m_sm; }
 
  private:
   /* clang-format off */
-  spc_gmt*                m_target;
-  cpal::argos_sm_adaptor * m_sm;
+  spc_gmt*                         m_target;
+  cpargos::swarm_manager_adaptor * m_sm;
   /* clang-format on */
 };
 
 NS_END(gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_BASE_SPCT_BUILDER_HPP_ */

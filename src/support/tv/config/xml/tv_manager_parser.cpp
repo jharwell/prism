@@ -32,6 +32,10 @@ NS_START(prism, support, tv, config, xml);
  * Member Functions
  ******************************************************************************/
 void tv_manager_parser::parse(const ticpp::Element& node) {
+  ER_DEBUG("Parent node=%s: child=%s",
+           node.Value().c_str(),
+           kXMLRoot.c_str());
+
   /*
    * This needs to be non-NULL in ALL situations, because the environmental
    * dynamics part of temporal variance must ALWAYS be present (even if it is

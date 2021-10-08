@@ -46,12 +46,12 @@ block_pickup::block_pickup(crepr::base_block3D* block,
  * Single Target Construction
  ******************************************************************************/
 void block_pickup::visit(controller::fcrw_bst_controller& controller) {
-  controller.ndc_pusht();
+  controller.ndc_uuid_push();
 
   visit(static_cast<ccontroller::block_carrying_controller&>(controller));
   visit(*controller.fsm());
 
-  controller.ndc_pop();
+  controller.ndc_uuid_pop();
 } /* visit() */
 
 void block_pickup::visit(fsm::fcrw_bst_fsm& fsm) {

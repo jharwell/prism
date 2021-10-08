@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_FCRW_BST_CONTROLLER_HPP_
-#define INCLUDE_PRISM_CONTROLLER_FCRW_BST_CONTROLLER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -92,4 +91,3 @@ class fcrw_bst_controller : public constructing_controller,
 
 NS_END(controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_FCRW_BST_CONTROLLER_HPP_ */

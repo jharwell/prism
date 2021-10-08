@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_REPR_PLACEMENT_INTENT_HPP_
-#define INCLUDE_PRISM_REPR_PLACEMENT_INTENT_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -73,4 +72,3 @@ class placement_intent : public rer::client<placement_intent>,
 
 NS_END(repr, prism);
 
-#endif /* INCLUDE_PRISM_REPR_PLACEMENT_INTENT_HPP_ */

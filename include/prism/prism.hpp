@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_PRISM_HPP_
-#define INCLUDE_PRISM_PRISM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -32,18 +31,20 @@
 namespace prism {
 namespace ds {}
 
-namespace algorithm {
-namespace constants {}
-} /* namespace algorithm */
+namespace properties {
+namespace algorithm {}
+namespace gmt {}
+} /* namespace properties */
+
 
 namespace repr {}
 
 namespace gmt {
 namespace config {}
-namespace operations {}
 namespace ds {}
 namespace metrics {}
 namespace repr {}
+namespace operations {}
 } /* namespace gmt */
 
 namespace fsm {
@@ -66,7 +67,9 @@ namespace metrics {}
 namespace config {}
 }/* namespace lane_alloc */
 
-namespace metrics {}
+namespace metrics {
+namespace specs {}
+}
 
 } /* namespace prism */
 
@@ -78,6 +81,7 @@ namespace pfcalculators = pfsm::calculators;
 namespace prepr = prism::repr;
 
 namespace pmetrics = prism::metrics;
+namespace pmspecs = pmetrics::specs;
 
 namespace pgmt = prism::gmt;
 namespace pgmetrics = pgmt::metrics;
@@ -85,9 +89,11 @@ namespace pgops = pgmt::operations;
 namespace pgconfig = pgmt::config;
 namespace pgds = pgmt::ds;
 namespace pgrepr = pgmt::repr;
+namespace pgoperations = pgmt::operations;
 
-namespace palgorithm = prism::algorithm;
-namespace paconstants = palgorithm::constants;
+namespace pproperties = prism::properties;
+namespace ppalgorithm = pproperties::algorithm;
+namespace ppgmt = pproperties::gmt;
 
 namespace psupport = prism::support;
 namespace pstv = psupport::tv;
@@ -100,5 +106,3 @@ namespace pcops = pcontroller::operations;
 namespace plane_alloc = prism::lane_alloc;
 namespace plametrics = plane_alloc::metrics;
 namespace placonfig = plane_alloc::config;
-
-#endif /* INCLUDE_PRISM_PRISM_HPP_ */

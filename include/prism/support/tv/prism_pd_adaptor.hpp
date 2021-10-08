@@ -18,14 +18,13 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_PRISM_PD_ADAPTOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_PRISM_PD_ADAPTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/pal/tv/argos_pd_adaptor.hpp"
-#include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
+#include "cosm/argos/tv/pd_adaptor.hpp"
+#include "cosm/pal/controller/controllerQ3D.hpp"
 #include "cosm/repr/base_block3D.hpp"
 
 #include "prism/controller/controller_fwd.hpp"
@@ -51,10 +50,10 @@ NS_START(prism, support, tv);
  * during population dynamics application.
  */
 class prism_pd_adaptor : rer::client<prism_pd_adaptor>,
-                           public cptv::argos_pd_adaptor<cpal::argos_controllerQ3D_adaptor>{
+                           public catv::pd_adaptor<cpcontroller::controllerQ3D>{
  public:
   prism_pd_adaptor(const ctv::config::population_dynamics_config* config,
-                     cpal::argos_sm_adaptor* sm,
+                     cpargos::swarm_manager_adaptor* sm,
                      env_dynamics_type *envd,
                      carena::base_arena_map* map,
                      rmath::rng* rng);
@@ -64,7 +63,7 @@ class prism_pd_adaptor : rer::client<prism_pd_adaptor>,
   const prism_pd_adaptor& operator=(const prism_pd_adaptor&) = delete;
 
   /* ARGoS PD apdaptor overrides */
-  void pre_kill_cleanup(cpal::argos_controllerQ3D_adaptor* controller) override;
+  void pre_kill_cleanup(cpcontroller::controllerQ3D* controller) override;
 
  private:
   /* clang-format off */
@@ -73,5 +72,3 @@ class prism_pd_adaptor : rer::client<prism_pd_adaptor>,
 };
 
 NS_END(tv, support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_TV_PRISM_PD_ADAPTOR_HPP_ */

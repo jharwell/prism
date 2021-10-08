@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_HPP_
-#define INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -70,4 +69,3 @@ class progress_metrics : public virtual rmetrics::base_metrics {
 
 NS_END(metrics, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_HPP_ */

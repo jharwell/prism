@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_SPC_GMT_HPP_
-#define INCLUDE_PRISM_GMT_SPC_GMT_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -269,4 +268,3 @@ class spc_gmt final : public rer::client<spc_gmt>,
 
 NS_END(gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_SPC_GMT_HPP_ */

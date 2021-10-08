@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_PERCEPTION_PERCEPTION_SUBSYSTEM_FACTORY_HPP_
-#define INCLUDE_PRISM_CONTROLLER_PERCEPTION_PERCEPTION_SUBSYSTEM_FACTORY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -60,4 +59,3 @@ class perception_subsystem_factory :
 
 NS_END(perception, subsystem, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_PERCEPTION_PERCEPTION_SUBSYSTEM_FACTORY_HPP_ */

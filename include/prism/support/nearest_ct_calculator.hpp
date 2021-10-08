@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_NEAREST_CT_CALCULATOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_NEAREST_CT_CALCULATOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -74,4 +73,3 @@ class nearest_ct_calculator : public rer::client<nearest_ct_calculator> {
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_NEAREST_CT_CALCULATOR_HPP_ */

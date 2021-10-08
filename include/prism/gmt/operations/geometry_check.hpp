@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_GEOMETRY_CHECK_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_GEOMETRY_CHECK_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -83,4 +82,3 @@ class geometry_check : public rer::client<geometry_check> {
 
 NS_END(operations, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_GEOMETRY_CHECK_HPP_ */

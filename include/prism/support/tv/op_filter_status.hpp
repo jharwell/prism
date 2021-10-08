@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_OP_FILTER_STATUS_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_OP_FILTER_STATUS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -62,4 +61,3 @@ enum class op_filter_status {
 
 NS_END(tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_OP_FILTER_STATUS_HPP_ */

@@ -28,12 +28,13 @@
 #include "cosm/spatial/fsm/util_signal.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
 #include "cosm/subsystem/sensing_subsystemQ3D.hpp"
+#include "cosm/subsystem/actuation_subsystem2D.hpp"
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/fsm/calculators/egress_lane_path.hpp"
 #include "prism/fsm/calculators/egress_path.hpp"
 #include "prism/fsm/construction_signal.hpp"
-#include "prism/repr/colors.hpp"
+#include "prism/repr/diagnostics.hpp"
 #include "prism/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -44,11 +45,9 @@ NS_START(prism, fsm);
 /*******************************************************************************
  * Constructors/Destructors
  ******************************************************************************/
-gmt_egress_fsm::gmt_egress_fsm(
-    const pcperception::builder_perception_subsystem* perception,
-    csubsystem::saa_subsystemQ3D* saa,
-    rmath::rng* rng)
-    : builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
+gmt_egress_fsm::gmt_egress_fsm(const pfsm::fsm_params* params,
+                               rmath::rng* rng)
+    : builder_util_fsm(params, rng, fsm_state::ekST_MAX_STATES),
       ER_CLIENT_INIT("prism.fsm.egress"),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
@@ -74,7 +73,7 @@ gmt_egress_fsm::gmt_egress_fsm(
                                              nullptr,
                                              &entry_finished,
                                              nullptr)),
-      m_alignment_calc(saa->sensing()) {}
+      m_alignment_calc(params->saa->sensing()) {}
 
 /*******************************************************************************
  * States
@@ -118,12 +117,12 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(gmt_egress_fsm, entry_acquire_egress_lane) {
    * actuators to their initial state and not rely on carryover from whatever
    * previous task/FSM was running. Things are more modular this way.
    */
-  saa()->actuation()->leds()->set_color(-1, prepr::colors::builder());
+  saa()->actuation()->diagnostics()->emit(prepr::diagnostics::ekBUILDER);
 }
 
 RCPPSW_HFSM_STATE_DEFINE_ND(gmt_egress_fsm, gmt_egress) {
   auto alignment = m_alignment_calc(allocated_lane());
-  bool in_ct_zone = saa()->sensing()->ground()->detect("nest");
+  bool in_ct_zone = saa()->sensing()->env()->detect("nest");
   ER_ASSERT(!(in_ct_zone && !alignment.egress),
             "Bad alignment (position) on structure egress");
 
@@ -179,7 +178,7 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(gmt_egress_fsm, entry_gmt_egress) {
    * Turn on LEDs--they may have been turned off when we exited the egress state
    * due to robot proximity.
    */
-  saa()->actuation()->leds()->set_color(-1, prepr::colors::builder());
+  saa()->actuation()->diagnostics()->emit(prepr::diagnostics::ekBUILDER);
 }
 
 RCPPSW_HFSM_STATE_DEFINE_ND(gmt_egress_fsm, finished) {

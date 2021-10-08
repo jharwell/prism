@@ -33,7 +33,11 @@ NS_START(prism, gmt, config, xml);
  * Member Functions
  ******************************************************************************/
 void spct_parser::parse(const ticpp::Element& node) {
-    /* We do not call get_node() before parsing--a rare exception */
+  ER_DEBUG("Parent node=%s: child=%s",
+           node.Value().c_str(),
+           kXMLRoot.c_str());
+
+  /* We do not call get_node() before parsing--a rare exception */
   m_config = std::make_unique<config_type>();
   XML_PARSE_ATTR(node, m_config, anchor);
   XML_PARSE_ATTR(node, m_config, bounding_box);

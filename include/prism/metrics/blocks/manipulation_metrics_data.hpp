@@ -18,15 +18,14 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_
-#define INCLUDE_PRISM_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <atomic>
 
-#include "rcppsw/metrics/base_metrics_data.hpp"
+#include "rcppsw/metrics/base_data.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -54,11 +53,10 @@ struct manipulation_metrics_data {
 
 NS_END(detail);
 
-struct manipulation_metrics_data : public rmetrics::base_metrics_data {
+struct manipulation_metrics_data : public rmetrics::base_data {
   detail::manipulation_metrics_data interval{};
   detail::manipulation_metrics_data cum{};
 };
 
 NS_END(metrics, manipulation, prism);
 
-#endif /* INCLUDE_PRISM_METRICS_BLOCKS_MANIPULATION_METRICS_DATA_HPP_ */

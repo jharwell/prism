@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_METRICS_CT_STATE_METRICS_HPP_
-#define INCLUDE_PRISM_GMT_METRICS_CT_STATE_METRICS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -45,4 +44,3 @@ class ct_state_metrics : public state_metrics {};
 
 NS_END(metrics, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_METRICS_CT_STATE_METRICS_HPP_ */

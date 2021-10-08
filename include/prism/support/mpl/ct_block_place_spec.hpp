@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_MPL_CT_BLOCK_PLACE_SPEC_HPP_
-#define INCLUDE_PRISM_SUPPORT_MPL_CT_BLOCK_PLACE_SPEC_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -70,4 +69,3 @@ using ct_block_place_spec = typename boost::mpl::fold<TTypelist,
                                                         detail::ct_block_place_inserter>::type;
 NS_END(mpl, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_MPL_CT_BLOCK_PLACE_SPEC_HPP_ */

@@ -24,12 +24,14 @@
 #include "prism/fsm/gmt_ingress_fsm.hpp"
 
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
+#include "cosm/subsystem/actuation_subsystem2D.hpp"
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/fsm/calculators/ct_approach.hpp"
 #include "prism/fsm/calculators/ingress_lane_path.hpp"
 #include "prism/fsm/construction_signal.hpp"
-#include "prism/repr/colors.hpp"
+#include "prism/repr/diagnostics.hpp"
 #include "prism/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -40,11 +42,9 @@ NS_START(prism, fsm);
 /*******************************************************************************
  * Structure_Ingresss/Destructors
  ******************************************************************************/
-gmt_ingress_fsm::gmt_ingress_fsm(
-    const pcperception::builder_perception_subsystem* perception,
-    csubsystem::saa_subsystemQ3D* const saa,
-    rmath::rng* rng)
-    : builder_util_fsm(perception, saa, rng, ekST_MAX_STATES),
+gmt_ingress_fsm::gmt_ingress_fsm(const pfsm::fsm_params* params,
+                                 rmath::rng* rng)
+    : builder_util_fsm(params, rng, ekST_MAX_STATES),
       ER_CLIENT_INIT("prism.fsm.gmt_ingress"),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
@@ -207,7 +207,7 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(gmt_ingress_fsm, entry_ct_approach) {
   sensing()->light()->enable();
 
   /* Turn on LEDs so we can be identified by other robots as we approach */
-  actuation()->leds()->set_color(-1, prepr::colors::ct_approach());
+  saa()->actuation()->diagnostics()->emit(prepr::diagnostics::ekCT_APPROACH);
 
   /* Enable camera as we approach so we can see robots in front of us */
   saa()->sensing()->blobs()->enable();
@@ -223,11 +223,11 @@ RCPPSW_HFSM_EXIT_DEFINE(gmt_ingress_fsm, exit_ct_entry) {
 }
 
 RCPPSW_HFSM_ENTRY_DEFINE_ND(gmt_ingress_fsm, entry_wait_for_robot) {
-  inta_tracker()->inta_enter();
+  inta_tracker()->state_enter();
 }
 
 RCPPSW_HFSM_EXIT_DEFINE(gmt_ingress_fsm, exit_wait_for_robot) {
-  inta_tracker()->inta_exit();
+  inta_tracker()->state_exit();
 }
 
 /*******************************************************************************
@@ -294,8 +294,8 @@ double gmt_ingress_fsm::path_factor_calc(void) const {
    * ingress lane.
    */
   std::vector<rutils::color> colors = {
-    prepr::colors::builder(),
-    prepr::colors::ct_approach(),
+    prepr::diagnostics::kColorMap.find(prepr::diagnostics::ekBUILDER)->second,
+    prepr::diagnostics::kColorMap.find(prepr::diagnostics::ekCT_APPROACH)->second
   };
 
   double factor = 1.0;

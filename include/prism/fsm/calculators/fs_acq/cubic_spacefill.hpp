@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_CUBIC_SPACEFILL_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_CUBIC_SPACEFILL_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -80,5 +79,3 @@ class cubic_spacefill : public rer::client<cubic_spacefill>,
 };
 
 NS_END(fs_acq, calculators, fsm, prism);
-
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_FS_ACQ_CUBIC_SPACEFILL_HPP_ */

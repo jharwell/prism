@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CONSTRUCTION_SIGNAL_HPP_
-#define INCLUDE_PRISM_FSM_CONSTRUCTION_SIGNAL_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -66,4 +65,3 @@ class construction_signal : public csfsm::util_signal {
 
 NS_END(controller, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CONSTRUCTION_SIGNAL_HPP_ */

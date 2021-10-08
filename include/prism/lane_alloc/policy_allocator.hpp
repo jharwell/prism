@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_POLICY_ALLOCATOR_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_POLICY_ALLOCATOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -64,4 +63,3 @@ class policy_allocator {
 
 NS_END(lane_alloc, prism);
 
-#endif /* INCLUDE_PRISM_LANE_ALLOC_POLICY_ALLOCATOR_HPP_ */

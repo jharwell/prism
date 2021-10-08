@@ -1,0 +1,24 @@
+;; RefTeX parse info file
+;; File: /opt/jharwell/git/prism/todo.org
+;; User: jharwell (John Harwell)
+
+(set reftex-docstruct-symbol '(
+
+
+(xr nil "\\\\\\\\\\\\")
+
+(index-tags)
+
+(is-multi nil)
+
+(bibview-cache)
+
+(master-dir . "/opt/jharwell/git/prism/")
+
+(label-numbers)
+
+(bof "/opt/jharwell/git/prism/todo.org")
+
+(eof "/opt/jharwell/git/prism/todo.org")
+))
+

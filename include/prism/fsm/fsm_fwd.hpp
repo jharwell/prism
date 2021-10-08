@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_FSM_FWD_HPP_
-#define INCLUDE_PRISM_FSM_FSM_FWD_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -36,4 +35,3 @@ class builder_fsm;
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_FSM_FWD_HPP_ */

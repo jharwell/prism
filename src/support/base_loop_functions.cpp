@@ -25,8 +25,8 @@
 
 #include "cosm/arena/base_arena_map.hpp"
 #include "cosm/arena/config/arena_map_config.hpp"
-#include "cosm/pal/argos_swarm_iterator.hpp"
-#include "cosm/vis/config/visualization_config.hpp"
+#include "cosm/pal/argos/swarm_iterator.hpp"
+#include "cosm/argos/vis/config/visualization_config.hpp"
 #include "cosm/pal/config/output_config.hpp"
 
 #include "prism/gmt/ct_manager.hpp"
@@ -49,7 +49,7 @@ base_loop_functions::~base_loop_functions(void) = default;
  * Initialization Functions
  ******************************************************************************/
 void base_loop_functions::init(ticpp::Element& node) {
-  argos_sm_adaptor::init(node);
+  swarm_manager_adaptor::init(node);
 
   /* parse simulation input file */
   m_config.parse_all(node);
@@ -102,13 +102,13 @@ void base_loop_functions::tv_init(const tv::config::tv_manager_config* tvp) {
     c->irv_init(m_tv_manager->dynamics<ctv::dynamics_type::ekENVIRONMENT>()
                     ->rda_adaptor());
   };
-  cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
+  cpargos::swarm_iterator::controllers<controller::constructing_controller,
                                           cpal::iteration_order::ekSTATIC>(
-      this, cb, cpal::kARGoSRobotType);
+      this, cb, cpal::kRobotType);
 } /* tv_init() */
 
 void base_loop_functions::output_init(const cpconfig::output_config* output) {
-  argos_sm_adaptor::output_init(output);
+  swarm_manager_adaptor::output_init(output);
 
 #if (LIBRA_ER == LIBRA_ER_ALL)
   ER_LOGFILE_SET(log4cxx::Logger::getLogger("prism.events"),
@@ -128,7 +128,7 @@ void base_loop_functions::output_init(const cpconfig::output_config* output) {
  * ARGoS Hooks
  ******************************************************************************/
 void base_loop_functions::pre_step(void) {
-  argos_sm_adaptor::pre_step();
+  swarm_manager_adaptor::pre_step();
   /*
    * Needs to be before robot controllers are run, so they run with the correct
    * throttling/are subjected to the correct penalties, etc.
@@ -139,12 +139,12 @@ void base_loop_functions::pre_step(void) {
 } /* pre_step() */
 
 void base_loop_functions::post_step(void) {
-  argos_sm_adaptor::post_step();
+  swarm_manager_adaptor::post_step();
   /* open to extension */
 } /* post_step() */
 
 void base_loop_functions::reset(void) {
-  argos_sm_adaptor::reset();
+  swarm_manager_adaptor::reset();
   /* nests already initialized, and don't change, so no need to re-initialize */
   arena_map()->initialize(this, nullptr);
 } /* reset() */

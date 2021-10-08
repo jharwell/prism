@@ -34,9 +34,9 @@ NS_START(prism, gmt, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 subtargets_metrics_collector::subtargets_metrics_collector(
-    std::unique_ptr<rmetrics::base_metrics_sink> sink,
+    std::unique_ptr<rmetrics::base_sink> sink,
     size_t n_subtargets)
-    : base_metrics_collector(std::move(sink)),
+    : base_collector(std::move(sink)),
       m_data(n_subtargets) {}
 
 /*******************************************************************************

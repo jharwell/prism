@@ -29,9 +29,9 @@
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/fsm/calculators/lane_alignment.hpp"
-#include "prism/repr/colors.hpp"
+#include "prism/repr/diagnostics.hpp"
 #include "prism/repr/construction_lane.hpp"
-#include "prism/algorithm/constants.hpp"
+#include "prism/properties/algorithm.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -238,12 +238,12 @@ builder_prox_type builder_prox_checker::frontier_set_proximity(
 
 double builder_prox_checker::trajectory_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
-  return std::sqrt(cellsize * paconstants::kCT_TRAJECTORY_PROX_CELLS);
+  return std::sqrt(cellsize * ppalgorithm::kCT_TRAJECTORY_PROX_CELLS);
 } /* trajectory_prox_dist() */
 
 double builder_prox_checker::frontier_set_prox_dist(void) const {
   auto cellsize = mc_perception->nearest_ct()->block_unit_dim().v();
-  return std::sqrt(cellsize * paconstants::kCT_FRONTIER_SET_PROX_CELLS);
+  return std::sqrt(cellsize * ppalgorithm::kCT_FRONTIER_SET_PROX_CELLS);
 } /* frontier_set_prox_dist() */
 
 builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
@@ -286,8 +286,13 @@ builder_prox_checker::lane_share_state builder_prox_checker::share_state_calc(
 } /* share_state_calc() */
 
 bool builder_prox_checker::is_builder_robot(const rutils::color& color) const {
-  auto colors = prepr::colors::ct();
-  return colors.end() != std::find(colors.begin(), colors.end(), color);
+  auto it = std::find_if(prepr::diagnostics::kColorMap.begin(),
+                         prepr::diagnostics::kColorMap.end(),
+                         [&](const auto& pair){
+                           return pair.first == prepr::diagnostics::ekBUILDER &&
+                               pair.second == color;
+                         });
+  return it != prepr::diagnostics::kColorMap.end();
 } /* is_builder_robot() */
 
 

@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -99,4 +98,3 @@ class lane_alignment : public rer::client<lane_alignment> {
 
 NS_END(calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_LANE_ALIGNMENT_HPP_ */

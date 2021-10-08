@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_LANE_ALLOC_LANE_ALLOCATOR_HPP_
-#define INCLUDE_PRISM_LANE_ALLOC_LANE_ALLOCATOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -99,4 +98,3 @@ class lane_allocator : public rer::client<lane_allocator>,
 
 NS_END(lane_alloc, prism);
 
-#endif /* INCLUDE_PRISM_LANE_ALLOC_LANE_ALLOCATOR_HPP_ */

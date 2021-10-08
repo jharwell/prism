@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_CT_BLOCK_PLACE_INTERACTOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_CT_BLOCK_PLACE_INTERACTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -91,4 +90,3 @@ class ct_block_place_interactor
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_CT_BLOCK_PLACE_INTERACTOR_HPP_ */

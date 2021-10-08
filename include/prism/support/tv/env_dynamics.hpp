@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_ENV_DYNAMICS_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_ENV_DYNAMICS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -32,8 +31,9 @@
 
 #include "cosm/tv/temporal_penalty_handler.hpp"
 #include "cosm/tv/metrics/base_env_dynamics_metrics.hpp"
-#include "cosm/pal/tv/argos_rda_adaptor.hpp"
+#include "cosm/argos/tv/rda_adaptor.hpp"
 #include "cosm/tv/env_dynamics.hpp"
+#include "cosm/pal/controller/controllerQ3D.hpp"
 
 #include "prism/support/tv/block_op_src.hpp"
 #include "prism/support/tv/block_op_penalty_handler.hpp"
@@ -44,9 +44,6 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace prism::support::tv::config { struct env_dynamics_config; }
-namespace cosm::pal {
-class argos_controllerQ3D_adaptor;
-}
 
 NS_START(prism, support);
 
@@ -65,12 +62,12 @@ NS_START(tv);
  * conditions to the swarm.
  */
 class env_dynamics final : public rer::client<env_dynamics>,
-                           public ctv::env_dynamics<cpal::argos_controllerQ3D_adaptor>,
+                           public ctv::env_dynamics<cpcontroller::controllerQ3D>,
                            public metrics::env_dynamics_metrics {
  public:
   using const_penalty_handlers = std::list<const ctv::temporal_penalty_handler*>;
   using penalty_handlers = std::list<ctv::temporal_penalty_handler*>;
-  using rda_adaptor_type = cpal::tv::argos_rda_adaptor<controller::constructing_controller>;
+  using rda_adaptor_type = catv::rda_adaptor<controller::constructing_controller>;
   env_dynamics(const tv::config::env_dynamics_config * config,
                const support::base_loop_functions* lf,
                carena::base_arena_map* map);
@@ -84,9 +81,9 @@ class env_dynamics final : public rer::client<env_dynamics>,
   rtypes::timestep ct_block_manip_penalty(void) const override;
 
   /* COSM environment dynamics overrides */
-  void register_controller(const cpal::argos_controllerQ3D_adaptor& c) override;
-  void unregister_controller(const cpal::argos_controllerQ3D_adaptor& c) override;
-  bool penalties_flush(const cpal::argos_controllerQ3D_adaptor& c) override;
+  void register_controller(const cpcontroller::controllerQ3D& c) override;
+  void unregister_controller(const cpcontroller::controllerQ3D& c) override;
+  bool penalties_flush(const cpcontroller::controllerQ3D& c) override;
 
   /**
    * \brief Register the handlers from a \ref gmt::spc_gmt object with
@@ -208,4 +205,3 @@ class env_dynamics final : public rer::client<env_dynamics>,
 
 NS_END(tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_ENV_DYNAMICS_HPP_ */

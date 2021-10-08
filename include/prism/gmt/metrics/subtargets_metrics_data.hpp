@@ -18,15 +18,14 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_DATA_HPP_
-#define INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_DATA_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include <vector>
 
-#include "rcppsw/metrics/base_metrics_data.hpp"
+#include "rcppsw/metrics/base_data.hpp"
 
 #include "prism/gmt/metrics/progress_metrics_data.hpp"
 
@@ -38,7 +37,7 @@ NS_START(prism, gmt, metrics);
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
-struct subtargets_metrics_data : public rmetrics::base_metrics_data  {
+struct subtargets_metrics_data : public rmetrics::base_data  {
   explicit subtargets_metrics_data(size_t n_subtargets):
       interval(n_subtargets),
       cum(n_subtargets) {}
@@ -49,4 +48,3 @@ struct subtargets_metrics_data : public rmetrics::base_metrics_data  {
 
 NS_END(metrics, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_METRICS_SUBTARGETS_METRICS_DATA_HPP_ */

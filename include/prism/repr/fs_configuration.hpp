@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_REPR_FS_CONFIGURATION_HPP_
-#define INCLUDE_PRISM_REPR_FS_CONFIGURATION_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -76,4 +75,3 @@ enum class fs_configuration {
 
 NS_END(repr, prism);
 
-#endif /* INCLUDE_PRISM_REPR_FS_CONFIGURATION_HPP_ */

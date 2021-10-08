@@ -24,7 +24,7 @@
 #include "prism/gmt/operations/geometry_check.hpp"
 
 #include "prism/gmt/repr/vshell.hpp"
-#include "prism/algorithm/constants.hpp"
+#include "prism/properties/algorithm.hpp"
 #include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
@@ -67,16 +67,16 @@ bool geometry_check::layer_check(const pgrepr::slice2D& layer,
    */
   if (rmath::radians::kZERO == orientation ||
       rmath::radians::kPI == orientation) {
-    ER_CHECK(0 == (layer.ydsize() % paconstants::kCT_SUBTARGET_WIDTH_CELLS),
+    ER_CHECK(0 == (layer.ydsize() % ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS),
              "Spec with orientation={0,PI},ysize=%zu not evenly divisible by subtarget width %zu",
              layer.ydsize(),
-             paconstants::kCT_SUBTARGET_WIDTH_CELLS);
+             ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS);
   } else if (rmath::radians::kPI_OVER_TWO == orientation ||
              rmath::radians::kTHREE_PI_OVER_TWO == orientation) {
-    ER_CHECK(0 == (layer.xdsize() % paconstants::kCT_SUBTARGET_WIDTH_CELLS),
+    ER_CHECK(0 == (layer.xdsize() % ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS),
              "Spec with orientation={PI/2,3PI/2},xsize=%zu not evenly divisible by subtarget width %zu",
              layer.xdsize(),
-             paconstants::kCT_SUBTARGET_WIDTH_CELLS);
+             ppalgorithm::kCT_SUBTARGET_WIDTH_CELLS);
   }
 
   return true;

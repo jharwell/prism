@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_PERCEPTION_CONFIG_PERCEPTION_PARSER_HPP_
-#define INCLUDE_PRISM_CONTROLLER_PERCEPTION_CONFIG_PERCEPTION_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -35,19 +34,20 @@
 /*******************************************************************************
  * Namespaces
  ******************************************************************************/
-NS_START(prism, controller, perception, config);
+NS_START(prism, controller, perception, config, xml);
 
 /*******************************************************************************
  * Class Definitions
  ******************************************************************************/
 /**
  * \class perception_parser
- * \ingroup controller perception config
+ * \ingroup controller perception config xml
  *
  * \brief Parses XML parameters for various perception subsystems into
  * \ref perception_config.
  */
-class perception_parser final : public rconfig::xml::xml_config_parser {
+class perception_parser final : public rer::client<perception_parser>,
+                                public rconfig::xml::xml_config_parser {
  public:
   using config_type = perception_config;
 
@@ -56,6 +56,9 @@ class perception_parser final : public rconfig::xml::xml_config_parser {
    * the XML tree.
    */
   inline static std::string kXMLRoot = "perception";
+
+  perception_parser(void)
+      : ER_CLIENT_INIT("prism.controller.perception.config.xml.perception_parser") {}
 
   bool validate(void) const override RCPPSW_ATTR(pure, cold);
   void parse(const ticpp::Element& node) override RCPPSW_COLD;
@@ -68,11 +71,9 @@ class perception_parser final : public rconfig::xml::xml_config_parser {
   }
 
   /* clang-format off */
-  std::unique_ptr<config_type> m_config{nullptr};
-  cspcxml::rlos_parser         m_rlos{};
+  std::unique_ptr<config_type>           m_config{nullptr};
+  csperception::config::xml::rlos_parser m_rlos{};
   /* clang-format on */
 };
 
-NS_END(config, perception, controller, prism);
-
-#endif /* INCLUDE_PRISM_CONTROLLER_CONFIG_PERCEPTION_PERCEPTION_PARSER_HPP_ */
+NS_END(xml, config, perception, controller, prism);

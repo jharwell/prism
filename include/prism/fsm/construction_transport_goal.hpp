@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CONSTRUCTION_TRANSPORT_GOAL_HPP_
-#define INCLUDE_PRISM_FSM_CONSTRUCTION_TRANSPORT_GOAL_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -59,4 +58,3 @@ enum class construction_transport_goal {
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CONSTRUCTION_TRANSPORT_GOAL_HPP_ */

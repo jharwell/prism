@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_OPERATIONS_CT_BLOCK_PLACE_HPP_
-#define INCLUDE_PRISM_CONTROLLER_OPERATIONS_CT_BLOCK_PLACE_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -80,4 +79,3 @@ using ct_block_place_visitor = rpvisitor::filtered_visitor<detail::ct_block_plac
 
 NS_END(operations, controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_OPERATIONS_CT_BLOCK_PLACE_HPP_ */

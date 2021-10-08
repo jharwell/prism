@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_UTILS_HPP_
-#define INCLUDE_PRISM_GMT_UTILS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -50,4 +49,3 @@ static inline bool orientation_valid(const rmath::radians& orientation,
 
 NS_END(gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_UTILS_HPP_ */

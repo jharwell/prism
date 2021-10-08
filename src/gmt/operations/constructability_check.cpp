@@ -23,10 +23,9 @@
  ******************************************************************************/
 #include "prism/gmt/operations/constructability_check.hpp"
 
-#include "prism/gmt/operations/composability_check.hpp"
+#include "prism/gmt/operations/stability_check.hpp"
 #include "prism/gmt/operations/geometry_check.hpp"
 #include "prism/gmt/operations/traversability_check.hpp"
-#include "prism/gmt/operations/topology_check.hpp"
 #include "prism/gmt/ds/connectivity_graph.hpp"
 
 /*******************************************************************************
@@ -48,9 +47,6 @@ bool constructability_check::operator()(const pgds::connectivity_graph* graph,
 
   ER_CHECK(traversability_check()(graph, vshell),
            "Structure spec not traversable at all points");
-
-  ER_CHECK(topology_check()(graph, vshell),
-           "Structure spec violates topological invariants")
 
   return true;
 

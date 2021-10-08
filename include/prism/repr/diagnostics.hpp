@@ -1,5 +1,5 @@
 /**
- * \file colors.hpp
+ * \file diagnostics.hpp
  *
  * \copyright 2021 John Harwell, All rights reserved.
  *
@@ -18,63 +18,42 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_REPR_COLORS_HPP_
-#define INCLUDE_PRISM_REPR_COLORS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include "rcppsw/utils/color.hpp"
 
+#include "cosm/hal/actuators/diagnostic_actuator.hpp"
+
 #include "prism/prism.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-NS_START(prism, repr);
+NS_START(prism, repr, diagnostics);
 
 /*******************************************************************************
- * Class Definitions
+ * Types
  ******************************************************************************/
-struct colors {
+enum {
   /**
    * \brief A robot running the \ref pfsm::acquire_block_placement_site_fsm or
    * \ref pfsm::gmt_egress_fsm.
    */
-  static const rutils::color& builder(void) {
-    static rutils::color kBuilder = rutils::color::kBLUE;
-    return kBuilder;
-  }
-
-  /**
-   * \brief A robot waiting for a signal during FSM operation.
-   */
-  static const rutils::color& wait_signal(void) {
-    static rutils::color kWaitSignal = rutils::color::kWHITE;
-    return kWaitSignal;
-  }
+  ekBUILDER = chactuators::diagnostics::ekMAX,
 
   /**
    * \brief A robot approaching a construction target via the \ref
    * pfsm::gmt_ingress_fsm.
    */
-  static const rutils::color& ct_approach(void) {
-    static rutils::color kCTApproach = rutils::color::kGREEN;
-    return kCTApproach;
-  }
-
-  /**
-   * \brief The colors used by robots to identify to others what they are
-   * currently doing while engaged in construction related tasks.
-   */
-  static std::array<rutils::color, 3>& ct(void) {
-    static std::array<rutils::color, 3> ct = { builder(),
-                                               wait_signal(),
-                                               ct_approach() };
-    return ct;
-  }
+  ekCT_APPROACH,
 };
 
-NS_END(repr, prism);
+/*******************************************************************************
+ * Global Variables
+ ******************************************************************************/
+extern chactuators::diagnostic_actuator::map_type kColorMap;
 
-#endif /* INCLUDE_PRISM_REPR_COLORS_HPP_ */
+NS_END(diagnostics, repr, prism);

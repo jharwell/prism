@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -56,4 +55,3 @@ class env_dynamics_metrics : public ctv::metrics::base_env_dynamics_metrics {
 
 NS_END(metrics, tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_HPP_ */

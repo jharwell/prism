@@ -18,13 +18,12 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_ARENA_BLOCK_PICKUP_INTERACTOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_ARENA_BLOCK_PICKUP_INTERACTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/interactors/base_arena_block_pickup.hpp"
+#include "cosm/argos/interactors/free_block_pickup.hpp"
 #include "cosm/tv/temporal_penalty.hpp"
 
 #include "prism/fsm/construction_acq_goal.hpp"
@@ -49,19 +48,19 @@ NS_START(prism, support);
  */
 template <typename TController, typename TControllerSpecMap>
 class arena_block_pickup_interactor final
-    : public cinteractors::base_arena_block_pickup<TController,
-                                                   TControllerSpecMap> {
+    : public cainteractors::free_block_pickup<TController,
+                                              TControllerSpecMap> {
  public:
-  using typename cinteractors::
-      base_arena_block_pickup<TController, TControllerSpecMap>::arena_map_type;
-  using typename cinteractors::base_arena_block_pickup<
+  using typename cainteractors::
+      free_block_pickup<TController, TControllerSpecMap>::arena_map_type;
+  using typename cainteractors::free_block_pickup<
       TController,
       TControllerSpecMap>::penalty_handler_type;
 
   arena_block_pickup_interactor(arena_map_type* const map,
                                 argos::CFloorEntity* const floor,
                                 penalty_handler_type* const handler)
-      : cinteractors::base_arena_block_pickup<TController, TControllerSpecMap>(
+      : cainteractors::free_block_pickup<TController, TControllerSpecMap>(
             map,
             floor,
             handler) {}
@@ -99,5 +98,3 @@ class arena_block_pickup_interactor final
 };
 
 NS_END(support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_ARENA_BLOCK_PICKUP_INTERACTOR_HPP_ */

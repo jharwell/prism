@@ -23,13 +23,12 @@
  ******************************************************************************/
 #include "prism/gmt/base_spct_builder.hpp"
 
-#include <boost/ref.hpp>
 #include <typeindex>
 
 #include "cosm/arena/base_arena_map.hpp"
-#include "cosm/pal/argos_sm_adaptor.hpp"
-#include "cosm/pal/block_embodiment_creator.hpp"
-#include "cosm/pal/embodied_block_creator.hpp"
+#include "cosm/pal/swarm_manager.hpp"
+#include "cosm/argos/block_embodiment_creator.hpp"
+#include "cosm/argos/embodied_block_creator.hpp"
 #include "cosm/repr/cube_block3D.hpp"
 #include "cosm/repr/ramp_block3D.hpp"
 
@@ -48,7 +47,7 @@ NS_START(prism, gmt);
 base_spct_builder::base_spct_builder(
     const config::spct_builder_config*,
     spc_gmt* target,
-    cpal::argos_sm_adaptor* sm)
+    cpargos::swarm_manager_adaptor* sm)
     : ER_CLIENT_INIT("prism.gmt.builder"), m_target(target), m_sm(sm) {}
 
 /*******************************************************************************
@@ -76,24 +75,24 @@ bool base_spct_builder::place_block(const crepr::base_block3D* block,
    * construction progresses constant. See PRISM#22.
    */
   auto embodiedo =
-      boost::apply_visitor(cpal::embodied_block_creator(m_sm), variantno);
+      std::visit(cargos::embodied_block_creator(m_sm), variantno);
 
   /* Add block to structure. */
   auto placement_op = operations::block_place(intent, m_target);
-  cpal::embodied_block_variantno embodiedno =
-      boost::apply_visitor(placement_op, std::move(embodiedo));
+  cargos::embodied_block_variantno embodiedno =
+      std::visit(placement_op, std::move(embodiedo));
 
   /*
    * Create and set block embodiment. This MUST be after the block has been
    * placed on the structure so that the embodiment is placed at its updated
    * location.
    */
-  auto creator = cpal::block_embodiment_creator(
+  auto creator = cargos::block_embodiment_creator(
       intent.z_rot(), m_target->placement_id(), m_sm);
-  auto embodiment = boost::apply_visitor(creator, embodiedno);
+  auto embodiment = std::visit(creator, embodiedno);
 
   auto setter = operations::block_embodiment_set(std::move(embodiment));
-  boost::apply_visitor(setter, embodiedno);
+  std::visit(setter, embodiedno);
   return true;
 } /* place_block() */
 

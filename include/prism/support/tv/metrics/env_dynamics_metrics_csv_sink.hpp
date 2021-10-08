@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_CSV_SINK_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_CSV_SINK_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -60,13 +59,12 @@ class env_dynamics_metrics_csv_sink final : public rmetrics::csv_sink {
 
   /* csv_sink overrides */
   std::list<std::string> csv_header_cols(
-      const rmetrics::base_metrics_data* data) const override;
+      const rmetrics::base_data* data) const override;
 
   boost::optional<std::string> csv_line_build(
-      const rmetrics::base_metrics_data* data,
+      const rmetrics::base_data* data,
       const rtypes::timestep& t) override;
 };
 
 NS_END(metrics, tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_METRICS_ENV_DYNAMICS_METRICS_CSV_SINK_HPP_ */

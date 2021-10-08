@@ -27,12 +27,19 @@ RCPPSW_WARNING_DISABLE_OVERLOADED_VIRTUAL()
 #include "prism/support/construction_qt_user_functions.hpp"
 RCPPSW_WARNING_DISABLE_POP()
 
+/*
+ * QT defines this as a macro which expands to nothing, which causes the
+ * diagnostic actuator compilation to fail.
+ */
+#undef emit
+
 #include <argos3/core/simulator/entity/controllable_entity.h>
 
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
-#include "cosm/vis/block_carry_visualizer.hpp"
-#include "cosm/vis/polygon2D_visualizer.hpp"
-#include "cosm/vis/steer2D_visualizer.hpp"
+#include "cosm/argos/vis/block_carry_visualizer.hpp"
+#include "cosm/argos/vis/polygon2D_visualizer.hpp"
+#include "cosm/argos/vis/steer2D_visualizer.hpp"
+#include "cosm/repr/sim_block3D.hpp"
 
 #include "prism/controller/fcrw_bst_controller.hpp"
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
@@ -63,14 +70,18 @@ void construction_qt_user_functions::Draw(chal::robot& c_entity) {
   }
 
   if (controller->is_carrying_block()) {
-    cvis::block_carry_visualizer(this, kBLOCK_VIS_OFFSET, kTEXT_VIS_OFFSET)
-        .draw(controller->block(), controller->GetId().size());
+    auto carrying = cavis::block_carry_visualizer(this,
+                                                  kBLOCK_VIS_OFFSET,
+                                                  kTEXT_VIS_OFFSET);
+    carrying.draw(static_cast<const crepr::sim_block3D*>(controller->block()),
+                  controller->GetId().size());
   }
   if (controller->display_steer2D()) {
-    auto steering = cvis::steer2D_visualizer(this, kTEXT_VIS_OFFSET);
+    auto steering = cavis::steer2D_visualizer(this, kTEXT_VIS_OFFSET);
     steering(controller->rpos3D(),
              c_entity.GetEmbodiedEntity().GetOriginAnchor().Orientation,
-             controller->saa()->steer_force2D().tracker());
+             controller->saa()->steer_force2D().tracker(),
+             false);
   }
   if (controller->display_los() && nullptr != controller->perception()->los()) {
     los_render(controller,
@@ -106,7 +117,7 @@ void construction_qt_user_functions::los_render(
   auto hull = ralgorithm::convex_hull2D<rmath::vector2d>()(std::move(points));
 
   std::vector<rmath::vector2d> vec(hull->begin(), hull->end());
-  cvis::polygon2D_visualizer(this).abs_draw(
+  cavis::polygon2D_visualizer(this).abs_draw(
       controller->rpos3D(), orientation, vec, rutils::color::kYELLOW);
 } /* los_render() */
 
@@ -147,7 +158,7 @@ void construction_qt_user_functions::nearest_ct_render(
     ct->anchor_loc_abs(lrv).to_2D()
   };
   /* Draw BOTH virtual and real bounding boxes in 2D */
-  cvis::polygon2D_visualizer v(this);
+  cavis::polygon2D_visualizer v(this);
   v.abs_draw(controller->rpos3D(), orientation, ct_rpoints, rutils::color::kRED);
   v.abs_draw(
       controller->rpos3D(), orientation, ct_vpoints, rutils::color::kORANGE);

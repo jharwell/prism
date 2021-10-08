@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_
-#define INCLUDE_PRISM_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -27,9 +26,11 @@
 #include <string>
 #include <memory>
 
-#include "prism/support/tv/config/tv_manager_config.hpp"
 #include "rcppsw/config/xml/xml_config_parser.hpp"
+
 #include "cosm/tv/config/xml/population_dynamics_parser.hpp"
+
+#include "prism/support/tv/config/tv_manager_config.hpp"
 #include "prism/support/tv/config/xml/env_dynamics_parser.hpp"
 
 /*******************************************************************************
@@ -46,7 +47,8 @@ NS_START(prism, support, tv, config, xml);
  *
  * \brief Parses XML parameters for \ref tv_manager into \ref tv_manager_config.
  */
-class tv_manager_parser final : public rconfig::xml::xml_config_parser {
+class tv_manager_parser final : public rer::client<tv_manager_parser>,
+                                public rconfig::xml::xml_config_parser {
  public:
   using config_type = tv_manager_config;
 
@@ -55,6 +57,9 @@ class tv_manager_parser final : public rconfig::xml::xml_config_parser {
    * in the XML tree.
    */
   inline static const std::string kXMLRoot = "temporal_variance";
+
+  tv_manager_parser(void)
+      : ER_CLIENT_INIT("prism.support.cv.config.xml") {}
 
   void parse(const ticpp::Element& node) override;
   bool validate(void) const override RCSW_CONST;
@@ -75,4 +80,3 @@ class tv_manager_parser final : public rconfig::xml::xml_config_parser {
 
 NS_END(xml, config, tv, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_TV_CONFIG_XML_TV_MANAGER_PARSER_HPP_ */

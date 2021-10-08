@@ -34,10 +34,10 @@ NS_START(prism, lane_alloc, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 lane_alloc_metrics_collector::lane_alloc_metrics_collector(
-    std::unique_ptr<rmetrics::base_metrics_sink> sink,
+    std::unique_ptr<rmetrics::base_sink> sink,
     const rtypes::type_uuid& target_id,
     size_t n_lanes)
-    : base_metrics_collector(std::move(sink)),
+    : base_collector(std::move(sink)),
       mc_target_id(target_id),
       m_data(n_lanes) {}
 

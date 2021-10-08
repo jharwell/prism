@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CALCULATORS_EGRESS_PATH_HPP_
-#define INCLUDE_PRISM_FSM_CALCULATORS_EGRESS_PATH_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -94,4 +93,3 @@ class egress_path : public rer::client<egress_path> {
 
 NS_END(calculators, fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CALCULATORS_EGRESS_PATH_HPP_ */

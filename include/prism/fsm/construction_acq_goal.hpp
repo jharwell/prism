@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_CONSTRUCTION_ACQ_GOAL_HPP_
-#define INCLUDE_PRISM_FSM_CONSTRUCTION_ACQ_GOAL_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -73,4 +72,3 @@ to_goal_type(const construction_acq_goal& goal);
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_CONSTRUCTION_ACQ_GOAL_HPP_ */

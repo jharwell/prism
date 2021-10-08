@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_BASE_CT_BLOCK_PLACE_INTERACTOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_BASE_CT_BLOCK_PLACE_INTERACTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -153,8 +152,9 @@ class base_ct_block_place_interactor
     auto builder = m_ct_manager->builder(ct->id());
     auto target = m_ct_manager->target(ct->id());
 
-    if (builder->block_placement_valid(crepr::make_variant(controller.block()),
-                                       *intent)) {
+    auto block = const_cast<const crepr::base_block3D*>(controller.block());
+
+    if (builder->block_placement_valid(crepr::make_variant(block), *intent)) {
       execute_block_place(controller, p, *intent, t);
     } else {
       ER_WARN("Block placement on target%s with intent %s invalid",
@@ -183,7 +183,8 @@ class base_ct_block_place_interactor
      * the nest block drop event resets block metrics.
      */
     controller.block()->md()->dest_drop_time(t);
-    m_metrics_manager->collect_from_block(controller.block());
+    auto block = static_cast<const crepr::sim_block3D*>(controller.block());
+    m_metrics_manager->collect_from_block(block);
 
     /* update controller bookkeeping */
     robot_previsit_hook(controller, penalty);
@@ -223,4 +224,3 @@ class base_ct_block_place_interactor
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_BASE_CT_BLOCK_PLACE_INTERACTOR_HPP_ */

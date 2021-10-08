@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_BASE_LOOP_FUNCTIONS_HPP_
-#define INCLUDE_PRISM_SUPPORT_BASE_LOOP_FUNCTIONS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -34,7 +33,7 @@
 #include "rcppsw/math/vector2.hpp"
 #include "rcppsw/utils/color.hpp"
 
-#include "cosm/pal/argos_sm_adaptor.hpp"
+#include "cosm/pal/argos/swarm_manager_adaptor.hpp"
 
 #include "prism/gmt/config/gmt_config.hpp"
 #include "prism/gmt/config/spct_builder_config.hpp"
@@ -66,7 +65,7 @@ NS_START(prism, support);
  * could not just be free functions because they require access to members in
  * the \ref argos::CLoopFunctions class.
  */
-class base_loop_functions : public cpal::argos_sm_adaptor,
+class base_loop_functions : public cpargos::swarm_manager_adaptor,
                             public rer::client<base_loop_functions> {
  public:
   base_loop_functions(void) RCPPSW_COLD;
@@ -113,5 +112,3 @@ class base_loop_functions : public cpal::argos_sm_adaptor,
 };
 
 NS_END(support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_BASE_LOOP_FUNCTIONS_HPP_ */

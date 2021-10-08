@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_PERCEPTION_CONFIG_PERCEPTION_CONFIG_HPP_
-#define INCLUDE_PRISM_CONTROLLER_PERCEPTION_CONFIG_PERCEPTION_CONFIG_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -52,4 +51,3 @@ struct perception_config final : public rconfig::base_config {
 
 NS_END(config, perception, controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_PERCEPTION_CONFIG_PERCEPTION_CONFIG_HPP_ */

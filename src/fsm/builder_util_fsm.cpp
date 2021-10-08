@@ -27,6 +27,8 @@
 #include "rcppsw/utils/maskable_enum.hpp"
 
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
+#include "cosm/subsystem/actuation_subsystem2D.hpp"
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/repr/construction_lane.hpp"
@@ -40,14 +42,13 @@ NS_START(prism, fsm);
  * Constructors/Destructors
  ******************************************************************************/
 builder_util_fsm::builder_util_fsm(
-    const pcperception::builder_perception_subsystem* perception,
-    csubsystem::saa_subsystemQ3D* saa,
+    const pfsm::fsm_params* params,
     rmath::rng* rng,
     uint8_t max_states)
-    : util_hfsm(saa, rng, max_states),
+    : util_hfsm(params, rng, max_states),
       ER_CLIENT_INIT("prism.fsm.builder_util"),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
-      mc_perception(perception) {}
+      mc_perception(params->perception) {}
 
 builder_util_fsm::~builder_util_fsm(void) = default;
 
@@ -73,12 +74,12 @@ RCPPSW_HFSM_STATE_DEFINE(builder_util_fsm,
 }
 
 RCPPSW_HFSM_ENTRY_DEFINE_ND(builder_util_fsm, entry_wait_for_robot) {
-  inta_tracker()->inta_enter();
+  inta_tracker()->state_enter();
 }
 
 RCPPSW_HFSM_EXIT_DEFINE(builder_util_fsm, exit_wait_for_robot) {
-  inta_tracker()->inta_exit();
-  bool in_ct_zone = saa()->sensing()->ground()->detect("nest");
+  inta_tracker()->state_exit();
+  bool in_ct_zone = saa()->sensing()->env()->detect("nest");
 
   /*
    * If the interference episode we have just experienced occured while we were

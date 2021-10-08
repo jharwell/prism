@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_BUILDER_UTIL_FSM_HPP_
-#define INCLUDE_PRISM_FSM_BUILDER_UTIL_FSM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -38,6 +37,7 @@
 #include "prism/fsm/calculators/lane_alignment.hpp"
 #include "prism/repr/fs_configuration.hpp"
 #include "prism/prism.hpp"
+#include "prism/fsm/fsm_params.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -86,8 +86,7 @@ class builder_util_fsm : public csfsm::util_hfsm,
   lane_alignment_verify_azimuth(const csubsystem::sensing_subsystemQ3D* sensing,
                                 const rmath::radians& orientation);
 
-  builder_util_fsm(const pcperception::builder_perception_subsystem* perception,
-                   csubsystem::saa_subsystemQ3D* saa,
+  builder_util_fsm(const pfsm::fsm_params* params,
                    rmath::rng* rng,
                    uint8_t max_states);
 
@@ -134,4 +133,3 @@ class builder_util_fsm : public csfsm::util_hfsm,
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_BUILDER_UTIL_FSM_HPP_ */

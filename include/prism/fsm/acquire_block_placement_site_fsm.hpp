@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_ACQUIRE_BLOCK_PLACEMENT_SITE_FSM_HPP_
-#define INCLUDE_PRISM_FSM_ACQUIRE_BLOCK_PLACEMENT_SITE_FSM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -57,10 +56,8 @@ class acquire_block_placement_site_fsm
     : public rer::client<acquire_block_placement_site_fsm>,
       public builder_util_fsm {
  public:
-  acquire_block_placement_site_fsm(
-      const pcperception::builder_perception_subsystem* perception,
-      csubsystem::saa_subsystemQ3D* saa,
-      rmath::rng* rng);
+  acquire_block_placement_site_fsm(const pfsm::fsm_params* params,
+                                   rmath::rng* rng);
 
   ~acquire_block_placement_site_fsm(void) override;
 
@@ -162,4 +159,3 @@ class acquire_block_placement_site_fsm
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_ACQUIRE_BLOCK_PLACEMENT_SITE_FSM_HPP_ */

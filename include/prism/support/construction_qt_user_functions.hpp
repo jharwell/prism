@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU General Public License along with
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
-#ifndef INCLUDE_PRISM_SUPPORT_CONSTRUCTION_QT_USER_FUNCTIONS_HPP_
-#define INCLUDE_PRISM_SUPPORT_CONSTRUCTION_QT_USER_FUNCTIONS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -77,4 +76,3 @@ class construction_qt_user_functions : public argos::CQTOpenGLUserFunctions {
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_CONSTRUCTION_QT_USER_FUNCTIONS_HPP_ */

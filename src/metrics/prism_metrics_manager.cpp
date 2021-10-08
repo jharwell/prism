@@ -27,9 +27,13 @@
 
 #include "rcppsw/mpl/typelist.hpp"
 #include "rcppsw/utils/maskable_enum.hpp"
-#include "rcppsw/metrics/collector_registerer.hpp"
+#include "rcppsw/metrics/file_sink_registerer.hpp"
+#include "rcppsw/metrics/register_with_sink.hpp"
+#include "rcppsw/metrics/register_using_config.hpp"
+#include "rcppsw/mpl/identity.hpp"
 
 #include "cosm/convergence/convergence_calculator.hpp"
+#include "cosm/metrics/specs.hpp"
 
 #include "prism/controller/fcrw_bst_controller.hpp"
 #include "prism/fsm/fcrw_bst_fsm.hpp"
@@ -48,6 +52,7 @@
 #include "prism/gmt/subtarget.hpp"
 #include "prism/support/tv/metrics/env_dynamics_metrics_collector.hpp"
 #include "prism/support/tv/metrics/env_dynamics_metrics_csv_sink.hpp"
+#include "prism/metrics/specs.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -63,7 +68,7 @@ prism_metrics_manager::prism_metrics_manager(
     const fs::path& output_root,
     const ds::ct_vectorno& targets)
     : ER_CLIENT_INIT("prism.metrics.manager"),
-      cosm_metrics_manager(mconfig, output_root) {
+      fs_output_manager(mconfig, output_root) {
   /* register collectors from base class  */
   auto dims2D = rmath::dvec2zvec(gconfig->dims, gconfig->resolution.v());
   size_t max_height = 0;
@@ -78,12 +83,13 @@ prism_metrics_manager::prism_metrics_manager(
   register_with_arena_dims3D(mconfig, dims3D);
 
   /* register PRISM collectors */
-  register_standard_non_target(mconfig);
+  register_standard(mconfig);
+
   for (auto* target : targets) {
-    register_standard_target(mconfig, target);
-    register_with_target_lanes(mconfig, target);
-    register_with_target_lanes_and_id(mconfig, target);
-    register_with_target_dims(mconfig, target);
+    register_with_ct(mconfig, target);
+    register_with_ct_and_lanes(mconfig, target);
+    register_with_ct_and_lanes_and_id(mconfig, target);
+    register_with_ct_and_dims(mconfig, target);
   } /* for(*target..) */
 
   /* setup metric collection for all collector groups in all sink groups */
@@ -95,22 +101,22 @@ prism_metrics_manager::prism_metrics_manager(
  ******************************************************************************/
 void prism_metrics_manager::collect_from_tv(
     const support::tv::tv_manager* const tvm) {
-  collect("tv::environment", *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
+  collect(cmspecs::tv::kEnvironment.scoped(),
+          *tvm->dynamics<ctv::dynamics_type::ekENVIRONMENT>());
 
   if (nullptr != tvm->dynamics<ctv::dynamics_type::ekPOPULATION>()) {
-    collect("tv::population", *tvm->dynamics<ctv::dynamics_type::ekPOPULATION>());
+    collect(cmspecs::tv::kPopulation.scoped(),
+            *tvm->dynamics<ctv::dynamics_type::ekPOPULATION>());
   }
 } /* collect_from_tv() */
 
 void prism_metrics_manager::collect_from_ct(
     const gmt::ct_manager* manager) {
   for (const auto* target : manager->targetsro()) {
-    collect("structure" + rcppsw::to_string(target->id()) + "::state", *target);
-    collect("structure" + rcppsw::to_string(target->id()) + "::progress",
-            *target);
+    collect(pmspecs::gmt::kState.scoped(target->id()), *target);
+    collect(pmspecs::gmt::kProgress.scoped(target->id()), *target);
     for (auto* st : target->subtargets()) {
-      collect("structure" + rcppsw::to_string(target->id()) + "::subtargets",
-              *st);
+      collect(pmspecs::gmt::kSubtargets.scoped(target->id()), *st);
     } /* for(*t..) */
   } /* for(*target..) */
 } /* collect_from_ct() */
@@ -118,133 +124,171 @@ void prism_metrics_manager::collect_from_ct(
 template <typename TController>
 void prism_metrics_manager::collect_from_controller(
     const TController* c,
-    const rtypes::type_uuid& structure_id) {
-  cosm_metrics_manager::collect_from_controller(c);
+    const rtypes::type_uuid& ct_id) {
+  fs_output_manager::collect_from_controller(c);
 
-  if (rtypes::constants::kNoUUID != structure_id) {
-    collect("structure" + rcppsw::to_string(structure_id) + "::lane_alloc",
+  if (rtypes::constants::kNoUUID != ct_id) {
+    collect(pmspecs::algorithm::kLaneAllocation.scoped(ct_id),
             *c->fsm()->lane_allocator());
   }
-  collect("blocks::manipulation", *c->block_manip_recorder());
-  collect("blocks::acq_locs2D", *c);
-  collect("blocks::acq_explore_locs2D", *c);
-  collect("blocks::acq_vector_locs2D", *c);
-  collect("blocks::acq_counts", *c);
-  collect("fsm::interference_counts", *c->fsm());
+  collect(pmspecs::blocks::kManipulation.scoped(),
+          *c->block_manip_recorder());
+  collect(cmspecs::blocks::kAcqLocs2D.scoped(), *c);
+  collect(cmspecs::blocks::kAcqExploreLocs2D.scoped(), *c);
+  collect(cmspecs::blocks::kAcqVectorLocs2D.scoped(), *c);
+  collect(cmspecs::blocks::kAcqCounts.scoped(), *c);
+  collect(cmspecs::spatial::kInterferenceCounts.scoped(), *c->fsm());
 } /* collect_from_controller() */
 
-void prism_metrics_manager::register_standard_non_target(
+void prism_metrics_manager::register_standard(
     const rmconfig::metrics_config* mconfig) {
   using sink_list = rmpl::typelist<
       rmpl::identity<blocks::manipulation_metrics_csv_sink>,
       rmpl::identity<support::tv::metrics::env_dynamics_metrics_csv_sink>
     >;
   rmetrics::creatable_collector_set creatable_set = {
-    { typeid(blocks::manipulation_metrics_collector),
-      "block_manipulation",
-      "blocks::manipulation",
-      rmetrics::output_mode::ekAPPEND },
-    { typeid(support::tv::metrics::env_dynamics_metrics_collector),
-      "tv_environment",
-      "tv::environment",
-      rmetrics::output_mode::ekAPPEND }
+    {
+      typeid(blocks::manipulation_metrics_collector),
+      pmspecs::blocks::kManipulation.xml(),
+      pmspecs::blocks::kManipulation.scoped(),
+      rmetrics::output_mode::ekAPPEND
+    },
+    {
+      typeid(support::tv::metrics::env_dynamics_metrics_collector),
+      cmspecs::tv::kEnvironment.xml(),
+      cmspecs::tv::kEnvironment.scoped(),
+      rmetrics::output_mode::ekAPPEND
+    }
   };
-  rmetrics::register_with_csv_sink csv(&mconfig->csv,
-                                       creatable_set,
-                                       this);
-  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
-  boost::mpl::for_each<sink_list>(registerer);
-} /* register_standard_non_target() */
 
-void prism_metrics_manager::register_standard_target(
+  rmetrics::register_with_sink<pmetrics::prism_metrics_manager,
+                               rmetrics::file_sink_registerer> csv(this,
+                                                                   creatable_set);
+  rmetrics::register_using_config<decltype(csv),
+                                  rmconfig::file_sink_config> registerer(
+                                      std::move(csv),
+                                      &mconfig->csv);
+
+  boost::mpl::for_each<sink_list>(registerer);
+} /* register_standard() */
+
+void prism_metrics_manager::register_with_ct(
     const rmconfig::metrics_config* mconfig,
-    const pgmt::spc_gmt* structure) {
+    const pgmt::spc_gmt* ct) {
   using sink_list = rmpl::typelist<
       rmpl::identity<gmt::metrics::ct_progress_metrics_csv_sink>
     >;
   rmetrics::creatable_collector_set creatable_set = {
-    { typeid(gmt::metrics::ct_progress_metrics_collector),
-      "structure" + rcppsw::to_string(structure->id()) + "_progress",
-      "structure" + rcppsw::to_string(structure->id()) + "::progress",
-      rmetrics::output_mode::ekAPPEND },
+    {
+      typeid(gmt::metrics::ct_progress_metrics_collector),
+      pmspecs::gmt::kProgress.xml(ct->id()),
+      pmspecs::gmt::kProgress.scoped(ct->id()),
+      rmetrics::output_mode::ekAPPEND
+    },
   };
-  rmetrics::register_with_csv_sink csv(&mconfig->csv,
-                                       creatable_set,
-                                       this);
-  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
-  boost::mpl::for_each<sink_list>(registerer);
-} /* register_standard_target() */
+  rmetrics::register_with_sink<pmetrics::prism_metrics_manager,
+                               rmetrics::file_sink_registerer> csv(this,
+                                                                   creatable_set);
+  rmetrics::register_using_config<decltype(csv),
+                                  rmconfig::file_sink_config> registerer(
+                                      std::move(csv),
+                                      &mconfig->csv);
 
-void prism_metrics_manager::register_with_target_lanes(
+  boost::mpl::for_each<sink_list>(registerer);
+} /* register_with_ct() */
+
+void prism_metrics_manager::register_with_ct_and_lanes(
     const rmconfig::metrics_config* mconfig,
-    const pgmt::spc_gmt* structure) {
+    const pgmt::spc_gmt* ct) {
   using sink_list = rmpl::typelist<
       rmpl::identity<pgmetrics::subtargets_metrics_csv_sink>
     >;
 
   rmetrics::creatable_collector_set creatable_set = {
-    { typeid(gmt::metrics::subtargets_metrics_collector),
-      "structure" + rcppsw::to_string(structure->id()) + "_subtargets",
-      "structure" + rcppsw::to_string(structure->id()) + "::subtargets",
-      rmetrics::output_mode::ekAPPEND },
+    {
+      typeid(gmt::metrics::subtargets_metrics_collector),
+      pmspecs::gmt::kSubtargets.xml(ct->id()),
+      pmspecs::gmt::kSubtargets.scoped(ct->id()),
+      rmetrics::output_mode::ekAPPEND
+    },
   };
-  auto extra_args = std::make_tuple(structure->subtargets().size());
-  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
-                                                             creatable_set,
-                                                             this,
-                                                             extra_args);
-  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
-  boost::mpl::for_each<sink_list>(registerer);
-} /* register_with_target_lanes() */
+  auto extra_args = std::make_tuple(ct->subtargets().size());
+  rmetrics::register_with_sink<pmetrics::prism_metrics_manager,
+                               rmetrics::file_sink_registerer,
+                               decltype(extra_args)> csv(this,
+                                                         creatable_set,
+                                                         extra_args);
+  rmetrics::register_using_config<decltype(csv),
+                                  rmconfig::file_sink_config> registerer(
+                                      std::move(csv),
+                                      &mconfig->csv);
 
-void prism_metrics_manager::register_with_target_lanes_and_id(
+  boost::mpl::for_each<sink_list>(registerer);
+} /* register_with_ct_and_lanes() */
+
+void prism_metrics_manager::register_with_ct_and_lanes_and_id(
     const rmconfig::metrics_config* mconfig,
-    const pgmt::spc_gmt* structure) {
+    const pgmt::spc_gmt* ct) {
   using sink_list = rmpl::typelist<
         rmpl::identity<plametrics::lane_alloc_metrics_csv_sink>
     >;
 
   rmetrics::creatable_collector_set creatable_set = {
-    { typeid(plametrics::lane_alloc_metrics_collector),
-      "structure" + rcppsw::to_string(structure->id()) + "_lane_alloc",
-      "structure" + rcppsw::to_string(structure->id()) + "::lane_alloc",
-      rmetrics::output_mode::ekAPPEND }
+    {
+      typeid(plametrics::lane_alloc_metrics_collector),
+      pmspecs::algorithm::kLaneAllocation.xml(ct->id()),
+      pmspecs::algorithm::kLaneAllocation.scoped(ct->id()),
+      rmetrics::output_mode::ekAPPEND
+    }
   };
-  auto extra_args = std::make_tuple(structure->id(),
-                                    structure->subtargets().size());
-  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
-                                                            creatable_set,
-                                                             this,
-                                                             extra_args);
-  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
-  boost::mpl::for_each<sink_list>(registerer);
-} /* register_with_target_lanes_and_id() */
+  auto extra_args = std::make_tuple(ct->id(),
+                                    ct->subtargets().size());
 
-void prism_metrics_manager::register_with_target_dims(
+  rmetrics::register_with_sink<pmetrics::prism_metrics_manager,
+                               rmetrics::file_sink_registerer,
+                               decltype(extra_args)> csv(this,
+                                                         creatable_set,
+                                                         extra_args);
+  rmetrics::register_using_config<decltype(csv),
+                                  rmconfig::file_sink_config> registerer(
+                                      std::move(csv),
+                                      &mconfig->csv);
+  boost::mpl::for_each<sink_list>(registerer);
+} /* register_with_ct_and_lanes_and_id() */
+
+void prism_metrics_manager::register_with_ct_and_dims(
     const rmconfig::metrics_config* mconfig,
-    const pgmt::spc_gmt* structure) {
+    const pgmt::spc_gmt* ct) {
 
   using sink_list = rmpl::typelist<
     rmpl::identity<pgmetrics::ct_state_metrics_csv_sink>
     >;
 
   rmetrics::creatable_collector_set creatable_set = {
-    { typeid(gmt::metrics::ct_state_metrics_collector),
-      "structure" + rcppsw::to_string(structure->id()) + "_state",
-      "structure" + rcppsw::to_string(structure->id()) + "::state",
-      rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE },
+    {
+      typeid(gmt::metrics::ct_state_metrics_collector),
+      pmspecs::gmt::kState.xml(ct->id()),
+      pmspecs::gmt::kState.scoped(ct->id()),
+      rmetrics::output_mode::ekCREATE | rmetrics::output_mode::ekTRUNCATE
+    },
   };
 
-  auto extra_args = std::make_tuple(rmath::vector3z{structure->xdsize(),
-                    structure->ydsize(),
-                    structure->zdsize()});
-  rmetrics::register_with_csv_sink<decltype(extra_args)> csv(&mconfig->csv,
-                                                             creatable_set,
-                                                             this,
-                                                             extra_args);
-  rmetrics::collector_registerer<decltype(csv)> registerer(std::move(csv));
+  auto extra_args = std::make_tuple(rmath::vector3z{ct->xdsize(),
+                    ct->ydsize(),
+                    ct->zdsize()});
+
+  rmetrics::register_with_sink<pmetrics::prism_metrics_manager,
+                               rmetrics::file_sink_registerer,
+                               decltype(extra_args)> csv(this,
+                                                         creatable_set,
+                                                         extra_args);
+  rmetrics::register_using_config<decltype(csv),
+                                  rmconfig::file_sink_config> registerer(
+                                      std::move(csv),
+                                      &mconfig->csv);
+
   boost::mpl::for_each<sink_list>(registerer);
-} /* register_with_target_dims() */
+} /* register_with_ct_and_dims() */
 
 /*******************************************************************************
  * Template Instantiations

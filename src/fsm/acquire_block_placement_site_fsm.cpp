@@ -27,6 +27,8 @@
 
 #include "cosm/spatial/fsm/util_signal.hpp"
 #include "cosm/subsystem/saa_subsystemQ3D.hpp"
+#include "cosm/subsystem/sensing_subsystemQ3D.hpp"
+#include "cosm/subsystem/actuation_subsystem2D.hpp"
 
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/fsm/calculators/ingress_path.hpp"
@@ -34,7 +36,7 @@
 #include "prism/fsm/calculators/placement_path.hpp"
 #include "prism/fsm/construction_signal.hpp"
 #include "prism/fsm/calculators/fs_acq/cubic_spacefill.hpp"
-#include "prism/repr/colors.hpp"
+#include "prism/repr/diagnostics.hpp"
 #include "prism/repr/construction_lane.hpp"
 
 /*******************************************************************************
@@ -46,11 +48,10 @@ NS_START(prism, fsm);
  * Constructors/Destructors
  ******************************************************************************/
 acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
-    const pcperception::builder_perception_subsystem* perception,
-    csubsystem::saa_subsystemQ3D* saa,
+    const pfsm::fsm_params* params,
     rmath::rng* rng)
     : ER_CLIENT_INIT("prism.fsm.acquire_block_placement_site"),
-      builder_util_fsm(perception, saa, rng, fsm_state::ekST_MAX_STATES),
+      builder_util_fsm(params, rng, fsm_state::ekST_MAX_STATES),
       RCPPSW_HFSM_CONSTRUCT_STATE(wait_for_robot, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(start, hfsm::top_state()),
       RCPPSW_HFSM_CONSTRUCT_STATE(acquire_frontier_set, hfsm::top_state()),
@@ -73,8 +74,8 @@ acquire_block_placement_site_fsm::acquire_block_placement_site_fsm(
                                              nullptr),
           RCPPSW_HFSM_STATE_MAP_ENTRY_EX(&finished)),
       m_fs_acq_strat(std::make_unique<pfcalculators::fs_acq::cubic_spacefill>(
-          saa->sensing(), perception)),
-      m_alignment_calc(saa->sensing()) {}
+          params->saa->sensing(), params->perception)),
+      m_alignment_calc(params->saa->sensing()) {}
 
 acquire_block_placement_site_fsm::~acquire_block_placement_site_fsm(void) =
     default;
@@ -96,7 +97,7 @@ RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
    * Turn on LEDs so we can be identified by other robots while on the
    * structure.
    */
-  saa()->actuation()->leds()->set_color(-1, prepr::colors::builder());
+  saa()->actuation()->diagnostics()->emit(prepr::diagnostics::ekBUILDER);
 }
 
 RCPPSW_HFSM_ENTRY_DEFINE_ND(acquire_block_placement_site_fsm,
@@ -125,7 +126,7 @@ RCPPSW_HFSM_STATE_DEFINE_ND(acquire_block_placement_site_fsm,
   auto alignment = m_alignment_calc(allocated_lane());
   ER_ASSERT(alignment.ingress,
             "Bad alignment (position) during frontier set acqusition");
-  ER_CHECKW(alignment.azimuth,
+  ER_CONDW(!alignment.azimuth,
             "Bad alignment (orientation) during frontier set acquisition");
 
   auto acq = m_fs_acq_strat->operator()(allocated_lane());

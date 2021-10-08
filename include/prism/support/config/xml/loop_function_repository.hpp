@@ -20,13 +20,12 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_
-#define INCLUDE_PRISM_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/pal/config/xml/base_sm_repository.hpp"
+#include "cosm/pal/config/xml/base_swarm_manager_repository.hpp"
 
 #include "prism/prism.hpp"
 
@@ -45,11 +44,10 @@ NS_START(prism, support, config, xml);
  * \brief Extra loop function XML parsers/results specific to the PRISM
  * project.
  */
-class loop_function_repository : public cpal::config::xml::base_sm_repository {
+class loop_function_repository
+    : public cpal::config::xml::base_swarm_manager_repository {
  public:
   loop_function_repository(void) noexcept;
 };
 
 NS_END(xml, config, support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_CONFIG_XML_LOOP_FUNCTION_REPOSITORY_HPP_ */

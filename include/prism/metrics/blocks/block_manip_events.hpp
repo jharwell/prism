@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_
-#define INCLUDE_PRISM_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -42,4 +41,3 @@ enum block_manip_events {
 
 NS_END(blocks, metrics, prism);
 
-#endif /* INCLUDE_PRISM_METRICS_BLOCKS_BLOCK_MANIP_EVENTS_HPP_ */

@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACEMENT_VALIDATE_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACEMENT_VALIDATE_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -95,4 +94,3 @@ class block_placement_validate : public rer::client<block_placement_validate> {
 
 NS_END(operations, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_BLOCK_PLACEMENT_VALIDATE_HPP_ */

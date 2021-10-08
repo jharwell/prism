@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_STATIC_BUILD_STATUS_HPP_
-#define INCLUDE_PRISM_GMT_STATIC_BUILD_STATUS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -65,4 +64,3 @@ enum class static_build_status {
 
 NS_END(gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_STATIC_BUILD_STATUS_HPP_ */

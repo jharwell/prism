@@ -44,11 +44,11 @@ ct_block_place::ct_block_place(const rtypes::type_uuid& robot_id)
  * Single Target Construction
  ******************************************************************************/
 void ct_block_place::visit(controller::fcrw_bst_controller& controller) {
-  controller.ndc_pusht();
+  controller.ndc_uuid_push();
 
   visit(*controller.fsm());
 
-  controller.ndc_pop();
+  controller.ndc_uuid_pop();
 } /* visit() */
 
 void ct_block_place::visit(fsm::fcrw_bst_fsm& fsm) {

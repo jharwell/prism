@@ -31,7 +31,7 @@
 #include "prism/controller/perception/builder_perception_subsystem.hpp"
 #include "prism/repr/construction_lane.hpp"
 #include "prism/repr/builder_los.hpp"
-#include "prism/algorithm/constants.hpp"
+#include "prism/properties/algorithm.hpp"
 #include "prism/gmt/utils.hpp"
 
 /*******************************************************************************
@@ -70,7 +70,7 @@ cubic_spacefill::operator()(const prepr::construction_lane* lane) const {
    * validated.
    */
 
-  for (size_t lookahead = 1; lookahead <= paconstants::kCT_FS_LOOKAHEAD_MAX_CELLS; ++lookahead) {
+  for (size_t lookahead = 1; lookahead <= ppalgorithm::kCT_FS_LOOKAHEAD_MAX_CELLS; ++lookahead) {
     result = acq_result_calc(lane, los, lookahead);
 
     /*
@@ -93,7 +93,7 @@ cubic_spacefill::acq_result_calc(const prepr::construction_lane* lane,
   const auto* ct = perception()->nearest_ct();
   auto robot_ct_cell = ct->to_rcoord(sensing()->rpos3D());
 
-  ER_CHECKW(boost::none != los->find(robot_ct_cell.offset()),
+  ER_CONDW(boost::none == los->find(robot_ct_cell.offset()),
             "Robot CT cell not in LOS?");
 
   auto rpos = sensing()->rpos3D();

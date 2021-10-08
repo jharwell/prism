@@ -48,21 +48,30 @@ fcrw_bst_controller::~fcrw_bst_controller(void) = default;
  ******************************************************************************/
 void fcrw_bst_controller::init(ticpp::Element& node) {
   constructing_controller::init(node);
-  ndc_push();
+  ndc_uuid_push();
   ER_INFO("Initializing...");
 
   config::constructing_controller_repository repo;
   repo.parse_all(node);
 
   const auto* allocator_config = repo.config_get<placonfig::lane_alloc_config>();
+  pfsm::fsm_params params = {
+    {
+      saa(),
+      inta_tracker(),
+      nullptr,
+    },
+    perception()
+  };
 
-  m_fsm = std::make_unique<fsm::fcrw_bst_fsm>(
-      allocator_config, perception(), saa(), rng());
+  m_fsm = std::make_unique<fsm::fcrw_bst_fsm>(allocator_config,
+                                              &params,
+                                              rng());
 
   /* Set FCRW_BST FSM supervision */
   supervisor()->supervisee_update(m_fsm.get());
   ER_INFO("Initialization finished");
-  ndc_pop();
+  ndc_uuid_pop();
 } /* init() */
 
 void fcrw_bst_controller::reset(void) {
@@ -73,7 +82,9 @@ void fcrw_bst_controller::reset(void) {
 } /* reset() */
 
 void fcrw_bst_controller::control_step(void) {
-  ndc_pusht();
+  mdc_ts_update();
+  ndc_uuid_push();
+
   ER_ASSERT(!(nullptr != block() &&
               rtypes::constants::kNoUUID == block()->md()->robot_id()),
             "Carried block%d has robot id=%d",
@@ -95,7 +106,7 @@ void fcrw_bst_controller::control_step(void) {
    * abnormal operation state.
    */
   supervisor()->run();
-  ndc_pop();
+  ndc_uuid_pop();
 } /* control_step() */
 
 RCPPSW_WRAP_DEF_OVERRIDE(fcrw_bst_controller,

@@ -18,13 +18,12 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_CONFIG_VISUALIZATION_CONFIG_HPP_
-#define INCLUDE_PRISM_SUPPORT_CONFIG_VISUALIZATION_CONFIG_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "cosm/vis/config/visualization_config.hpp"
+#include "cosm/argos/vis/config/visualization_config.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -40,10 +39,8 @@ NS_START(prism, support, config);
  *
  * \brief PRISM visualizations beyond those supported in COSM.
  */
-struct visualization_config final : public cvconfig::visualization_config {
+struct visualization_config final : public cavis::config::visualization_config {
   bool robot_nearest_ct{false};
 };
 
 NS_END(config, support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_CONFIG_VISUALIZATION_CONFIG_HPP_ */

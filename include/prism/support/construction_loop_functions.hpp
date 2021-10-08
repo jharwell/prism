@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_CONSTRUCTION_LOOP_FUNCTIONS_HPP_
-#define INCLUDE_PRISM_SUPPORT_CONSTRUCTION_LOOP_FUNCTIONS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -201,4 +200,3 @@ class construction_loop_functions
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_CONSTRUCTION_LOOP_FUNCTIONS_HPP_ */

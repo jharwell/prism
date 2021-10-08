@@ -1,7 +1,7 @@
 /**
- * \file perception_parser.cpp
+ * \file fsm_params.hpp
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell, All rights reserved.
  *
  * This file is part of PRISM.
  *
@@ -18,39 +18,29 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
+#pragma once
+
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "prism/controller/perception/config/perception_parser.hpp"
+#include "cosm/spatial/fsm/fsm_params.hpp"
+
+#include "prism/prism.hpp"
 
 /*******************************************************************************
- * Namespaces
+ * Namespaces/Decls
  ******************************************************************************/
-NS_START(prism, controller, perception, config);
+namespace prism::controller::perception {
+class builder_perception_subsystem;
+} /* namespace prism::perception */
+
+NS_START(prism, fsm);
 
 /*******************************************************************************
- * Member Functions
+ * Class Definitions
  ******************************************************************************/
-void perception_parser::parse(const ticpp::Element& node) {
-  ticpp::Element pnode = node_get(node, kXMLRoot);
-  m_config = std::make_unique<config_type>();
+struct fsm_params  : public csfsm::fsm_params {
+  const pcperception::builder_perception_subsystem* perception;
+};
 
-  XML_PARSE_ATTR(pnode, m_config, type);
-
-  m_rlos.parse(pnode);
-  m_config->rlos = *m_rlos.config_get<cspcxml::rlos_parser::config_type>();
-} /* parse() */
-
-bool perception_parser::validate(void) const {
-  if (!is_parsed()) {
-    return true;
-  }
-  RCPPSW_CHECK(m_rlos.validate());
-
-  return true;
-
-error:
-  return false;
-} /* validate() */
-
-NS_END(config, perception, controller, prism);
+NS_END(fsm, prism);

@@ -33,7 +33,8 @@ using temporal_config_type =
 /*******************************************************************************
  * Constructors/Destructor
  ******************************************************************************/
-env_dynamics_parser::env_dynamics_parser(void) {
+env_dynamics_parser::env_dynamics_parser(void)
+    : ER_CLIENT_INIT("prism.support.tv.config.xml.env_dynamics_parser") {
   m_block_manip.xml_root("manipulation_penalty");
   m_block_carry.xml_root("carry_throttle");
 }
@@ -42,6 +43,10 @@ env_dynamics_parser::env_dynamics_parser(void) {
  * Member Functions
  ******************************************************************************/
 void env_dynamics_parser::parse(const ticpp::Element& node) {
+  ER_DEBUG("Parent node=%s: child=%s",
+           node.Value().c_str(),
+           kXMLRoot.c_str());
+
   /* No environmental dynamics configured */
   if (nullptr == node.FirstChild(kXMLRoot, false)) {
     return;

@@ -51,13 +51,14 @@ loop_function_repository::loop_function_repository(void) noexcept {
    * Unregister the COSM visualization parser--it doesn't have everything we
    * need.
    */
-  parser_unregister<cvconfig::xml::visualization_parser,
+  parser_unregister<cavis::config::xml::visualization_parser,
                     support::config::visualization_config>(
-      cvconfig::xml::visualization_parser::kXMLRoot);
+                        cavis::config::xml::visualization_parser::kXMLRoot);
 
-  parser_register<support::config::xml::visualization_parser,
-                  support::config::visualization_config>(
-      support::config::xml::visualization_parser::kXMLRoot);
+  /* Register the visualization parser for PRISM */
+  parser_register<psupport::config::xml::visualization_parser,
+                  psupport::config::visualization_config>(
+      psupport::config::xml::visualization_parser::kXMLRoot);
 }
 
 NS_END(xml, config, support, prism);

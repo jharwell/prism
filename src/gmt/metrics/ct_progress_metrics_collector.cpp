@@ -34,8 +34,8 @@ NS_START(prism, gmt, metrics);
  * Constructors/Destructor
  ******************************************************************************/
 ct_progress_metrics_collector::ct_progress_metrics_collector(
-    std::unique_ptr<rmetrics::base_metrics_sink> sink)
-    : base_metrics_collector(std::move(sink)) {}
+    std::unique_ptr<rmetrics::base_sink> sink)
+    : base_collector(std::move(sink)) {}
 
 /*******************************************************************************
  * Member Functions

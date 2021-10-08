@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_SPCT_INGRESS_FSM_HPP_
-#define INCLUDE_PRISM_FSM_SPCT_INGRESS_FSM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -29,6 +28,7 @@
 #include "cosm/steer2D/ds/path_state.hpp"
 
 #include "prism/fsm/builder_util_fsm.hpp"
+#include "prism/fsm/fsm_params.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -56,12 +56,10 @@ NS_START(prism, fsm);
  * After these steps have been done, it signals it has completed its task.
  */
 class gmt_ingress_fsm final : public builder_util_fsm,
-                                    public rer::client<gmt_ingress_fsm> {
+                              public rer::client<gmt_ingress_fsm> {
  public:
-  gmt_ingress_fsm(
-      const pcperception::builder_perception_subsystem* perception,
-      csubsystem::saa_subsystemQ3D* saa,
-      rmath::rng* rng);
+  gmt_ingress_fsm(const pfsm::fsm_params* params,
+                  rmath::rng* rng);
   ~gmt_ingress_fsm(void) override;
 
   gmt_ingress_fsm(const gmt_ingress_fsm&) = delete;
@@ -166,4 +164,3 @@ class gmt_ingress_fsm final : public builder_util_fsm,
 
 NS_END(fsm, prism);
 
-#endif /* INCLUDE_PRISM_FSM_SPCT_INGRESS_FSM_HPP_ */

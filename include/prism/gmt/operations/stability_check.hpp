@@ -1,5 +1,5 @@
 /**
- * \file composability_check.hpp
+ * \file stability_check.hpp
  *
  * \copyright 2020 John Harwell, All rights reserved.
  *
@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_OPERATIONS_COMPOSABILITY_CHECK_HPP_
-#define INCLUDE_PRISM_GMT_OPERATIONS_COMPOSABILITY_CHECK_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -38,20 +37,23 @@ NS_START(prism, gmt, operations);
  * Class Definitions
  ******************************************************************************/
 /**
- * \class composability_check
+ * \class stability_check
  * \ingroup gmt operations
  *
  * \brief Determine if the layers of the \ref spc_gmt specified by the \ref
  * pgds::connectivity_graph are composable; that is, they can be stacked on top
- * of each other in a physically realizable way.
+ * of each other in a physically realizable way. Framed as a graph coloring
+ * problem.
  */
-class composability_check : public rer::client<composability_check> {
+class stability_check : public rer::client<stability_check> {
  public:
-  composability_check(void);
+  stability_check(void)
+      : ER_CLIENT_INIT("prism.gmt.operations.stability_check") {}
+
 
   /* Not copy constructible or copy assignment by default  */
-  composability_check(const composability_check&) = delete;
-  composability_check& operator=(const composability_check&) = delete;
+  stability_check(const stability_check&) = delete;
+  stability_check& operator=(const stability_check&) = delete;
 
   bool operator()(const pgds::connectivity_graph* graph,
                   const pgrepr::vshell* vshell) const;
@@ -78,5 +80,3 @@ class composability_check : public rer::client<composability_check> {
 };
 
 NS_END(operations, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_OPERATIONS_COMPOSABILITY_CHECK_HPP_ */

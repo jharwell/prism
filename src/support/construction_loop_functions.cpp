@@ -32,7 +32,7 @@
 #include "cosm/convergence/convergence_calculator.hpp"
 #include "cosm/foraging/metrics/block_transportee_metrics_collector.hpp"
 #include "cosm/interactors/applicator.hpp"
-#include "cosm/pal/argos_swarm_iterator.hpp"
+#include "cosm/pal/argos/swarm_iterator.hpp"
 #include "cosm/pal/config/output_config.hpp"
 
 #include "prism/controller/fcrw_bst_controller.hpp"
@@ -66,7 +66,7 @@ using configurer_map_type = rds::type_map<
  * \ingroup support construction detail
  *
  * Convenience class containing initialization for all of the typeid ->
- * boost::variant maps for all controller types that are used throughout
+ * std::variant maps for all controller types that are used throughout
  * initialization and simulation.
  */
 struct functor_maps_initializer {
@@ -132,14 +132,14 @@ construction_loop_functions::~construction_loop_functions(void) = default;
  * Initialization Functions
  ******************************************************************************/
 void construction_loop_functions::init(ticpp::Element& node) {
-  ndc_push();
+  ndc_uuid_push();
   ER_INFO("Initializing...");
 
   shared_init(node);
   private_init();
 
   ER_INFO("Initialization finished");
-  ndc_pop();
+  ndc_uuid_pop();
 } /* init() */
 
 void construction_loop_functions::shared_init(ticpp::Element& node) {
@@ -153,7 +153,7 @@ void construction_loop_functions::shared_init(ticpp::Element& node) {
       &tv->env_dynamics.block_manip_penalty);
 
   /* initialize arena map, creating nests from construction targets */
-  const auto* vconfig = config()->config_get<cvconfig::visualization_config>();
+  const auto* vconfig = config()->config_get<cavis::config::visualization_config>();
   arena_map_init(vconfig, &nests);
 } /* shared_init() */
 
@@ -171,9 +171,6 @@ void construction_loop_functions::private_init(void) {
   arena.grid.dims = padded_size;
   m_metrics_manager = std::make_unique<pmetrics::prism_metrics_manager>(
       &output->metrics, &arena.grid, output_root(), ct_manager()->targetsno());
-
-  /* this starts at 0, and ARGoS starts at 1, so sync up */
-  m_metrics_manager->timestep_inc();
 
   m_interactor_map = std::make_unique<interactor_map_type>();
   m_metrics_map = std::make_unique<metric_extraction_map_type>();
@@ -213,9 +210,10 @@ void construction_loop_functions::private_init(void) {
    * threads are not set up yet so doing dynamicaly causes a deadlock. Also, it
    * only happens once, so it doesn't really matter if it is slow.
    */
-  cpal::argos_swarm_iterator::controllers<controller::constructing_controller,
-                                          cpal::iteration_order::ekSTATIC>(
-      this, cb, cpal::kARGoSRobotType);
+  cpargos::swarm_iterator::controllers<controller::constructing_controller,
+                                       cpal::iteration_order::ekSTATIC>(this,
+                                                                        cb,
+                                                                        cpal::kRobotType);
 } /* private_init() */
 
 crepr::config::nests_config construction_loop_functions::construction_init(
@@ -236,36 +234,36 @@ crepr::config::nests_config construction_loop_functions::construction_init(
  * ARGoS Hooks
  ******************************************************************************/
 void construction_loop_functions::pre_step(void) {
-  ndc_push();
+  ndc_uuid_push();
   base_loop_functions::pre_step();
-  ndc_pop();
+  ndc_uuid_pop();
 
   /* update structure builders if static builds are enabled */
   m_ct_manager->update(timestep());
 
   /* Process all robots */
   auto cb = [&](argos::CControllableEntity* robot) {
-    ndc_push();
+    ndc_uuid_push();
     robot_pre_step(dynamic_cast<chal::robot&>(robot->GetParent()));
-    ndc_pop();
+    ndc_uuid_pop();
   };
-  cpal::argos_swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
+  cpargos::swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
 } /* pre_step() */
 
 void construction_loop_functions::post_step(void) {
-  ndc_push();
+  ndc_uuid_push();
   base_loop_functions::post_step();
-  ndc_pop();
+  ndc_uuid_pop();
 
   /* Process all robots: interact with environment then collect metrics */
   auto cb = [&](argos::CControllableEntity* robot) {
-    ndc_push();
+    ndc_uuid_push();
     robot_post_step(dynamic_cast<chal::robot&>(robot->GetParent()));
-    ndc_pop();
+    ndc_uuid_pop();
   };
-  cpal::argos_swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
+  cpargos::swarm_iterator::robots<cpal::iteration_order::ekDYNAMIC>(this, cb);
 
-  ndc_push();
+  ndc_uuid_push();
   /* Update block distribution status */
   const auto* collector =
       m_metrics_manager->get<cfmetrics::block_transportee_metrics_collector>("blocks:"
@@ -278,11 +276,11 @@ void construction_loop_functions::post_step(void) {
   /* Collect metrics from loop functions */
   m_metrics_manager->collect_from_ct(ct_manager());
 
-  m_metrics_manager->flush(rmetrics::output_mode::ekTRUNCATE);
-  m_metrics_manager->flush(rmetrics::output_mode::ekCREATE);
+  m_metrics_manager->flush(rmetrics::output_mode::ekTRUNCATE, timestep());
+  m_metrics_manager->flush(rmetrics::output_mode::ekCREATE, timestep());
 
   /* Not a clean way to do this in the metrics collectors... */
-  if (m_metrics_manager->flush(rmetrics::output_mode::ekAPPEND)) {
+  if (m_metrics_manager->flush(rmetrics::output_mode::ekAPPEND, timestep())) {
     tv_manager()->dynamics<ctv::dynamics_type::ekPOPULATION>()->reset_metrics();
 
     for (auto* target : ct_manager()->targetsno()) {
@@ -290,10 +288,9 @@ void construction_loop_functions::post_step(void) {
     } /* for(*target..) */
   }
 
-  m_metrics_manager->interval_reset();
-  m_metrics_manager->timestep_inc();
+  m_metrics_manager->interval_reset(timestep());
 
-  ndc_pop();
+  ndc_uuid_pop();
 } /* post_step() */
 
 void construction_loop_functions::destroy(void) {
@@ -303,11 +300,11 @@ void construction_loop_functions::destroy(void) {
 } /* destroy() */
 
 void construction_loop_functions::reset(void) {
-  ndc_push();
+  ndc_uuid_push();
   base_loop_functions::reset();
   m_metrics_manager->initialize();
   m_ct_manager->reset();
-  ndc_pop();
+  ndc_uuid_pop();
 } /* reset() */
 
 /*******************************************************************************

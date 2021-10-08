@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_CONTROLLER_OPERATIONS_BLOCK_PICKUP_HPP_
-#define INCLUDE_PRISM_CONTROLLER_OPERATIONS_BLOCK_PICKUP_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -83,4 +82,3 @@ using block_pickup_visitor = rpvisitor::filtered_visitor<detail::block_pickup>;
 
 NS_END(operations, controller, prism);
 
-#endif /* INCLUDE_PRISM_CONTROLLER_OPERATIONS_BLOCK_PICKUP_HPP_ */

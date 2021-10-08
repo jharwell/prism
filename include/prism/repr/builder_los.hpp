@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_REPR_BUILDER_LOS_HPP_
-#define INCLUDE_PRISM_REPR_BUILDER_LOS_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -67,4 +66,3 @@ class builder_los final : public rer::client<builder_los>,
 
 NS_END(repr, prism);
 
-#endif /* INCLUDE_PRISM_REPR_BUILDER_LOS_HPP_ */

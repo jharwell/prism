@@ -23,7 +23,7 @@
  ******************************************************************************/
 #include "prism/support/tv/env_dynamics.hpp"
 
-#include "cosm/pal/argos_controllerQ3D_adaptor.hpp"
+#include "cosm/pal/controller/controllerQ3D.hpp"
 
 #include "prism/support/base_loop_functions.hpp"
 #include "prism/support/tv/config/env_dynamics_config.hpp"
@@ -64,22 +64,20 @@ rtypes::timestep env_dynamics::ct_block_manip_penalty(void) const {
    * Relies on homogeneously applied penalties for all block manipulation events
    * in all structures.
    */
-  return ct_penalty_handler(block_op_src::ekCT_BLOCK_MANIP, rtypes::type_uuid(0))
-      ->penalty_calc(m_timestep);
+  return ct_penalty_handler(block_op_src::ekCT_BLOCK_MANIP,
+                            rtypes::type_uuid(0))->penalty_calc(m_timestep);
 } /* ct_block_manip_penalty() */
 
-void env_dynamics::register_controller(
-    const cpal::argos_controllerQ3D_adaptor& c) {
+void env_dynamics::register_controller(const cpcontroller::controllerQ3D& c) {
   m_rda.register_controller(c.entity_id());
 } /* register_controller() */
 
-void env_dynamics::unregister_controller(
-    const cpal::argos_controllerQ3D_adaptor& c) {
+void env_dynamics::unregister_controller(const cpcontroller::controllerQ3D& c) {
   m_rda.unregister_controller(c.entity_id());
   penalties_flush(c);
 } /* unregister_controller() */
 
-bool env_dynamics::penalties_flush(const cpal::argos_controllerQ3D_adaptor& c) {
+bool env_dynamics::penalties_flush(const cpcontroller::controllerQ3D& c) {
   bool aborted = false;
   for (auto& h : all_penalty_handlers()) {
     if (h->is_serving_penalty(c)) {

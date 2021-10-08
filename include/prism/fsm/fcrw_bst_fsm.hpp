@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_FSM_FCRW_BST_FSM_HPP_
-#define INCLUDE_PRISM_FSM_FCRW_BST_FSM_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -38,6 +37,7 @@
 #include "prism/fsm/gmt_egress_fsm.hpp"
 #include "prism/fsm/gmt_ingress_fsm.hpp"
 #include "prism/lane_alloc/lane_allocator.hpp"
+#include "prism/fsm/fsm_params.hpp"
 
 /*******************************************************************************
  * Namespaces
@@ -74,8 +74,7 @@ class fcrw_bst_fsm final
       public block_placer {
  public:
   fcrw_bst_fsm(const placonfig::lane_alloc_config* allocator_config,
-               const pcperception::builder_perception_subsystem* perception,
-               csubsystem::saa_subsystemQ3D* saa,
+               const pfsm::fsm_params* params,
                rmath::rng* rng);
   ~fcrw_bst_fsm(void) override;
 
@@ -165,7 +164,7 @@ class fcrw_bst_fsm final
     ekST_MAX_STATES
   };
 
-  bool block_detected(void) const;
+  bool block_detect(void) const;
 
   /* inherited states */
   RCPPSW_HFSM_ENTRY_INHERIT_ND(csfsm::util_hfsm, entry_wait_for_signal);
@@ -197,15 +196,13 @@ class fcrw_bst_fsm final
   RCPPSW_HFSM_DECLARE_STATE_MAP(state_map_ex, mc_state_map, ekST_MAX_STATES);
 
   /* clang-format off */
-  lane_alloc::lane_allocator                        m_allocator;
-  std::unique_ptr<prepr::construction_lane>         m_allocated_lane;
-  csfsm::explore_for_goal_fsm                       m_forage_fsm;
-  acquire_block_placement_site_fsm                  m_block_place_fsm;
-  gmt_ingress_fsm                             m_gmt_ingress_fsm;
-  gmt_egress_fsm                              m_gmt_egress_fsm;
+  lane_alloc::lane_allocator                m_allocator;
+  std::unique_ptr<prepr::construction_lane> m_allocated_lane;
+  csfsm::explore_for_goal_fsm               m_forage_fsm;
+  acquire_block_placement_site_fsm          m_block_place_fsm;
+  gmt_ingress_fsm                           m_gmt_ingress_fsm;
+  gmt_egress_fsm                            m_gmt_egress_fsm;
   /* clang-format on */
 };
 
 NS_END(fsm, prism);
-
-#endif /* INCLUDE_PRISM_FSM_FCRW_BST_FSM_HPP_ */

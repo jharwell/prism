@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_DS_CONNECTIVITY_GRAPH_HPP_
-#define INCLUDE_PRISM_GMT_DS_CONNECTIVITY_GRAPH_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -73,9 +72,28 @@ class connectivity_graph : public rer::client<connectivity_graph>,
 
   RCPPSW_DECORATE_DECLDEF(operator[], const);
   RCPPSW_DECORATE_DECLDEF(n_vertices, const);
+  RCPPSW_DECORATE_DECLDEF(vertices, const);
   RCPPSW_DECORATE_DECLDEF(subgraph, const);
   RCPPSW_DECORATE_DECLDEF(find, const);
   RCPPSW_DECORATE_DECLDEF(contains, const);
+  RCPPSW_DECORATE_DECLDEF(out_edges, const);
+  RCPPSW_DECORATE_DECLDEF(target, const);
+
+  /**
+   * \brief \ref connectivity_graph is undirected, so no distinction between in-
+   * and out-edges.
+   */
+  auto edges(const vertex_descriptor& vd) const {
+    return decoratee().out_edges(vd);
+  }
+
+  /**
+   * \brief \ref connectivity_graph is undirected, so no distinction between in-
+   * and out-degree.
+   */
+  auto degree(const vertex_descriptor& vd) const {
+    return decoratee().out_degree(vd);
+  }
 
   RCPPSW_DECORATE_DECLDEF(operator[]);
 
@@ -101,4 +119,3 @@ class connectivity_graph : public rer::client<connectivity_graph>,
 
 NS_END(ds, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_DS_CONNECTIVITY_GRAPH_HPP_ */

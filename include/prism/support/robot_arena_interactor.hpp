@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_ROBOT_ARENA_INTERACTOR_HPP_
-#define INCLUDE_PRISM_SUPPORT_ROBOT_ARENA_INTERACTOR_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -115,4 +114,3 @@ class robot_arena_interactor final
 
 NS_END(support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_ROBOT_ARENA_INTERACTOR_HPP_ */

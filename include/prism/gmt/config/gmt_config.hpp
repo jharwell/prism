@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_CONFIG_GMT_CONFIG_HPP_
-#define INCLUDE_PRISM_GMT_CONFIG_GMT_CONFIG_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -52,4 +51,3 @@ struct gmt_config final : public rconfig::base_config {
 
 NS_END(config, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_CONFIG_GMT_CONFIG_HPP_ */

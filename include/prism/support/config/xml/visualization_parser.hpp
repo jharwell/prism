@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_CONFIG_XML_VISUALIZATION_PARSER_HPP_
-#define INCLUDE_PRISM_SUPPORT_CONFIG_XML_VISUALIZATION_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -27,7 +26,7 @@
 #include <memory>
 #include <string>
 
-#include "cosm/vis/config/xml/visualization_parser.hpp"
+#include "cosm/argos/vis/config/xml/visualization_parser.hpp"
 
 #include "prism/prism.hpp"
 #include "prism/support/config/visualization_config.hpp"
@@ -42,12 +41,13 @@ NS_START(prism, support, config, xml);
  ******************************************************************************/
 /**
  * \class visualization_parser
- * \ingroup vis config xml
+ * \ingroup support config xml
  *
  * \brief Parses XML parameters relating to visualization in loop functions into
  * \ref visualization_config.
  */
-class visualization_parser final : public rconfig::xml::xml_config_parser {
+class visualization_parser final : public rer::client<visualization_parser>,
+                                   public rconfig::xml::xml_config_parser {
  public:
   using config_type = visualization_config;
 
@@ -56,6 +56,9 @@ class visualization_parser final : public rconfig::xml::xml_config_parser {
    * lie under in the XML tree.
    */
   inline static const std::string kXMLRoot = "visualization";
+
+  visualization_parser(void)
+      : ER_CLIENT_INIT("prism.support.config.xml.visualization_parser") {}
 
   void parse(const ticpp::Element& node) override;
 
@@ -67,11 +70,9 @@ class visualization_parser final : public rconfig::xml::xml_config_parser {
   }
 
   /* clang-format off */
-  std::unique_ptr<config_type>        m_config{nullptr};
-  cvconfig::xml::visualization_parser m_parent{};
+  std::unique_ptr<config_type>             m_config{nullptr};
+  cavis::config::xml::visualization_parser m_parent{};
   /* clang-format on */
 };
 
 NS_END(xml, config, support, prism);
-
-#endif /* INCLUDE_PRISM_SUPPORT_CONFIG_XML_VISUALIZATION_PARSER_HPP_ */

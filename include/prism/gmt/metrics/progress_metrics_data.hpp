@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_DATA_HPP_
-#define INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_DATA_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -50,4 +49,3 @@ struct progress_metrics_data {
 
 NS_END(metrics, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_METRICS_PROGRESS_METRICS_DATA_HPP_ */

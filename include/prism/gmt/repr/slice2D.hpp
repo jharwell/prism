@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_REPR_SLICE2D_HPP_
-#define INCLUDE_PRISM_GMT_REPR_SLICE2D_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -77,5 +76,3 @@ class slice2D : public rer::client<slice2D>,
 };
 
 NS_END(repr, gmt, prism);
-
-#endif /* INCLUDE_PRISM_GMT_REPR_SLICE2D_HPP_ */

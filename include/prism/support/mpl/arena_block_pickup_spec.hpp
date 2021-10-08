@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_SUPPORT_MPL_ARENA_BLOCK_PICKUP_SPEC_HPP_
-#define INCLUDE_PRISM_SUPPORT_MPL_ARENA_BLOCK_PICKUP_SPEC_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -69,4 +68,3 @@ using arena_block_pickup_spec = typename boost::mpl::fold<TTypelist,
                                                         detail::arena_pickup_inserter>::type;
 NS_END(mpl, support, prism);
 
-#endif /* INCLUDE_PRISM_SUPPORT_MPL_ARENA_BLOCK_PICKUP_SPEC_HPP_ */

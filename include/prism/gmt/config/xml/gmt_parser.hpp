@@ -18,8 +18,7 @@
  * PRISM.  If not, see <http://www.gnu.org/licenses/
  */
 
-#ifndef INCLUDE_PRISM_GMT_CONFIG_XML_GMT_PARSER_HPP_
-#define INCLUDE_PRISM_GMT_CONFIG_XML_GMT_PARSER_HPP_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -80,4 +79,3 @@ class gmt_parser final : public rer::client<gmt_parser>,
 
 NS_END(xml, config, gmt, prism);
 
-#endif /* INCLUDE_PRISM_GMT_CONFIG_XML_GMT_PARSER_HPP_ */
